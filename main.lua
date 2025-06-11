@@ -1,4 +1,5 @@
 local Player = require("player")
+local PlayerRespawn = require("playerrespawn")
 local Enemy = require("enemy")
 local Blob = require("blob")
 local Tileset = require("tileset")
@@ -28,6 +29,10 @@ _G.incrementPlayerScore = incrementPlayerScore -- Make it accessible globally fo
 
 -- Debug to test table loading and enemy functions for taking damage, dying and score increment
 function love.keypressed(key)
+    if key == "r" and player.isDead then
+        PlayerRespawn.respawnPlayer(player, world)
+    end
+
     if key == "escape" then
         love.event.quit()
     end
