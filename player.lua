@@ -3,6 +3,7 @@ local Projectile = require("projectile")
 local Utils = require("utils")
 local anim8 = require "libraries/anim8"
 local wf = require "libraries/windfield"
+local flashShader = require "libraries/flashshader"
 
 local Player = {} -- one global player object based on current singleton setup, but local to the module making it not global in use
 Player.__index = Player -- rereference for methods from instances
@@ -25,9 +26,19 @@ function Player:load(passedWorld, sprite_path)
     self.animations = {}
     self.currentAnimation = nil
 
+    -- flags for death and removal upon death
+    self.isDead = false
+
     self.isFlashing = false
     self.flashTimer = 0
     self.flashDuration = 0.12
+    self.flashInterval = 0.1
+
+    -- flags for invincibilty frames after damage and isFlashing
+
+    self.isInvincible = false
+    self.invincibleDuration = 1.0
+    self.invincibleTimer = 0
 
     -- Load sprite sheet if path provided (following enemy.lua pattern exactly)
     if sprite_path then
@@ -98,6 +109,14 @@ function Player:update(dt)
         if self.flashTimer <= 0 then
             self.isFlashing = false
             self.flashTimer = 0
+        end
+    end
+
+    if self.isInvincible then
+        self.invincibleTimer = self.invincibleTimer - dt
+        if self.invincibleTimer <= 0 then
+            self.isInvincible = false
+            self.invincibleTimer = 0
         end
     end
 
@@ -205,12 +224,17 @@ function Player:checkBoundaries()
 end
 
 function Player:draw()
-    -- world:draw()
+    world:draw()
     if self.isFlashing then
-        love.graphics.setColor(1, 1, 1, 1) -- White flash
-    else
-        love.graphics.setColor(1, 1, 1, 1) -- Normal (full color)
+        love.graphics.setShader(flashShader)
+            flashShader:send("WhiteFactor", 1.0)
+    elseif self.isInvincible then
+        local time = love.timer.getTime()
+        local alpha = math.floor(time / self.flashInterval) % 2 == 0 and 0.4 or 0.8
+        love.graphics.setColor(1, 1, 1, alpha) -- transparent  
     end
+        love.graphics.setColor(1, 1, 1, 1) -- Normal (full color)
+
     if self.currentAnimation and self.spriteSheet then
         love.graphics.setColor(1, 1, 1, 1)
         self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
@@ -228,14 +252,29 @@ function Player:draw()
     self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
 
     love.graphics.setColor(1, 1, 1, 1) -- color reset
+    love.graphics.setShader()
 end
 
 -- take damage, deal damage and direction
 function Player:takeDamage(dmg)
-    Utils.takeDamage(self, dmg)
-    -- msybr move this into Utils take damage later
+    print("DAMAGE TRIGGERED")
+    if self.isDead or self.isInvincible then return end -- no more damage taken if dead
+
+     -- maybe move this into Utils take damage later
+     -- look into state machines 6/11/25
     self.isFlashing = true
     self.flashTimer = self.flashDuration
+
+    self.isInvincible = true
+    self.invincibleTimer = self.invincibleDuration
+
+    self.health = self.health - dmg
+    print(string.format("%s took %.2f damage. Health is now %.2f", self.name, dmg, self.health))
+    print(string.format("Invincible: %s | Timer: %.2f", tostring(self.invincible), self.invincibleTimer))
+    -- Utils.takeDamage(self, dmg)
+    if self.health <= 0 then
+        self.die(self)
+    end
 end
 
 -- build target logic and implement into player and enemy 5/26/25
@@ -244,10 +283,26 @@ function Player:dealDamage(target, dmg)
 end
 
 function Player:die()
+    if self.isDead then return end
+
+    self.isDead = true
+
     Utils.die(self)
     -- print("You are dead!/nGame Over.")
     -- remove from world and/or active enemy table
+    if self.collider then
+        print("Attempting to destroy collider for: " .. self.name)
+        self.collider:destroy()
+        self.collider = nil -- set collider to nil
+        print(self.name .. " collider is destroyed!")
+    else
+        print(self.name .. "had no collider or it was already nil.")
+    end
     -- death animation and effects go here
+    if self.animations and self.animations.death then
+        self.currentAnimation = self.animations.death
+        self.currentAnimation:resume() -- Make sure it plays
+    end
 end
 
 return Player

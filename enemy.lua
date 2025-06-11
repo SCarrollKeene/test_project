@@ -17,7 +17,7 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         yVel = yVel or 0,
         health = health or 40,
         speed = speed or 40,
-        baseDamage = baseDamage or 2,
+        baseDamage = baseDamage or 5,
 
         spriteSheet = nil, -- add sprite later on, possibly in main.lua find a test sprite to use
         animations = {},
@@ -40,7 +40,8 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         flashDuration = 0.12 -- seconds, tweak as needed
     }
 
-    print("DEBUG: Enemy:new - Instance name:", instance.name, " Health:", instance.health, "Speed:", instance.speed, "Type of speed:", type(instance.speed))
+    print("DEBUG: Enemy:new - Instance name:", instance.name, " Health:", instance.health, "Speed:", instance.speed, "Type of speed:", type(instance.speed), 
+    "Damage:", instance.baseDamage)
     setmetatable(instance, {__index = Enemy}) -- Enemy methods and fields/data will get looked up
 
     if sprite then
@@ -146,7 +147,7 @@ function Enemy:update(dt)
         self.currentAnimation:update(dt)
     end
 
-    print("DEBUG: Enemy:update - Self name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed))
+    print("DEBUG: Enemy:update - Self name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
 
     local isMoving = false
     -- AI: Decide movement direction/velocity
@@ -262,6 +263,8 @@ end
 -- build target logic and implement into player and enemy 5/26/25
 function Enemy:dealDamage(target, dmg)
     Utils.dealDamage(self, target, dmg)
+
+    -- moved this to Utils.dealDamage
     -- if target and target.takeDamage() then
     --     target:takeDamage(dmg)
     -- end

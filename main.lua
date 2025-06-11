@@ -47,9 +47,9 @@ function spawnRandomEnemy()
 
     -- define enemy types and configurations
     local randomBlobs = { 
-        { name = "Black Blob", spritePath = slime_spritesheet_path, health = 60, speed = 50 },
-        { name = "Blue Blob", spritePath = blueblob_spritesheet_path, health = 120, speed = 70 }, 
-        { name = "Violet Blob", spritePath = violetblob_spritesheet_path, health = 180, speed = 90 } 
+        { name = "Black Blob", spritePath = slime_spritesheet_path, health = 60, speed = 50, baseDamage = 5 },
+        { name = "Blue Blob", spritePath = blueblob_spritesheet_path, health = 120, speed = 70, baseDamage = 10 }, 
+        { name = "Violet Blob", spritePath = violetblob_spritesheet_path, health = 180, speed = 90, baseDamage = 15 } 
     }
 
     -- Pick a random enemy type from the randomBlobs configuration table
@@ -64,7 +64,7 @@ function spawnRandomEnemy()
     local y = love.math.random(enemy_height, love.graphics.getHeight() - enemy_height)
     
     -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
-    local newEnemy = Enemy:new(world, randomBlob.name, x, y, enemy_width, enemy_height, nil, nil, randomBlob.health, randomBlob.speed, nil, randomBlob.spritePath)
+    local newEnemy = Enemy:new(world, randomBlob.name, x, y, enemy_width, enemy_height, nil, nil, randomBlob.health, randomBlob.speed, randomBlob.baseDamage, randomBlob.spritePath)
 
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
@@ -110,15 +110,15 @@ function love.load()
     -- Projectile:load()
 
     local slime_spritesheet_path = "sprites/slime_black.png"
-    enemy1 = Enemy:new(world, "Black Blob", 800, 200, 32, 32, nil, nil, 60, 50, nil, slime_spritesheet_path)
+    enemy1 = Enemy:new(world, "Black Blob", 800, 200, 32, 32, nil, nil, 60, 50, 5, slime_spritesheet_path)
 
     --enemy1 = Enemy:new(world, name, 800, 200) -- revisit how to pass in only the args that I want 5/30/25
 
     local blueblob_spritesheet_path = "sprites/slime_blue.png"
-    blueBlob = Enemy:new(world, "Blue Blob", 700, 300, 32, 32, nil, nil, 120, 70, nil, blueblob_spritesheet_path)
+    blueBlob = Enemy:new(world, "Blue Blob", 700, 300, 32, 32, nil, nil, 120, 70, 10, blueblob_spritesheet_path)
 
     local violetblob_spritesheet_path = "sprites/slime_violet.png"
-    violetBlob = Enemy:new(world, "Violet Blob", 750, 250, 32, 32, nil, nil, 180, 90, nil, violetblob_spritesheet_path)
+    violetBlob = Enemy:new(world, "Violet Blob", 750, 250, 32, 32, nil, nil, 180, 90, 15, violetblob_spritesheet_path)
 
     -- enemy1:setTarget(player)
     -- blueBlob:setTarget(player)
@@ -150,8 +150,25 @@ function love.load()
     function beginContact(a, b, coll)
         local dataA = a:getUserData() -- both Should be the projectile/enemy data
         local dataB = b:getUserData() -- based on the collision check if statement below
-        local dataC = a:getUserData()
-        local projectile, enemy, wall
+        local projectile, enemy, wall, player
+
+        -- make function local to prevent overwriting similar variables
+        local function handlePlayerEnemyCollision(a, b)
+            local player, enemy
+            -- Check for Player/Enemy collision
+            if (a.type == "player" and b.type == "enemy") then
+                player, enemy = a, b 
+            elseif (b.type == "player" and a.type == "enemy") then
+                player, enemy = b, a
+            else
+                return -- exit if not player/enemy collision
+            end
+    
+            -- Handle Player-Enemy interactions
+            if player and not player.isDead and not player.isInvincible then
+                player:takeDamage(enemy.baseDamage)
+            end
+        end
 
         -- Check for Projectile-Enemy collision
         if dataA and dataA.damage and dataA.owner and dataB and dataB.health and not dataB.damage then -- Heuristic eval: projectile has damage, enemy has health but not damage field
@@ -166,7 +183,7 @@ function love.load()
         if projectile and enemy and not enemy.isDead then -- Ensure enemy isn't already marked dead
             -- beginContact starts
             -- update when enemy can also launch projectiles 5/30/25
-            if projectile and enemy then
+            if projectile and enemy and projectile.owner ~= enemy then
                 
                 print(string.format("Collision: Projectile (owner: %s, damage: %.2f) vs Enemy (%s, health: %.2f)",
                 (projectile.owner and projectile.owner.name) or "Unknown", projectile.damage, enemy.name, enemy.health))

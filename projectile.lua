@@ -21,6 +21,7 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner)
         damage = damage or 10, -- store damage
         world = world,
         owner = owner, --store the owner of the shot projectile, in this case, the player
+        ignoreTarget = owner,
         orbSprite = image,
 
         type = "projectile",
