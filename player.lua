@@ -23,11 +23,13 @@ function Player:load(passedWorld, sprite_path)
     self.frameHeight = 32
 
     self.spriteSheet = nil
+    -- self.soulsplodeSheet = love.graphics.newImage("sprites/soulsplode.png")
     self.animations = {}
     self.currentAnimation = nil
 
     -- flags for death and removal upon death
     self.isDead = false
+    -- self.isExploding = false
 
     self.isFlashing = false
     self.flashTimer = 0
@@ -59,8 +61,13 @@ function Player:load(passedWorld, sprite_path)
             -- Create anim8 grid (following enemy.lua pattern exactly)
             self.grid = anim8.newGrid(frameWidth, frameHeight, 
                                        self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
+            -- death animation grid
+            -- self.deathGrid = anim8.newGrid(32, 32, 
+            --                             self.soulsplodeSheet:getWidth(), self.soulsplodeSheet:getHeight())
+            
         
         self.animations.idle = anim8.newAnimation(self.grid('1-3', 3), 0.2) -- Example
+        -- self.animations.death = anim8.newAnimation(self.deathGrid('1-8', 1), 0.08, 'pauseAtEnd')
         self.animations.down = anim8.newAnimation(self.grid('1-3', 3), 0.2) -- Example, adjust frames
         self.animations.up = anim8.newAnimation(self.grid('1-3', 1), 0.2)   -- Example, adjust frames
         self.animations.left = anim8.newAnimation(self.grid('1-3', 4), 0.2) -- Example, adjust frames
@@ -102,6 +109,14 @@ function Player:load(passedWorld, sprite_path)
 end
 
 function Player:update(dt)
+    if self.isDead then
+        -- Only update death animation and effects
+        if self.currentAnimation then
+            self.currentAnimation:update(dt)
+        end
+        return  -- Skip all other updates
+    end
+
     self:move(dt)
 
     if self.isFlashing then
@@ -123,9 +138,24 @@ function Player:update(dt)
         end
     end
 
+    -- if self.isDead then
+    --     if self.deathTimer then
+    --         self.deathTimer = self.deathTimer - dt
+    --         if self.deathTimer <= 0 then
+    --             self:triggerGameOver()
+    --         end
+    --     end
+    --     return
+    -- end
+
     if self.currentAnimation then
         self.currentAnimation:update(dt) -- updates current sprite active animation
     end
+
+    -- if self.isExploding then
+    --     self.currentAnimation:update(dt)
+    --     return -- Skip normal update logic when exploding
+    -- end
 
     if self.collider then
         self.x, self.y = self.collider:getPosition()
@@ -136,6 +166,8 @@ function Player:update(dt)
 end
 
 function Player:move(dt)
+    if self.isDead then return end -- stop all input once dead
+
     self.xVel = 0 
     self.yVel = 0 -- reset velocities for play/collider movement
     local newAnimation = nil
@@ -165,9 +197,9 @@ function Player:move(dt)
         isMoving = true
     end
 
-    if love.keyboard.isDown("escape") then
-        love.event.quit()
-    end
+    -- if love.keyboard.isDown("escape") then
+    --     love.event.quit()
+    -- end
 
     if isMoving == true then
         -- probably move entire movement logic in here
@@ -298,23 +330,37 @@ function Player:die()
     if self.isDead then return end
 
     self.isDead = true
+    self.isInvincible = false
+    self.isFlashing = false
 
     Utils.die(self)
     print("You are dead!/nGame Over.")
+
     -- remove from world and/or active enemy table
     if self.collider then
         print("Attempting to destroy collider for: " .. self.name)
+        self.collider:setLinearVelocity(0, 0) -- stops collider from moving if player dies while moving
         self.collider:destroy()
         self.collider = nil -- set collider to nil
         print(self.name .. " collider is destroyed!")
     else
         print(self.name .. "had no collider or it was already nil.")
     end
+
     -- death animation and effects go here
     if self.animations and self.animations.death then
         self.currentAnimation = self.animations.death
         self.currentAnimation:resume() -- Make sure it plays
     end
+
+     -- Set death timer for game over transition
+    self.deathTimer = 2.0  -- x seconds to show death animation, change based on sprite/animation
+end
+
+function Player:triggerGameOver()
+    -- Transition to game over screen, restart, or respawn, etc
+    print("Game Over! Final Score: " .. playerScore)
+    -- Add in game over logic
 end
 
 return Player

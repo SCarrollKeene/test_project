@@ -20,6 +20,8 @@ function Weapon:update(dt)
 end
 
 function Weapon:shoot(world, x, y, angle, speed, owner)
+    if owner.isDead then return nil end -- extra safety measure to not fire projectile if owner is dead
+    
     print("Shoot called, is cooldown ready?")
     if self.cooldown:isReady() then
         print("DEBUG: cooldown is ready", self.cooldown, "Cooldown time:", self.cooldown.time)

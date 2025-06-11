@@ -28,6 +28,10 @@ _G.incrementPlayerScore = incrementPlayerScore -- Make it accessible globally fo
 
 -- Debug to test table loading and enemy functions for taking damage, dying and score increment
 function love.keypressed(key)
+    if key == "escape" then
+        love.event.quit()
+    end
+
     if key == "e" then
         spawnRandomEnemy()
     end
@@ -105,6 +109,7 @@ function love.load()
     
     local mage_spritesheet_path = "sprites/mage-NESW.png"
     Player:load(world, mage_spritesheet_path)
+    -- Player:load(world, death_spritesheet_path)
     -- Blob:load()
 
     local slime_spritesheet_path = "sprites/slime_black.png"
@@ -266,12 +271,12 @@ function love.update(dt)
     -- Handle shooting
     -- feels like a global action, maybe move this into main? or a sound file, hmm 5/29/25
     function love.mousepressed(x, y, button, istouch, presses)
-        if button == 1 then
+        if not player.isDead and button == 1 then
             sounds.blip:play()
         end
     end
 
-    if love.mouse.isDown(1) then
+    if not player.isDead and love.mouse.isDown(1) then
         print("DEBUG: left mouse click detected")
         local angle = math.atan2(
             love.mouse.getY() - player.y, 
