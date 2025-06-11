@@ -164,11 +164,16 @@ function love.load()
                 return -- exit if not player/enemy collision
             end
     
+            print(string.format("COLLISION: %s vs %s", a.type, b.type))
+
             -- Handle Player-Enemy interactions
             if player and not player.isDead and not player.isInvincible then
                 player:takeDamage(enemy.baseDamage)
             end
         end
+
+        -- execute function
+        handlePlayerEnemyCollision(dataA, dataB)
 
         -- Check for Projectile-Enemy collision
         if dataA and dataA.damage and dataA.owner and dataB and dataB.health and not dataB.damage then -- Heuristic eval: projectile has damage, enemy has health but not damage field

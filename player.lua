@@ -225,26 +225,35 @@ end
 
 function Player:draw()
     world:draw()
+    -- Reset color and shader before setting new ones (optional, but good practice)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setShader()
+
     if self.isFlashing then
         love.graphics.setShader(flashShader)
             flashShader:send("WhiteFactor", 1.0)
+            -- love.graphics.setColor(1, 1, 1, 1)
     elseif self.isInvincible then
         local time = love.timer.getTime()
         local alpha = math.floor(time / self.flashInterval) % 2 == 0 and 0.4 or 0.8
         love.graphics.setColor(1, 1, 1, alpha) -- transparent  
+        -- love.graphics.setShader()
     end
-        love.graphics.setColor(1, 1, 1, 1) -- Normal (full color)
+    -- else
+    --     love.graphics.setColor(1, 1, 1, 1) -- Normal (full color)
+    --     love.graphics.setShader()
+    -- end
 
     if self.currentAnimation and self.spriteSheet then
-        love.graphics.setColor(1, 1, 1, 1)
+        -- love.graphics.setColor(1, 1, 1, 1)
         self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
     elseif self.spriteSheet then
         -- Fallback: draw whole sheet if no currentAnimation
-        love.graphics.setColor(1,1,1,1)
+        -- love.graphics.setColor(1,1,1,1)
         love.graphics.draw(self.spriteSheet, self.x - self.spriteSheet:getWidth()/2, self.y - self.spriteSheet:getHeight()/2)
     else
         -- fallback to rectangle if animation/spritesheet fails
-        love.graphics.setColor(1, 1, 1, 1)
+        -- love.graphics.setColor(1, 1, 1, 1)
         love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
     end
 
@@ -288,7 +297,7 @@ function Player:die()
     self.isDead = true
 
     Utils.die(self)
-    -- print("You are dead!/nGame Over.")
+    print("You are dead!/nGame Over.")
     -- remove from world and/or active enemy table
     if self.collider then
         print("Attempting to destroy collider for: " .. self.name)
