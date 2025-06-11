@@ -114,6 +114,9 @@ function Player:update(dt)
 
     if self.isInvincible then
         self.invincibleTimer = self.invincibleTimer - dt
+         print(string.format("[INVINCIBLE] Timer: %.2f/%s", 
+            self.invincibleTimer, 
+            tostring(self.invincibleDuration)))
         if self.invincibleTimer <= 0 then
             self.isInvincible = false
             self.invincibleTimer = 0
@@ -282,7 +285,7 @@ function Player:takeDamage(dmg)
     print(string.format("Invincible: %s | Timer: %.2f", tostring(self.invincible), self.invincibleTimer))
     -- Utils.takeDamage(self, dmg)
     if self.health <= 0 then
-        self.die(self)
+        self:die()
     end
 end
 

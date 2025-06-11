@@ -105,9 +105,7 @@ function love.load()
     
     local mage_spritesheet_path = "sprites/mage-NESW.png"
     Player:load(world, mage_spritesheet_path)
-    -- Enemy:load()
     -- Blob:load()
-    -- Projectile:load()
 
     local slime_spritesheet_path = "sprites/slime_black.png"
     enemy1 = Enemy:new(world, "Black Blob", 800, 200, 32, 32, nil, nil, 60, 50, 5, slime_spritesheet_path)
@@ -152,7 +150,7 @@ function love.load()
         local dataB = b:getUserData() -- based on the collision check if statement below
         local projectile, enemy, wall, player
 
-        -- make function local to prevent overwriting similar variables
+        -- make function local to prevent overwriting similar outer variables
         local function handlePlayerEnemyCollision(a, b)
             local player, enemy
             -- Check for Player/Enemy collision
@@ -167,8 +165,10 @@ function love.load()
             print(string.format("COLLISION: %s vs %s", a.type, b.type))
 
             -- Handle Player-Enemy interactions
-            if player and not player.isDead and not player.isInvincible then
-                player:takeDamage(enemy.baseDamage)
+            if player and not player.isDead then
+                if not player.isInvincible then
+                    player:takeDamage(enemy.baseDamage)
+                end
             end
         end
 
