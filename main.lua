@@ -162,6 +162,11 @@ function love.load()
 
         -- make function local to prevent overwriting similar outer variables
         local function handlePlayerEnemyCollision(a, b)
+            -- Add defensive NIL checks
+            -- made collision handler resilient to incomplete (user) collision data
+            if not a or not b or not a.type or not b.type then
+                return
+            end
             local player, enemy
             -- Check for Player/Enemy collision
             if (a.type == "player" and b.type == "enemy") then
