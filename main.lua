@@ -33,6 +33,10 @@ function love.keypressed(key)
         PlayerRespawn.respawnPlayer(player, world)
     end
 
+    if key == "space" and not player.isDead then
+        player:dash()
+    end
+    
     if key == "escape" then
         love.event.quit()
     end

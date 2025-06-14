@@ -31,6 +31,15 @@ function Player:load(passedWorld, sprite_path)
     self.isDead = false
     -- self.isExploding = false
 
+    -- dash logic
+    self.isDashing = false
+    self.dashSpeed = 900          -- Adjust based on preference
+    self.dashDuration = 0.15      -- Dash lasts 0.15 seconds
+    self.dashCooldown = 0.5       -- Time before player can dash again
+    self.dashTimer = 0
+    self.dashCooldownTimer = 0
+    self.lastDashDirection = {x = 0, y = 0}
+
     self.isFlashing = false
     self.flashTimer = 0
     self.flashDuration = 0.12
@@ -109,6 +118,24 @@ function Player:load(passedWorld, sprite_path)
 end
 
 function Player:update(dt)
+    -- Handle dash cooldown
+    if self.dashCooldownTimer > 0 then
+        self.dashCooldownTimer = self.dashCooldownTimer - dt
+        if self.dashCooldownTimer < 0 then self.dashCooldownTimer = 0 end
+    end
+
+    -- Handle dashing
+    if self.isDashing then
+        self.dashTimer = self.dashTimer - dt
+        if self.dashTimer <= 0 then
+            self.isDashing = false
+            -- Stop dash, reset to normal speed (or zero velocity)
+            if self.collider then
+                self.collider:setLinearVelocity(0, 0)
+            end
+        end
+    end
+
     if self.isDead then
         -- Only update death animation and effects
         if self.currentAnimation then
@@ -166,6 +193,8 @@ function Player:update(dt)
 end
 
 function Player:move(dt)
+    if self.isDashing then return end -- Don't process normal movement while dashing
+
     if self.isDead then return end -- stop all input once dead
 
     self.xVel = 0 
@@ -297,6 +326,41 @@ function Player:draw()
 
     love.graphics.setColor(1, 1, 1, 1) -- color reset
     love.graphics.setShader()
+end
+
+-- dash logic
+function Player:dash()
+    -- Only allow dashing if not already dashing and cooldown is over
+    if self.isDashing or self.dashCooldownTimer > 0 then return end
+
+    -- Determine dash direction based on current movement or last input
+    local dx, dy = 0, 0
+    if love.keyboard.isDown("w") or love.keyboard.isDown("up")    then dy = dy - 1 end
+    if love.keyboard.isDown("s") or love.keyboard.isDown("down")  then dy = dy + 1 end
+    if love.keyboard.isDown("a") or love.keyboard.isDown("left")  then dx = dx - 1 end
+    if love.keyboard.isDown("d") or love.keyboard.isDown("right") then dx = dx + 1 end
+
+    -- If no direction pressed, dash in last moved direction
+    if dx == 0 and dy == 0 then
+        dx, dy = self.lastDashDirection.x, self.lastDashDirection.y
+    else
+        self.lastDashDirection.x, self.lastDashDirection.y = dx, dy
+    end
+
+    -- Normalize direction
+    local length = math.sqrt(dx*dx + dy*dy)
+    if length == 0 then return end -- Can't dash with no direction
+    dx, dy = dx / length, dy / length
+
+    -- Set dash state
+    self.isDashing = true
+    self.dashTimer = self.dashDuration
+    self.dashCooldownTimer = self.dashCooldown
+
+    -- Set dash velocity
+    if self.collider then
+        self.collider:setLinearVelocity(dx * self.dashSpeed, dy * self.dashSpeed)
+    end
 end
 
 -- take damage, deal damage and direction
