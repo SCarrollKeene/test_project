@@ -1,11 +1,19 @@
 local Player = require("player")
 local PlayerRespawn = require("playerrespawn")
 local Enemy = require("enemy")
+local Portal = require("portal")
 local Blob = require("blob")
 local Tileset = require("tileset")
 local Map = require("map")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
+local Gamestate = require("libraries/hump/gamestate")
+
+-- game state definitions
+local playing = "playing"
+local paused = "paused"
+local safeRoom = "saferoom"
+local gameOver = "gameover"
 
 local projectiles = {}
 local player = Player -- create new player instance, change player.lua to a constructor pattern if you want multiple players
@@ -13,6 +21,7 @@ local player = Player -- create new player instance, change player.lua to a cons
 -- local worldCollider = world:newRectangleCollider(350, 100, 80, 80)
 
 local enemies = {} -- enemies table to house all active enemies
+local portal = nil -- set portal to nil initially, won't exist until round is won by player
 local playerScore = 0
 local scoeFont = 0
 
@@ -36,7 +45,7 @@ function love.keypressed(key)
     if key == "space" and not player.isDead then
         player:dash()
     end
-    
+
     if key == "escape" then
         love.event.quit()
     end
@@ -58,7 +67,7 @@ function spawnRandomEnemy()
     local blueblob_spritesheet_path = "sprites/slime_blue.png"
     local violetblob_spritesheet_path = "sprites/slime_violet.png"
 
-    -- define enemy types and configurations
+    -- define enemy types and configurations in configuration table
     local randomBlobs = { 
         { name = "Black Blob", spritePath = slime_spritesheet_path, health = 60, speed = 50, baseDamage = 5 },
         { name = "Blue Blob", spritePath = blueblob_spritesheet_path, health = 120, speed = 70, baseDamage = 10 }, 
@@ -66,7 +75,7 @@ function spawnRandomEnemy()
     }
 
     -- Pick a random enemy type from the randomBlobs configuration table
-    local randomIndex = math.random(1, #randomBlobs) -- picks a random index
+    local randomIndex = math.random(1, #randomBlobs) -- picks a random index between 1-3
     print(#randomBlobs) -- returns number of entries in the #randomBlobs table
     local randomBlob = randomBlobs[randomIndex] -- returns a random blob from the table
 
@@ -89,6 +98,13 @@ function spawnRandomEnemy()
     print(string.format("DEBUG: %s at x=%.1f, y=%.1f", randomBlob.name, x, y))
 end
 
+function spawnPortal()
+    local portalX = love.graphics.getWidth() / 2
+    local portalY = love.graphics.getHeight() / 2
+    portal = Portal:new(world, portalX, portalY)
+    print("A portal has spawned! Traverse to safe room.")
+end
+
 function love.load()
     world = wf.newWorld(0, 0)
     -- collision classes must load into the world first, per order of operations/how content is loaded, I believe
@@ -100,6 +116,7 @@ function love.load()
     print("DEBUG: main.lua: Added collision class - " .. 'projectile')
     world:addCollisionClass('wall', {ignores = {}})
     print("DEBUG: main.lua: Added collision class - " .. 'wall')
+    world:addCollisionClass('portal', {ignores = {}})
     -- You can also define interactions here
 
     if world.collisionClassesSet then
@@ -191,6 +208,22 @@ function love.load()
             end
         end
 
+        -- Player-Portal collision
+        local player_obj, portal_obj
+        if dataA and dataA.type == "player" and dataB and dataB.type == "portal" then
+            player_obj, portal_obj = dataA, dataB
+        elseif dataB and dataB.type == "player" and dataA and dataA.type == "portal" then
+            player_obj, portal_obj = dataB, dataA
+        end
+        
+        if player_obj and portal_obj and Gamestate.current() == playing then
+            Gamestate.switch(safeRoom)
+            if portal then
+                portal:destroy()
+                portal = nil
+            end
+        end
+
         -- execute function
         handlePlayerEnemyCollision(dataA, dataB)
 
@@ -256,6 +289,10 @@ function love.load()
 
     -- sounds.music:play()
     scoreFont = love.graphics.newFont(30)
+
+    -- register gamestate events and start game in playing state
+    Gamestate.registerEvents()
+    Gamestate.switch(playing)
 end
 
 function love.update(dt)

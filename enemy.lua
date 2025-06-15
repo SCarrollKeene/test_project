@@ -100,8 +100,17 @@ end
 function Enemy:load()
     local colliderHeight = self.height * 0.8 -- used to reduce blob collider height
     local colliderWidth = self.width * 0.7
+    local yOffset = 4
+    local xOffset = 4
     -- set it up with self so each enemy instance has their own collider
-    self.collider = self.world:newBSGRectangleCollider(self.x + (self.width - colliderWidth)/2, self.y + (self.height - colliderHeight)/2, colliderWidth, colliderHeight, 10)
+    self.collider = self.world:newBSGRectangleCollider(
+        self.x + (self.width - colliderWidth)/2, 
+        self.y + (self.height - colliderHeight)/2, 
+        colliderWidth, 
+        colliderHeight, 
+        10
+    )
+
     self.collider:setFixedRotation(true)
     self.collider:setUserData(self) -- associate enemy obj w/ collider
     self.collider:setObject(self)

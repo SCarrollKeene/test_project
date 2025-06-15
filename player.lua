@@ -6,7 +6,7 @@ local wf = require "libraries/windfield"
 local flashShader = require "libraries/flashshader"
 
 local Player = {} -- one global player object based on current singleton setup, but local to the module making it not global in use
-Player.__index = Player -- rereference for methods from instances
+Player.__index = Player -- reference for methods from instances
 
 function Player:load(passedWorld, sprite_path)
     love.graphics.setDefaultFilter("nearest", "nearest")
@@ -32,21 +32,21 @@ function Player:load(passedWorld, sprite_path)
     -- self.isExploding = false
 
     -- dash logic
-    self.isDashing = false
-    self.dashSpeed = 900          -- Adjust based on preference
-    self.dashDuration = 0.15      -- Dash lasts 0.15 seconds
-    self.dashCooldown = 0.5       -- Time before player can dash again
+    self.isDashing = false  -- flag to use in movement to switch between regular movement vs dashing
+    self.dashSpeed = 900  -- Adjust based on preference
+    self.dashDuration = 0.15  -- Dash lasts 0.15 seconds
+    self.dashCooldown = 0.5  -- Time before player can dash again
     self.dashTimer = 0
     self.dashCooldownTimer = 0
     self.lastDashDirection = {x = 0, y = 0}
 
+    -- flashing properties for when the player takes damage
     self.isFlashing = false
     self.flashTimer = 0
     self.flashDuration = 0.12
     self.flashInterval = 0.1
 
     -- flags for invincibilty frames after damage and isFlashing
-
     self.isInvincible = false
     self.invincibleDuration = 1.0
     self.invincibleTimer = 0
