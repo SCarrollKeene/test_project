@@ -32,6 +32,14 @@ local scoeFont = 0
 
 local pendingRoomTransition = false
 
+-- fade variables for room transitions
+local fadeAlpha = 0         -- 0 = fully transparent, 1 = fully opaque
+local fading = false        -- Is a fade in progress?
+local fadeDirection = 1     -- 1 = fade in (to black), -1 = fade out (to transparent)
+local fadeDuration = 0.5    -- Duration of fade in seconds
+local fadeTimer = 0
+local nextState = nil       -- The state to switch to after fade
+
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
@@ -225,7 +233,11 @@ function love.load()
         end
         
         if player_obj and portal_obj and Gamestate.current() == playing then
-            pendingRoomTransition = true
+            -- pendingRoomTransition = true
+            fading = true
+            fadeDirection = 1
+            fadeTimer = 0
+            nextState = safeRoom
             if portal then
                 portal:destroy()
                 portal = nil
@@ -307,7 +319,7 @@ end
 function playing:enter()
     print("Entered playing gamestate")
     -- Reset player position and state
-    player.x = 60
+    player.x = 140
     player.y = love.graphics.getHeight() / 3
     if player.collider then
         player.collider:setPosition(player.x, player.y)
@@ -331,6 +343,23 @@ function playing:update(dt)
         pendingRoomTransition = false
         return -- prevents any further update logic
     end
+
+    if fading then
+        fadeTimer = fadeTimer + dt
+        fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
+        if fadeAlpha >= 1 and fadeDirection == 1 then
+            -- Fade in complete, switch state
+            Gamestate.switch(nextState)
+            fadeDirection = -1      -- Start fading out
+            fadeTimer = 0
+        elseif fadeAlpha >= 1 and fadeDirection == -1 then
+            -- Fade out complete
+            fading = false
+            fadeAlpha = 0
+        end
+        return -- Optionally halt other updates during fade
+    end
+
 
     if not player.isDead then
         player:update(dt)
@@ -482,14 +511,22 @@ function playing:draw()
     --     end
     -- end
 
+    if fading and fadeAlpha > 0 then
+        love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        love.graphics.setColor(1, 1, 1, 1)
+    end
+
      -- Display player score
      -- debate change to an event system or callback function later when enemy dies or check for when the enemy is dead
     if scoreFont then
         love.graphics.setFont(scoreFont)
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
-    love.graphics.print("Score: " .. playerScore, 30, 30)
-    love.graphics.print("Press 'e' on keyboard to spawn more enemies.", 30, 60)
+    love.graphics.print("SAFE ROOM 1", 30, 50)
+    love.graphics.print("Health: " .. player.health, 30, 80)
+    love.graphics.print("Score: " .. playerScore, 30, 110)
+    love.graphics.print("Press 'e' on keyboard to spawn more enemies.", 30, 140)
 end
 
 function safeRoom:enter()
@@ -522,6 +559,23 @@ function safeRoom:update(dt)
     if saferoomMap then saferoomMap:update(dt) end
     if world then world:update(dt) end
     player:update(dt)
+
+    if fading then
+        fadeTimer = fadeTimer + dt
+        fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
+        if fadeAlpha >= 1 and fadeDirection == 1 then
+            -- Fade in complete, switch state
+            Gamestate.switch(nextState)
+            fadeDirection = -1      -- Start fading out
+            fadeTimer = 0
+        elseif fadeAlpha >= 1 and fadeDirection == -1 then
+            -- Fade out complete
+            fading = false
+            fadeAlpha = 0
+        end
+        return -- Optionally halt other updates during fade
+    end
+
     -- add other safe room specific logic
 
     -- safe room music
@@ -537,14 +591,22 @@ function safeRoom:draw()
     
     -- Draw player
     player:draw()
+
+    if fading and fadeAlpha > 0 then
+        love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        love.graphics.setColor(1, 1, 1, 1)
+    end
+
+
     
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
-    love.graphics.print("SAFE ROOM", 50, 50)
-    love.graphics.print("Press 'R' to start next round", 50, 80)
-    love.graphics.print("Health: " .. player.health, 50, 110)
-    love.graphics.print("Score: " .. playerScore, 50, 140)
+    love.graphics.print("SAFE ROOM", 30, 50)
+    love.graphics.print("Press 'R' to start next round", 30, 80)
+    love.graphics.print("Health: " .. player.health, 30, 110)
+    love.graphics.print("Score: " .. playerScore, 30, 140)
 end
 
 function safeRoom:keypressed(key)
