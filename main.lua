@@ -5,9 +5,14 @@ local Portal = require("portal")
 local Blob = require("blob")
 local Tileset = require("tileset")
 local Map = require("map")
+local MapLoader = require("maploader")
+local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
-local Gamestate = require("libraries.hump.gamestate")
+local Gamestate = require("libraries/hump/gamestate")
+
+-- for testing purposes, loading the safe room map after entering portal
+local saferoomMap
 
 -- game state definitions
 local playing = {}
@@ -24,6 +29,8 @@ local enemies = {} -- enemies table to house all active enemies
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
 local playerScore = 0
 local scoeFont = 0
+
+local pendingRoomTransition = false
 
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
@@ -107,6 +114,7 @@ end
 
 function love.load()
     world = wf.newWorld(0, 0)
+
     -- collision classes must load into the world first, per order of operations/how content is loaded, I believe
     world:addCollisionClass('player', {ignores = {}})
     print("DEBUG: main.lua: Added collision class - " .. 'player')
@@ -217,7 +225,7 @@ function love.load()
         end
         
         if player_obj and portal_obj and Gamestate.current() == playing then
-            Gamestate.switch(safeRoom)
+            pendingRoomTransition = true
             if portal then
                 portal:destroy()
                 portal = nil
@@ -318,6 +326,12 @@ end
 
 function playing:update(dt)
     print("playing:update")
+    if pendingRoomTransition then
+        Gamestate.switch(safeRoom)
+        pendingRoomTransition = false
+        return -- prevents any further update logic
+    end
+
     if not player.isDead then
         player:update(dt)
     end
@@ -480,10 +494,12 @@ end
 
 function safeRoom:enter()
     print("Entering safe room")
+    saferoomMap = MapLoader.load("saferoommap", world)
+    
     player.x = love.graphics.getWidth() / 2
     player.y = love.graphics.getHeight() / 2
     if player.collider then
-        player.collider:setPosition(player.x, player,y)
+        player.collider:setPosition(player.x, player.y)
         player.collider:setLinearVelocity(0, 0)
     end
 
@@ -503,8 +519,9 @@ function safeRoom:enter()
 end
 
 function safeRoom:update(dt)
+    if saferoomMap then saferoomMap:update(dt) end
+    if world then world:update(dt) end
     player:update(dt)
-
     -- add other safe room specific logic
 
     -- safe room music
@@ -514,8 +531,9 @@ end
 
 function safeRoom:draw()
     -- Draw safe room background
-    love.graphics.setColor(0.2, 0.5, 0.3, 1)
-    love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    if saferoomMap then saferoomMap:draw() end
+    -- love.graphics.setColor(0.2, 0.5, 0.3, 1)
+    -- love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
     
     -- Draw player
     player:draw()
