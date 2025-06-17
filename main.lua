@@ -7,13 +7,13 @@ local Tileset = require("tileset")
 local Map = require("map")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
-local Gamestate = require("libraries/hump/gamestate")
+local Gamestate = require("libraries.hump.gamestate")
 
 -- game state definitions
-local playing = "playing"
-local paused = "paused"
-local safeRoom = "saferoom"
-local gameOver = "gameover"
+local playing = {}
+local paused = {}
+local safeRoom = {}
+local gameOver = {}
 
 local projectiles = {}
 local player = Player -- create new player instance, change player.lua to a constructor pattern if you want multiple players
@@ -295,9 +295,32 @@ function love.load()
     Gamestate.switch(playing)
 end
 
+-- Entering playing gamestate
+function playing:enter()
+    print("Entered playing gamestate")
+    -- Reset player position and state
+    player.x = 60
+    player.y = love.graphics.getHeight() / 3
+    if player.collider then
+        player.collider:setPosition(player.x, player.y)
+        player.collider:setLinearVelocity(0, 0)
+    end
+    
+    -- Spawn initial enemies if needed
+    if #enemies == 0 then
+        spawnRandomEnemy()
+    end
+end
+
 function love.update(dt)
-    print("update")
-    player:update(dt)
+    -- moved all logic into func playing:update(dt) because I'm utilizing hump.gamestate
+end
+
+function playing:update(dt)
+    print("playing:update")
+    if not player.isDead then
+        player:update(dt)
+    end
     -- enemy1:update(dt)
     -- blob1:update(dt)
 
@@ -311,13 +334,17 @@ function love.update(dt)
        print("DEBUG: SUCCESS, Enemies table size NOW:", #enemies)
     end
 
-    if #enemies == 0 then
-        print("DEBUG: No enemies in table.")
+    if #enemies == 0 and not portal then
+        spawnPortal()
+        print("DEBUG: No enemies in table. Attempting to spawn portal.")
     else
         print("DEBUG: Attempting to update:", #enemies, "enemies in table.")
     end
 
-    -- add logic to handle removing dead enemies from the 'enemies' table if enemy:die() sets a flag
+    -- if portal exists, update it
+    if portal then
+        portal:update(dt)
+    end
 
     -- Handle shooting
     -- feels like a global action, maybe move this into main? or a sound file, hmm 5/29/25
@@ -378,6 +405,7 @@ function love.update(dt)
     end
 
     -- after collision handling
+    -- add logic to handle removing dead enemies from the 'enemies' table if enemy:die() sets a flag
     for i = #enemies, 1, -1 do
         local e = enemies[i]
         if e and e.toBeRemoved then -- Check the flag set in Enemy:die()
@@ -392,7 +420,11 @@ function love.update(dt)
 end
 
 function love.draw()
-    print("draw")
+    -- moved all logic into func playing:draw() because I'm utilizing hump.gamestate
+end
+
+function playing:draw()
+    print("playing:draw")
     world:draw()
     print(Tileset.image)
         -- draw map first, player should load on top of map
@@ -410,7 +442,10 @@ function love.draw()
             end
         end
         
-    player:draw()
+    if not player.isDead then
+        player:draw()
+    end
+
     -- Iterate through the 'enemies' table to draw active enemies:
     for _, active_enemy in ipairs(enemies) do
         if active_enemy and active_enemy.draw then -- Check if it exists and has a draw method
@@ -420,6 +455,11 @@ function love.draw()
 
     for _, p in ipairs(projectiles) do
         p:draw()
+    end
+
+    -- draw portal
+    if portal then
+        portal:draw()
     end
 
     -- function love.keypressed(key)
@@ -437,3 +477,68 @@ function love.draw()
     love.graphics.print("Score: " .. playerScore, 30, 30)
     love.graphics.print("Press 'e' on keyboard to spawn more enemies.", 30, 60)
 end
+
+function safeRoom:enter()
+    print("Entering safe room")
+    player.x = love.graphics.getWidth() / 2
+    player.y = love.graphics.getHeight() / 2
+    if player.collider then
+        player.collider:setPosition(player.x, player,y)
+        player.collider:setLinearVelocity(0, 0)
+    end
+
+    -- create store/shop logic
+
+    -- add some NPC
+
+    -- a way for the player to heal
+
+    -- a way to portal into the next world/levels
+
+    -- clear current remaining portal
+    if portal then
+        portal:destroy()
+        portal = nil
+    end
+end
+
+function safeRoom:update(dt)
+    player:update(dt)
+
+    -- add other safe room specific logic
+
+    -- safe room music
+
+    -- interaction sounds
+end
+
+function safeRoom:draw()
+    -- Draw safe room background
+    love.graphics.setColor(0.2, 0.5, 0.3, 1)
+    love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    
+    -- Draw player
+    player:draw()
+    
+    -- Safe room UI
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(scoreFont)
+    love.graphics.print("SAFE ROOM", 50, 50)
+    love.graphics.print("Press 'R' to start next round", 50, 80)
+    love.graphics.print("Health: " .. player.health, 50, 110)
+    love.graphics.print("Score: " .. playerScore, 50, 140)
+end
+
+function safeRoom:keypressed(key)
+    if key == "r" then
+        -- Start next round
+        spawnRandomEnemy() -- Spawn enemies for next round
+        Gamestate.switch(playing)
+    elseif key == "escape" then
+        love.event.quit()
+    end
+end
+
+-- refactor some of this code eventually
+-- especially since I need to account for loading different maps
+-- 6/17/2025
