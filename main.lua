@@ -37,6 +37,8 @@ local fadeAlpha = 0         -- 0 = fully transparent, 1 = fully opaque
 local fading = false        -- Is a fade in progress?
 local fadeDirection = 1     -- 1 = fade in (to black), -1 = fade out (to transparent)
 local fadeDuration = 0.5    -- Duration of fade in seconds
+local fadeHoldDuration = 0.5   -- Length of hold in seconds (adjust as needed)
+local fadeHoldTimer = 0
 local fadeTimer = 0
 local nextState = nil       -- The state to switch to after fade
 
@@ -338,28 +340,52 @@ end
 
 function playing:update(dt)
     print("playing:update")
-    if pendingRoomTransition then
-        Gamestate.switch(safeRoom)
-        pendingRoomTransition = false
-        return -- prevents any further update logic
-    end
+    -- if pendingRoomTransition then
+    --     Gamestate.switch(safeRoom)
+    --     pendingRoomTransition = false
+    --     return -- prevents any further update logic
+    -- end
 
     if fading then
-        fadeTimer = fadeTimer + dt
-        fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
-        if fadeAlpha >= 1 and fadeDirection == 1 then
-            -- Fade in complete, switch state
-            Gamestate.switch(nextState)
-            fadeDirection = -1      -- Start fading out
-            fadeTimer = 0
-        elseif fadeAlpha >= 1 and fadeDirection == -1 then
-            -- Fade out complete
-            fading = false
-            fadeAlpha = 0
+        if fadeDirection == 1 then
+            -- Fade out (to black)
+            fadeTimer = fadeTimer + dt
+            fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
+            if fadeAlpha >= 1 then
+                -- Fade out complete, start hold
+                fadeHoldTimer = 0
+                fadeDirection = 0    -- 0 indicates hold phase
+            end
+        elseif fadeDirection == 0 then
+            -- Hold phase (fully black)
+            fadeHoldTimer = fadeHoldTimer + dt
+            fadeAlpha = 1
+            if fadeHoldTimer >= fadeHoldDuration then
+                -- Hold complete, switch state and start fade in
+                Gamestate.switch(nextState)
+                fadeDirection = -1
+                fadeTimer = 0
+            end
+        elseif fadeDirection == -1 then
+            -- Fade in (from black)
+            fadeTimer = fadeTimer + dt
+            fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
+            if fadeAlpha <= 0 then
+                fading = false
+                fadeAlpha = 0
+            end
         end
-        return -- Optionally halt other updates during fade
+        return -- halt other updates during fade
     end
 
+    if pendingRoomTransition then
+        fading = true
+        fadeDirection = 1
+        fadeTimer = 0
+        nextState = safeRoom
+        pendingRoomTransition = false
+        return
+    end
 
     if not player.isDead then
         player:update(dt)
@@ -523,7 +549,7 @@ function playing:draw()
         love.graphics.setFont(scoreFont)
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
-    love.graphics.print("SAFE ROOM 1", 30, 50)
+    love.graphics.print("ROOM 1", 30, 50)
     love.graphics.print("Health: " .. player.health, 30, 80)
     love.graphics.print("Score: " .. playerScore, 30, 110)
     love.graphics.print("Press 'e' on keyboard to spawn more enemies.", 30, 140)
@@ -561,19 +587,35 @@ function safeRoom:update(dt)
     player:update(dt)
 
     if fading then
-        fadeTimer = fadeTimer + dt
-        fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
-        if fadeAlpha >= 1 and fadeDirection == 1 then
-            -- Fade in complete, switch state
-            Gamestate.switch(nextState)
-            fadeDirection = -1      -- Start fading out
-            fadeTimer = 0
-        elseif fadeAlpha >= 1 and fadeDirection == -1 then
-            -- Fade out complete
-            fading = false
-            fadeAlpha = 0
+        if fadeDirection == 1 then
+            -- Fade out (to black)
+            fadeTimer = fadeTimer + dt
+            fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
+            if fadeAlpha >= 1 then
+                -- Fade out complete, start hold
+                fadeHoldTimer = 0
+                fadeDirection = 0    -- 0 indicates hold phase
+            end
+        elseif fadeDirection == 0 then
+            -- Hold phase (fully black)
+            fadeHoldTimer = fadeHoldTimer + dt
+            fadeAlpha = 1
+            if fadeHoldTimer >= fadeHoldDuration then
+                -- Hold complete, switch state and start fade in
+                Gamestate.switch(nextState)
+                fadeDirection = -1
+                fadeTimer = 0
+            end
+        elseif fadeDirection == -1 then
+            -- Fade in (from black)
+            fadeTimer = fadeTimer + dt
+            fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
+            if fadeAlpha <= 0 then
+                fading = false
+                fadeAlpha = 0
+            end
         end
-        return -- Optionally halt other updates during fade
+        return -- halt other updates during fade
     end
 
     -- add other safe room specific logic
