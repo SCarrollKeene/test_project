@@ -8,7 +8,7 @@ local flashShader = require "libraries/flashshader"
 local Player = {} -- one global player object based on current singleton setup, but local to the module making it not global in use
 Player.__index = Player -- reference for methods from instances
 
-function Player:load(passedWorld, sprite_path)
+function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_path)
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     self.name = "Player"
@@ -23,6 +23,7 @@ function Player:load(passedWorld, sprite_path)
     self.frameHeight = 32
 
     self.spriteSheet = nil
+    -- self.dashSpriteSheet = love.graphics.newImage("sprites/dash.png")
     -- self.soulsplodeSheet = love.graphics.newImage("sprites/soulsplode.png")
     self.animations = {}
     self.currentAnimation = nil
@@ -51,7 +52,7 @@ function Player:load(passedWorld, sprite_path)
     self.invincibleDuration = 1.0
     self.invincibleTimer = 0
 
-    -- Load sprite sheet if path provided (following enemy.lua pattern exactly)
+    -- Load player sprite sheet if path provided (following enemy.lua pattern)
     if sprite_path then
         local success, image_or_error = pcall(function() return love.graphics.newImage(sprite_path) end)
         if success then
@@ -69,18 +70,16 @@ function Player:load(passedWorld, sprite_path)
             
             -- Create anim8 grid (following enemy.lua pattern exactly)
             self.grid = anim8.newGrid(frameWidth, frameHeight, 
-                                       self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
-            -- death animation grid
-            -- self.deathGrid = anim8.newGrid(32, 32, 
-            --                             self.soulsplodeSheet:getWidth(), self.soulsplodeSheet:getHeight())
-            
+                                       self.spriteSheet:getWidth(), self.spriteSheet:getHeight())          
         
+
         self.animations.idle = anim8.newAnimation(self.grid('1-3', 3), 0.2) -- Example
         -- self.animations.death = anim8.newAnimation(self.deathGrid('1-8', 1), 0.08, 'pauseAtEnd')
         self.animations.down = anim8.newAnimation(self.grid('1-3', 3), 0.2) -- Example, adjust frames
         self.animations.up = anim8.newAnimation(self.grid('1-3', 1), 0.2)   -- Example, adjust frames
         self.animations.left = anim8.newAnimation(self.grid('1-3', 4), 0.2) -- Example, adjust frames
         self.animations.right = anim8.newAnimation(self.grid('1-3', 2), 0.2)-- Example, adjust frames
+        -- self.animations.dash = anim8.newAnimation(self.dashGrid('1-6', 1), 0.2, 'pauseAtEnd') -- adjust speed for 6 frames 
 
         -- Add print statements to check if each animation object was created
         print("Idle animation object:", tostring(self.animations.idle))
@@ -101,6 +100,43 @@ function Player:load(passedWorld, sprite_path)
             end
             else
                 print("DEBUG: No spritesheet path provided for player:", self.name)
+    end
+     -- Load dash sprite sheet
+    if dash_sprite_path then
+        local success, image_or_error = pcall(function() return love.graphics.newImage(dash_sprite_path) end)
+        if success then
+            self.dashSpriteSheet = image_or_error
+            print("Dash spritesheet loaded successfully from:", dash_sprite_path)
+            
+            -- Set up dash animation (6 frames, 1 row)
+            local dashFrameWidth = self.dashSpriteSheet:getWidth() / 6
+            local dashFrameHeight = self.dashSpriteSheet:getHeight()
+            self.dashGrid = anim8.newGrid(dashFrameWidth, dashFrameHeight,
+                self.dashSpriteSheet:getWidth(), self.dashSpriteSheet:getHeight())
+            self.animations.dash = anim8.newAnimation(self.dashGrid('1-6', 1), 0.08)
+            
+        else
+            print("ERROR: Failed to load dash spritesheet:", tostring(image_or_error))
+        end
+    end
+    
+    -- Load death sprite sheet
+    if death_sprite_path then
+        local success, image_or_error = pcall(function() return love.graphics.newImage(death_sprite_path) end)
+        if success then
+            self.soulsplodeSheet = image_or_error
+            print("Death spritesheet loaded successfully from:", death_sprite_path)
+            
+            -- Set up death animation (8 frames, 1 row)
+            local deathFrameWidth = self.soulsplodeSheet:getWidth() / 8
+            local deathFrameHeight = self.soulsplodeSheet:getHeight()
+            self.deathGrid = anim8.newGrid(deathFrameWidth, deathFrameHeight,
+                self.soulsplodeSheet:getWidth(), self.soulsplodeSheet:getHeight())
+            self.animations.death = anim8.newAnimation(self.deathGrid('1-8', 1), 0.08, 'pauseAtEnd')
+            
+        else
+            print("ERROR: Failed to load death spritesheet:", tostring(image_or_error))
+        end
     end
 
     self.collider = self.world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 10)
@@ -136,6 +172,18 @@ function Player:update(dt)
         end
     end
 
+    -- condition to switch to dashing anim and back to idle
+    if self.isDashing and self.animations.dash then
+        if self.currentAnimation ~= self.animations.dash then
+            self.currentAnimation = self.animations.dash
+            self.currentAnimation:gotoFrame(1)
+            print("----------SWITCH TO DASH ANIMATION----------")
+        end
+    elseif self.currentAnimation == self.animations.dash and not self.isDashing then
+        self.currentAnimation = self.animations.idle
+        print("----------SWITCH TO IDLE ANIMATION----------")
+    end
+
     if self.isDead then
         -- Only update death animation and effects
         if self.currentAnimation then
@@ -165,24 +213,16 @@ function Player:update(dt)
         end
     end
 
-    -- if self.isDead then
-    --     if self.deathTimer then
-    --         self.deathTimer = self.deathTimer - dt
-    --         if self.deathTimer <= 0 then
-    --             self:triggerGameOver()
-    --         end
-    --     end
-    --     return
-    -- end
-
     if self.currentAnimation then
         self.currentAnimation:update(dt) -- updates current sprite active animation
     end
 
-    -- if self.isExploding then
-    --     self.currentAnimation:update(dt)
-    --     return -- Skip normal update logic when exploding
-    -- end
+    if self.isDead then
+        if self.currentAnimation then
+            self.currentAnimation:update(dt)
+        end
+        return -- Skip all normal update logic if dead
+    end
 
     if self.collider then
         self.x, self.y = self.collider:getPosition()
@@ -259,7 +299,8 @@ function Player:move(dt)
         print("Switched to animation:", newAnimation == self.animations.up and "up" or 
             newAnimation == self.animations.down and "down" or
             newAnimation == self.animations.left and "left" or
-            newAnimation == self.animations.right and "right" or "unknown")
+            newAnimation == self.animations.right and "right" or "unknown" or
+            newAnimation == self.animations.dash and "space" )
     elseif not isMoving and self.animations and self.animations.idle and self.currentAnimation ~= self.animations.idle then
         self.currentAnimation = self.animations.idle
         print("Player switched to idle.")
@@ -308,21 +349,52 @@ function Player:draw()
     --     love.graphics.setShader()
     -- end
 
-    if self.currentAnimation and self.spriteSheet then
-        -- love.graphics.setColor(1, 1, 1, 1)
-        self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
-    elseif self.spriteSheet then
-        -- Fallback: draw whole sheet if no currentAnimation
-        -- love.graphics.setColor(1,1,1,1)
-        love.graphics.draw(self.spriteSheet, self.x - self.spriteSheet:getWidth()/2, self.y - self.spriteSheet:getHeight()/2)
-    else
-        -- fallback to rectangle if animation/spritesheet fails
-        -- love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
+    -- if self.currentAnimation and self.spriteSheet then
+    --     -- love.graphics.setColor(1, 1, 1, 1)
+    --     self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+    -- elseif self.spriteSheet then
+    --     -- Fallback: draw whole sheet if no currentAnimation
+    --     -- love.graphics.setColor(1,1,1,1)
+    --     love.graphics.draw(self.spriteSheet, self.x - self.spriteSheet:getWidth()/2, self.y - self.spriteSheet:getHeight()/2)
+    -- else
+    --     -- fallback to rectangle if animation/spritesheet fails
+    --     -- love.graphics.setColor(1, 1, 1, 1)
+    --     love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
+    -- end
+
+    -- -- dash drawing
+    -- if self.currentAnimation == self.animations.dash and self.dashSpriteSheet then
+    --     self.currentAnimation:draw(self.dashSpriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+    -- elseif self.spriteSheet then
+    --     self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+    -- else
+    --     love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
+    -- end
+
+    -- -- death drawing
+    -- if self.currentAnimation == self.animations.death and self.soulsplodeSheet then
+    --     self.currentAnimation:draw(self.soulsplodeSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+    -- elseif self.spriteSheet then
+    --     self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+    -- else
+    --     love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
+    -- end
+    local sheet = self.spriteSheet
+    if self.currentAnimation == self.animations.dash then
+        sheet = self.dashSpriteSheet
+    elseif self.currentAnimation == self.animations.death then
+        sheet = self.soulsplodeSheet
     end
 
+    if self.currentAnimation and sheet then
+        self.currentAnimation:draw(sheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+    elseif self.spriteSheet then
+        love.graphics.draw(self.spriteSheet, self.x - self.spriteSheet:getWidth()/2, self.y - self.spriteSheet:getHeight()/2)
+    else
+        love.graphics.rectangle("fill", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
+    end
     -- Draw your sprite as usual:
-    self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+    -- self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
 
     love.graphics.setColor(1, 1, 1, 1) -- color reset
     love.graphics.setShader()
@@ -414,6 +486,7 @@ function Player:die()
     -- death animation and effects go here
     if self.animations and self.animations.death then
         self.currentAnimation = self.animations.death
+        self.currentAnimation:gotoFrame(1)
         self.currentAnimation:resume() -- Make sure it plays
     end
 

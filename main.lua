@@ -152,7 +152,9 @@ function love.load()
     Map:load(world) -- idk if I need to pass world to may, this seems contingent upon Map creating the colliders, revisit
     
     local mage_spritesheet_path = "sprites/mage-NESW.png"
-    Player:load(world, mage_spritesheet_path)
+    local dash_spritesheet_path = "sprites/dash.png"
+    local death_spritesheet_path = "sprites/soulsplode.png"
+    Player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
     -- Player:load(world, death_spritesheet_path)
     -- Blob:load()
 
