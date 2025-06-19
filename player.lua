@@ -60,8 +60,8 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             print("Player spritesheet loaded successfully from:", sprite_path)
             
             -- Calculate frame dimensions (like enemy.lua does)
-            -- Based on mage-NESW.jpg, it appears to be 4 columns (frames per direction) and 4 rows (directions)
-            local frameWidth = self.spriteSheet:getWidth() / 3   -- 4 frames per direction
+            -- Based on mage-NESW.jpg, it appears to be 3 columns (frames per direction) and 4 rows (directions)
+            local frameWidth = self.spriteSheet:getWidth() / 3   -- 3 frames per direction
             local frameHeight = self.spriteSheet:getHeight() / 4 -- 4 directions (down, left, right, up)
             
             self.width = frameWidth

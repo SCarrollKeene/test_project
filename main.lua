@@ -2,6 +2,7 @@ local Player = require("player")
 local PlayerRespawn = require("playerrespawn")
 local Enemy = require("enemy")
 local Portal = require("portal")
+local Particle = require("particle")
 local Blob = require("blob")
 local Tileset = require("tileset")
 local Map = require("map")
@@ -10,6 +11,9 @@ local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
+
+-- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
+-- Particle.preloadImages()
 
 -- for testing purposes, loading the safe room map after entering portal
 local saferoomMap
@@ -29,6 +33,8 @@ local enemies = {} -- enemies table to house all active enemies
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
 local playerScore = 0
 local scoeFont = 0
+
+globalParticleSystems = {}
 
 local pendingRoomTransition = false
 
@@ -412,6 +418,28 @@ function playing:update(dt)
         print("DEBUG: Attempting to update:", #enemies, "enemies in table.")
     end
 
+    -- if particle systems exists, update it
+    for i = #globalParticleSystems, 1, -1 do
+        local ps = globalParticleSystems[i]
+        ps:update(dt)
+
+        -- remove inactive particle systems
+        if ps:getCount() == 0 and not ps:isActive() then
+            table.remove(globalParticleSystems, i)
+            print("REMOVED INACTIVE PARTICLE SYSTEM")
+        end
+    end
+
+    -- particle culling
+    if #globalParticleSystems > 100 then
+        -- remove oldest particles systems first
+        local toRemove = #globalParticleSystems - 100
+        for i = 1, toRemove do
+            table.remove(globalParticleSystems, 1)
+        end
+        print("Culled", toRemove, "Particle systems")
+    end
+
     -- if portal exists, update it
     if portal then
         portal:update(dt)
@@ -538,6 +566,13 @@ function playing:draw()
     --         sounds.music:stop()
     --     end
     -- end
+
+    -- love.graphics.setBlendMode("add") -- for visibility
+    -- draw particles systems last after other entities
+    for _, ps in ipairs(globalParticleSystems) do
+        love.graphics.draw(ps)
+    end
+    -- love.graphics.setBlendMode("alpha")
 
     if fading and fadeAlpha > 0 then
         love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
