@@ -567,12 +567,12 @@ function playing:draw()
     --     end
     -- end
 
-    -- love.graphics.setBlendMode("add") -- for visibility
+    love.graphics.setBlendMode("add") -- for visibility
     -- draw particles systems last after other entities
     for _, ps in ipairs(globalParticleSystems) do
         love.graphics.draw(ps)
     end
-    -- love.graphics.setBlendMode("alpha")
+    love.graphics.setBlendMode("alpha")
 
     if fading and fadeAlpha > 0 then
         love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
