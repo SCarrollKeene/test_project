@@ -141,6 +141,7 @@ function love.load()
     world:addCollisionClass('wall', {ignores = {}})
     print("DEBUG: main.lua: Added collision class - " .. 'wall')
     world:addCollisionClass('portal', {ignores = {}})
+    print("DEBUG: main.lua: Added collision class - " .. 'portal')
     -- You can also define interactions here
 
     if world.collisionClassesSet then
@@ -347,6 +348,23 @@ function playing:enter()
     end
 end
 
+function playing:leave()
+    -- stop music, clear temp tables/objects, destroy portals, etc
+
+    -- clear particles
+    globalParticleSystems = {}
+
+    -- destroy current remaining portal
+    if portal then
+        portal:destroy();
+        portal = nil
+    end
+
+    -- reset flags
+    pendingRoomTransition = false
+    print("Leaving playing state, cleaning up resources.")
+end
+
 function love.update(dt)
     -- moved all logic into func playing:update(dt) because I'm utilizing hump.gamestate
 end
@@ -435,7 +453,7 @@ function playing:update(dt)
 
         -- remove inactive particle systems
         -- switched 'and' to 'or' as this removes particles between transitions
-        -- may need to revisit once we start adding other particle logic 
+        -- may need to revisit once we start adding other particle 
         if ps:getCount() == 0 or not ps:isActive() then
             table.remove(globalParticleSystems, i)
             print("REMOVED INACTIVE PARTICLE SYSTEM")
@@ -622,12 +640,23 @@ function safeRoom:enter()
     -- a way for the player to heal
 
     -- a way to portal into the next world/levels
+end
 
-    -- clear current remaining portal
+function safeRoom:leave()
+    -- stop music, clear temp tables/objects, destroy portals, etc
+
+    -- clear particles
+    globalParticleSystems = {}
+
+    -- destroy current remaining portal
     if portal then
-        portal:destroy()
+        portal:destroy();
         portal = nil
     end
+
+    -- reset flags
+    pendingRoomTransition = false
+    print("Leaving safeRoom state, cleaning up resources.")
 end
 
 function safeRoom:update(dt)
