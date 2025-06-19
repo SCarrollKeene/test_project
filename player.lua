@@ -329,7 +329,7 @@ function Player:checkBoundaries()
 end
 
 function Player:draw()
-    world:draw()
+    -- world:draw()
     -- Reset color and shader before setting new ones (optional, but good practice)
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setShader()

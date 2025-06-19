@@ -79,7 +79,10 @@ function Portal:destroy()
     self.isActive = false
 
     -- flag particle system to stop once portal is destroyed
-    if self.ps then self.ps:stop() end
+    if self.ps then 
+        self.ps:stop()
+        self.ps = nil
+    end
     -- debate adding globalps table to remove particles unles I want them to linger for longer
 end
 

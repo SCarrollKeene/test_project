@@ -321,6 +321,11 @@ function love.load()
     scoreFont = love.graphics.newFont(30)
 
     -- register gamestate events and start game in playing state
+    -- Gamestate.registerEvents({
+    --     leave = function()
+    --         globalParticleSystems = {}
+    --     end
+    -- })
     Gamestate.registerEvents()
     Gamestate.switch(playing)
 end
@@ -355,6 +360,11 @@ function playing:update(dt)
     -- end
 
     if fading then
+        -- SUPPOSED to clear particles when starting fade out
+        if fadeDirection == 1 and nextState == playing then
+            globalParticleSystems = {}
+        end
+
         if fadeDirection == 1 then
             -- Fade out (to black)
             fadeTimer = fadeTimer + dt
@@ -424,7 +434,9 @@ function playing:update(dt)
         ps:update(dt)
 
         -- remove inactive particle systems
-        if ps:getCount() == 0 and not ps:isActive() then
+        -- switched 'and' to 'or' as this removes particles between transitions
+        -- may need to revisit once we start adding other particle logic 
+        if ps:getCount() == 0 or not ps:isActive() then
             table.remove(globalParticleSystems, i)
             print("REMOVED INACTIVE PARTICLE SYSTEM")
         end
@@ -524,7 +536,7 @@ end
 
 function playing:draw()
     print("playing:draw")
-    world:draw()
+    -- world:draw()
     print(Tileset.image)
         -- draw map first, player should load on top of map
         for row = 1, #Map.data do
@@ -624,6 +636,11 @@ function safeRoom:update(dt)
     player:update(dt)
 
     if fading then
+        -- SUPPOSED to clear particles when starting fade out
+        if fadeDirection == 1 and nextState == playing then
+            globalParticleSystems = {}
+        end
+
         if fadeDirection == 1 then
             -- Fade out (to black)
             fadeTimer = fadeTimer + dt
