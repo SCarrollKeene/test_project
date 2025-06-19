@@ -1,5 +1,6 @@
 local Utils = require("utils")
-local wf = require "libraries/windfield"
+local wf = require("libraries/windfield")
+local Particle = require("particle")
 
 local Projectile = {}
 Projectile.__index = Projectile -- points back at the table itself, is used when you set the metatable of an obj
@@ -27,7 +28,9 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner)
         type = "projectile",
 
         toBeRemoved = false, -- flag to eventually remove projectiles/enemy
-        toBeDestroyed = false -- flag for projectile to handle its own destruction on contact with things like walls
+        toBeDestroyed = false, -- flag for projectile to handle its own destruction on contact with things like walls
+
+        particleTrail = Particle.getBaseSpark()
     }
     
     setmetatable(self, {__index = Projectile}) -- Projectile methods and fields/data will get looked up
@@ -53,6 +56,17 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner)
     self.collider:setObject(self)
     -- self.collider:setMask('enemy') -- Projectiles only care about hitting enemies
 
+    if self.particleTrail then
+        -- trail behind the Projectile
+        local offset = 10
+        local trailX = self.x - math.cos(self.angle) * offset
+        local trailY = self.y - math.sin(self.angle) * offset
+
+        self.particleTrail:setPosition(trailX, trailY)
+        self.particleTrail:emit(1) -- initial burst
+        table.insert(globalParticleSystems, self.particleTrail) -- insert particles into global table
+    end
+
     return self
 end
 
@@ -64,8 +78,25 @@ function Projectile:destroySelf()
         self.collider:destroy()
         self.collider = nil
     end
+
     self.toBeRemoved = true
     self.isDestroyed = true -- Add a flag to prevent re-entry
+
+    -- stop emitting
+    -- TODO #1: debate remove from global particle system table
+    -- TODO #2: do not remove from globalps from here if I want particles to fade out
+    if self.particleTrail then
+        -- stop emitting
+        -- self.particleTrail:setEmissionRate(0)
+        self.particleTrail:stop()-- Stop emitting and reset if needed
+
+        -- If using pooling, return it:
+        Timer.after(1.0, function() -- wait for particle to fade
+            Particle.returnBaseSpark(self.particleTrail)
+        -- If not pooling, just set to nil
+        -- self.particleTrail = nil
+        end)
+    end
 end
 
 function Projectile:onHitEnemy(enemy_collided_with)
@@ -136,6 +167,12 @@ function Projectile:update(dt)
     -- self.x = self.x + self.velx * dt
     -- self.y = self.y + self.vely * dt
     -- print("x"..self.x, "y"..self.y)
+
+    if self.particleTrail then
+        self.particleTrail:setPosition(self.x, self.y)
+        self.particleTrail:emit(1) -- emit 1 per frame
+        -- self.particleTrail:update(dt)
+    end
     
 end
 
