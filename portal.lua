@@ -25,7 +25,7 @@ function Portal:new(world, x, y)
         animationTimer = 0,
         cooldown = 1.0,
         cooldownActive = false,
-        ps = Particle.portalGlow(true) -- true only if emission burst
+        ps = Particle.portalGlow(false) -- true only if emission burst
     }
     
     -- set position after Portal table creation
@@ -58,7 +58,12 @@ end
 
 function Portal:update(dt)
     self.ps:moveTo(self.x, self.y)
-    -- self.ps:update(dt)
+
+    if self.ps then
+        self.ps:update(dt)
+        self.ps:setPosition(self.x, self.y)
+    end
+
     self.animationTimer = self.animationTimer + dt
 
     if self.cooldown > 0 then
