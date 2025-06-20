@@ -11,6 +11,22 @@ local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
+local SaveSystem = require("save_game_data")
+
+-- current run data and persistent game data
+local runData = {
+    currentRoom = 1,
+    cleared = false,
+    clearedRooms = {},
+    playerHealth = 100,
+    inventory = {}
+}
+
+local metaData = {
+    unlockedCharacters = {},
+    permanentUpgrades = {},
+    highScore = 0
+}
 
 -- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
 -- Particle.preloadImages()
@@ -127,10 +143,27 @@ function spawnPortal()
     local portalX = love.graphics.getWidth() / 2
     local portalY = love.graphics.getHeight() / 2
     portal = Portal:new(world, portalX, portalY)
-    print("A portal has spawned! Traverse to safe room.")
+    print("A portal has spawned! Traverse to " ..runData.currentRoom.. " room.")
+end
+
+function roomComplete()
+    runData.cleared = true
+    spawnPortal() -- TODO: maybe, revisit later 6/20/25
+    print("Room " ..runData.currentRoom.. " completed!")
 end
 
 function love.load()
+    -- load player save data
+    -- TODO: implement save game and load game logic later on 6/20/25
+    -- local save = SaveSystem.loadGame()
+    -- if save then
+    --     runData = save.run
+    --     metaData = save.meta
+    -- else
+    --     runData = createNewRun()
+    --     metaData = loadDefaultMeta()
+    -- end
+
     world = wf.newWorld(0, 0)
 
     -- collision classes must load into the world first, per order of operations/how content is loaded, I believe
@@ -347,6 +380,8 @@ end
 -- Entering playing gamestate
 function playing:enter()
     print("Entered playing gamestate")
+    -- reset for each new Room
+    runData.cleared = false
     -- Reset player position and state
     player.x = 140
     player.y = love.graphics.getHeight() / 3
@@ -376,6 +411,8 @@ function playing:leave()
     -- reset flags
     pendingRoomTransition = false
     print("Leaving playing state, cleaning up resources.")
+    -- save game after clearing initial room
+    SaveSystem.saveGame(runData, metaData)
 end
 
 function love.update(dt)
@@ -554,6 +591,10 @@ function playing:update(dt)
             -- Collider should have been destroyed in Enemy:die()
             table.remove(enemies, i)
             print("DEBUG: Removed " .. (e.name or "enemy") .. " from table.")
+            -- check if room is cleared and turn room cleared flag to true
+            if #enemies == 0 and not runData.cleared then
+                roomComplete(runData.currentRoom)
+            end
         end
     end
 
@@ -677,6 +718,8 @@ function safeRoom:leave()
     -- reset flags
     pendingRoomTransition = false
     print("Leaving safeRoom state, cleaning up resources.")
+    -- save game after clearing initial room
+    SaveSystem.saveGame(runData, metaData)
 end
 
 function safeRoom:update(dt)
@@ -798,6 +841,10 @@ function room2:enter()
     print("Entering room 2")
     room2Map = MapLoader.load("room2", world)
 
+    -- reset for each new Room
+    runData.currentRoom = runData.currentRoom + 1
+    runData.cleared = false
+
     player.x = 140
     player.y = love.graphics.getHeight() / 3
     if player.collider then
@@ -831,6 +878,8 @@ function room2:leave()
     -- reset flags
     pendingRoomTransition = false
     print("Leaving room 2 state, cleaning up resources.")
+    -- save game after clearing initial room
+    SaveSystem.saveGame(runData, metaData)
 end
 
 function room2:update(dt)
@@ -938,4 +987,9 @@ function room2:keypressed(key)
     elseif key == "escape" then
         love.event.quit()
     end
+end
+
+function love.quit()
+    -- save game on quit
+    SaveSystem.saveGame(runData, metaData)
 end

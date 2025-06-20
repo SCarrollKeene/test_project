@@ -1,9 +1,10 @@
 local Weapon = require("weapon")
 local Projectile = require("projectile")
 local Utils = require("utils")
-local anim8 = require "libraries/anim8"
-local wf = require "libraries/windfield"
-local flashShader = require "libraries/flashshader"
+local anim8 = require("libraries/anim8")
+local wf = require("libraries/windfield")
+local flashShader = require("libraries/flashshader")
+local SaveSystem = require("save_game_data")
 
 local Player = {} -- one global player object based on current singleton setup, but local to the module making it not global in use
 Player.__index = Player -- reference for methods from instances
@@ -463,6 +464,10 @@ function Player:dealDamage(target, dmg)
 end
 
 function Player:die()
+    SaveSystem.highScore = math.max(metaData.highScore, playerScore)
+    SaveSystem.resetRun(runData, metaData)  -- Reset current run
+    -- Gamestate.switch(gameOver) -- TODO: implement gameOver gamestate
+
     if self.isDead then return end
 
     self.isDead = true

@@ -4,6 +4,20 @@ local Utils = {}
 -- create and require Utils in ..blob1.health..
 -- maintainability and reduce redundancy
 
+function deepCopy(orig)
+  local orig_type = type(orig)
+
+  if orig_type ~= 'table' then return orig end
+  local copy = {}
+  for k, v in next, orig, nil do
+    copy[deepCopy(k)] = deepCopy(v)
+  end
+
+  setmetatable(copy, deepCopy(getmetatable(orig)))
+
+  return copy
+end
+
 function Utils.takeDamage(target, dmg)
   target.health = target.health - dmg
     if target.health <= 0 then
