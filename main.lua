@@ -7,6 +7,7 @@ local Blob = require("blob")
 local Tileset = require("tileset")
 local Map = require("map")
 local MapLoader = require("maploader")
+local LevelManager = require("levelmanager")
 local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
@@ -39,7 +40,6 @@ local room2Map
 local playing = {}
 local paused = {}
 local safeRoom = {}
-local room2 = {}
 local gameOver = {}
 
 local projectiles = {}
@@ -50,7 +50,7 @@ local player = Player -- create new player instance, change player.lua to a cons
 local enemies = {} -- enemies table to house all active enemies
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
 local playerScore = 0
-local scoeFont = 0
+local scoreFont = 0
 
 globalParticleSystems = {}
 
@@ -80,7 +80,8 @@ _G.incrementPlayerScore = incrementPlayerScore -- Make it accessible globally fo
 -- Debug to test table loading and enemy functions for taking damage, dying and score increment
 function love.keypressed(key)
     if key == "r" and player.isDead then
-        PlayerRespawn.respawnPlayer(player, world)
+        PlayerRespawn.respawnPlayer(player, world, metaData, playerScore) -- encapsulate metadata and player score to main.lua only
+        return -- prevent other keys from utilizing r
     end
 
     if key == "space" and not player.isDead then
@@ -97,6 +98,9 @@ function love.keypressed(key)
 end
 
 function spawnRandomEnemy()
+    -- 6/20/25 no spawning in safe rooms!
+    if Gamestate.current() == safeRoom then return end
+
     -- CONCEPT 6/3/25, UPDATE 6/3/25 IT WORKS, had to google some things lol
     -- load enemy types into table
     -- iterate through table
@@ -265,7 +269,11 @@ function love.load()
             -- Handle Player-Enemy interactions
             if player and not player.isDead then
                 if not player.isInvincible then
-                    player:takeDamage(enemy.baseDamage)
+                    player:takeDamage(
+                        enemy.baseDamage,
+                        metaData,
+                        playerScore
+                    )
                 end
             end
         end
@@ -287,11 +295,12 @@ function love.load()
                     fadeTimer = 0
                     nextState = safeRoom
                 elseif Gamestate.current() == safeRoom then
+                    LevelManager:loadLevel(LevelManager.currentLevel + 1)
                     pendingRoomTransition = true
                     fading = true
                     fadeDirection = 1
                     fadeTimer = 0
-                    nextState = room2
+                    nextState = playing
                 end
 
                 if portal then
@@ -380,11 +389,13 @@ end
 -- Entering playing gamestate
 function playing:enter()
     print("Entered playing gamestate")
+    LevelManager:loadLevel(LevelManager.currentLevel)
     -- reset for each new Room
     runData.cleared = false
     -- Reset player position and state
     player.x = 140
     player.y = love.graphics.getHeight() / 3
+
     if player.collider then
         player.collider:setPosition(player.x, player.y)
         player.collider:setLinearVelocity(0, 0)
@@ -609,21 +620,8 @@ end
 function playing:draw()
     print("playing:draw")
     -- world:draw()
-    print(Tileset.image)
-        -- draw map first, player should load on top of map
-        for row = 1, #Map.data do
-            for col = 1, #Map.data[row] do
-                local tileIndex = Map.data[row][col]
-                    if tileIndex > 0 then  -- skip empty tiles if 0 = empty
-                            love.graphics.draw(
-                            Tileset.image,
-                            Tileset.quads[tileIndex],
-                            (col - 1) * Tileset.tileWidth,
-                            (row - 1) * Tileset.tileHeight
-                        )
-                    end
-            end
-        end
+    -- draw map first, player should load on top of map
+    if currentMap then currentMap:draw() end
         
     if not player.isDead then
         player:draw()
@@ -701,6 +699,9 @@ function safeRoom:enter()
         portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/3)
         print("Safe room portal created")
     end
+
+    -- prepare to load next level
+    LevelManager.currentLevel = LevelManager.currentLevel + 1
 end
 
 function safeRoom:leave()
@@ -818,177 +819,158 @@ function safeRoom:draw()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
     love.graphics.print("SAFE ROOM", 30, 50)
-    love.graphics.print("Press 'R' to start next round", 30, 80)
-    love.graphics.print("Health: " .. player.health, 30, 110)
-    love.graphics.print("Score: " .. playerScore, 30, 140)
+    love.graphics.print("Health: " .. player.health, 30,80)
+    love.graphics.print("Score: " .. playerScore, 30, 110)
 end
 
-function safeRoom:keypressed(key)
-    if key == "r" then
-        -- Start next round
-        spawnRandomEnemy() -- Spawn enemies for next round
-        Gamestate.switch(playing)
-    elseif key == "escape" then
-        love.event.quit()
-    end
-end
-
--- refactor some of this code eventually
+-- refactor some of this code eventually TODO: add level manager
 -- especially since I need to account for loading different maps
 -- 6/17/2025
 
-function room2:enter()
-    print("Entering room 2")
-    room2Map = MapLoader.load("room2", world)
+-- function room2:enter()
+--     print("Entering room 2")
+--     room2Map = MapLoader.load("room2", world)
 
-    -- reset for each new Room
-    runData.currentRoom = runData.currentRoom + 1
-    runData.cleared = false
+--     -- reset for each new Room
+--     runData.currentRoom = runData.currentRoom + 1
+--     runData.cleared = false
 
-    player.x = 140
-    player.y = love.graphics.getHeight() / 3
-    if player.collider then
-        player.collider:setPosition(player.x, player.y)
-        player.collider:setLinearVelocity(0, 0)
-    end
+--     player.x = 140
+--     player.y = love.graphics.getHeight() / 3
+--     if player.collider then
+--         player.collider:setPosition(player.x, player.y)
+--         player.collider:setLinearVelocity(0, 0)
+--     end
 
-    -- need to check for, update and draw projectiles again
+--     -- need to check for, update and draw projectiles again
 
-    -- spawn some random enemies
-    for i = 1, 5 do
-        spawnRandomEnemy()
-    end
+--     -- spawn some random enemies
+--     for i = 1, 5 do
+--         spawnRandomEnemy()
+--     end
 
-    -- portal reset
-    portal = nil
-end
+--     -- portal reset
+--     portal = nil
+-- end
 
-function room2:leave()
-    -- stop music, clear temp tables/objects, destroy portals, etc
+-- function room2:leave()
+--     -- stop music, clear temp tables/objects, destroy portals, etc
 
-    -- clear particles
-    globalParticleSystems = {}
+--     -- clear particles
+--     globalParticleSystems = {}
 
-    -- destroy current remaining portal
-    if portal then
-        portal:destroy();
-        portal = nil
-    end
+--     -- destroy current remaining portal
+--     if portal then
+--         portal:destroy();
+--         portal = nil
+--     end
 
-    -- reset flags
-    pendingRoomTransition = false
-    print("Leaving room 2 state, cleaning up resources.")
-    -- save game after clearing initial room
-    SaveSystem.saveGame(runData, metaData)
-end
+--     -- reset flags
+--     pendingRoomTransition = false
+--     print("Leaving room 2 state, cleaning up resources.")
+--     -- save game after clearing initial room
+--     SaveSystem.saveGame(runData, metaData)
+-- end
 
-function room2:update(dt)
-    if room2 then room2Map:update(dt) end
-    if world then world:update(dt) end
-    player:update(dt)
+-- function room2:update(dt)
+--     if room2 then room2Map:update(dt) end
+--     if world then world:update(dt) end
+--     player:update(dt)
 
-    -- update spawned enemies in room 2
-    for i, enemy in ipairs(enemies) do
-        enemy:update(dt)
-    end
+--     -- update spawned enemies in room 2
+--     for i, enemy in ipairs(enemies) do
+--         enemy:update(dt)
+--     end
 
-    if #enemies == 0 and not portal then
-        spawnPortal() -- spawn portal when enemies have been defeaated
-        print("Room 2 CLEARED. Portal spawned.")
-    end
+--     if #enemies == 0 and not portal then
+--         spawnPortal() -- spawn portal when enemies have been defeaated
+--         print("Room 2 CLEARED. Portal spawned.")
+--     end
 
-    if pendingRoomTransition then
-        fading = true
-        fadeDirection = 1
-        fadeTimer = 0
-        nextState = safeRoom
-        pendingRoomTransition = false
-    end
-    -- if fading then
-    --     -- SUPPOSED to clear particles when starting fade out
-    --     if fadeDirection == 1 and nextState == playing then
-    --         globalParticleSystems = {}
-    --     end
+--     if pendingRoomTransition then
+--         fading = true
+--         fadeDirection = 1
+--         fadeTimer = 0
+--         nextState = safeRoom
+--         pendingRoomTransition = false
+--     end
+--     -- if fading then
+--     --     -- SUPPOSED to clear particles when starting fade out
+--     --     if fadeDirection == 1 and nextState == playing then
+--     --         globalParticleSystems = {}
+--     --     end
 
-    --     if fadeDirection == 1 then
-    --         -- Fade out (to black)
-    --         fadeTimer = fadeTimer + dt
-    --         fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
-    --         if fadeAlpha >= 1 then
-    --             -- Fade out complete, start hold
-    --             fadeHoldTimer = 0
-    --             fadeDirection = 0    -- 0 indicates hold phase
-    --         end
-    --     elseif fadeDirection == 0 then
-    --         -- Hold phase (fully black)
-    --         fadeHoldTimer = fadeHoldTimer + dt
-    --         fadeAlpha = 1
-    --         if fadeHoldTimer >= fadeHoldDuration then
-    --             -- Hold complete, switch state and start fade in
-    --             Gamestate.switch(nextState)
-    --             fadeDirection = -1
-    --             fadeTimer = 0
-    --         end
-    --     elseif fadeDirection == -1 then
-    --         -- Fade in (from black)
-    --         fadeTimer = fadeTimer + dt
-    --         fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
-    --         if fadeAlpha <= 0 then
-    --             fading = false
-    --             fadeAlpha = 0
-    --         end
-    --     end
-    --     return -- halt other updates during fade
-    -- end
+--     --     if fadeDirection == 1 then
+--     --         -- Fade out (to black)
+--     --         fadeTimer = fadeTimer + dt
+--     --         fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
+--     --         if fadeAlpha >= 1 then
+--     --             -- Fade out complete, start hold
+--     --             fadeHoldTimer = 0
+--     --             fadeDirection = 0    -- 0 indicates hold phase
+--     --         end
+--     --     elseif fadeDirection == 0 then
+--     --         -- Hold phase (fully black)
+--     --         fadeHoldTimer = fadeHoldTimer + dt
+--     --         fadeAlpha = 1
+--     --         if fadeHoldTimer >= fadeHoldDuration then
+--     --             -- Hold complete, switch state and start fade in
+--     --             Gamestate.switch(nextState)
+--     --             fadeDirection = -1
+--     --             fadeTimer = 0
+--     --         end
+--     --     elseif fadeDirection == -1 then
+--     --         -- Fade in (from black)
+--     --         fadeTimer = fadeTimer + dt
+--     --         fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
+--     --         if fadeAlpha <= 0 then
+--     --             fading = false
+--     --             fadeAlpha = 0
+--     --         end
+--     --     end
+--     --     return -- halt other updates during fade
+--     -- end
 
-    -- if not player.isDead then
-    --     player:update(dt)
-    -- end
+--     -- if not player.isDead then
+--     --     player:update(dt)
+--     -- end
 
-    if portal then
-        portal:update(dt)
-    end
-end
+--     if portal then
+--         portal:update(dt)
+--     end
+-- end
 
-function room2:draw()
-    -- draw room
-    if room2Map then room2Map:draw() end
+-- function room2:draw()
+--     -- draw room
+--     if room2Map then room2Map:draw() end
 
-    -- Draw player
-    if player then
-        player:draw()
-    end
+--     -- Draw player
+--     if player then
+--         player:draw()
+--     end
 
-    -- draw spawned enemeis in room 2
-    for _, enemy in ipairs(enemies) do
-        if enemy.draw then enemy:draw() end
-    end
+--     -- draw spawned enemeis in room 2
+--     for _, enemy in ipairs(enemies) do
+--         if enemy.draw then enemy:draw() end
+--     end
 
-    -- if portal exists, draw it
-    if portal and portal.draw then
-        portal:draw()
-    end
+--     -- if portal exists, draw it
+--     if portal and portal.draw then
+--         portal:draw()
+--     end
 
-    -- Room 2 room UI
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.setFont(scoreFont)
-    love.graphics.print("ROOM 2", 30, 50)
-    love.graphics.print("Press 'R' to start next round", 30, 80)
-    love.graphics.print("Health: " .. player.health, 30, 110)
-    love.graphics.print("Score: " .. playerScore, 30, 140)
-    love.graphics.print("Enemies: " .. #enemies, 30, 170)
-end
+--     -- Room 2 room UI
+--     love.graphics.setColor(1, 1, 1, 1)
+--     love.graphics.setFont(scoreFont)
+--     love.graphics.print("ROOM 2", 30, 50)
+--     love.graphics.print("Press 'R' to start next round", 30, 80)
+--     love.graphics.print("Health: " .. player.health, 30, 110)
+--     love.graphics.print("Score: " .. playerScore, 30, 140)
+--     love.graphics.print("Enemies: " .. #enemies, 30, 170)
+-- end
 
-function room2:keypressed(key)
-    if key == "r" then
-        -- Start next round
-        spawnRandomEnemy() -- Spawn enemies for next round
-        Gamestate.switch(playing)
-    elseif key == "escape" then
-        love.event.quit()
-    end
-end
 
+-- TODO: make ESC key global for quiting no matter what game state they are in
 function love.quit()
     -- save game on quit
     SaveSystem.saveGame(runData, metaData)

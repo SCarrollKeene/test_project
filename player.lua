@@ -437,7 +437,7 @@ function Player:dash()
 end
 
 -- take damage, deal damage and direction
-function Player:takeDamage(dmg)
+function Player:takeDamage(dmg, metaData, playerScore)
     print("DAMAGE TRIGGERED")
     if self.isDead or self.isInvincible then return end -- no more damage taken if dead
 
@@ -454,7 +454,7 @@ function Player:takeDamage(dmg)
     print(string.format("Invincible: %s | Timer: %.2f", tostring(self.invincible), self.invincibleTimer))
     -- Utils.takeDamage(self, dmg)
     if self.health <= 0 then
-        self:die()
+        self:die(metaData, playerScore)
     end
 end
 
@@ -463,7 +463,9 @@ function Player:dealDamage(target, dmg)
     Utils.dealDamage(self, target, dmg)
 end
 
-function Player:die()
+function Player:die(metaData, playerScore)
+    metaData.highScore = math.max(metaData.highScore, playerScore)
+
     SaveSystem.highScore = math.max(metaData.highScore, playerScore)
     SaveSystem.resetRun(runData, metaData)  -- Reset current run
     -- Gamestate.switch(gameOver) -- TODO: implement gameOver gamestate

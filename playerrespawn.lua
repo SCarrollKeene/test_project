@@ -1,7 +1,7 @@
 -- playerrespawn.lua, for testing purposes only!!! 6/11/25
 local PlayerRespawn = {}
 
-function PlayerRespawn.respawnPlayer(player, world)
+function PlayerRespawn.respawnPlayer(player, world, metaData, playerScore) -- explicit dependecy, function declares what it needs via paramters
     -- Reset player state
     player.x = 60
     player.y = love.graphics.getHeight() / 3
