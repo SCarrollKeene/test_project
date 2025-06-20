@@ -22,7 +22,7 @@ function Portal:new(world, x, y)
         world = world,
         isActive = true,
         animationTimer = 0,
-        ps = Particle.portalGlow(false) -- true only if emission burst
+        ps = Particle.portalGlow(true) -- true only if emission burst
     }
     
     -- set position after Portal table creation
@@ -61,6 +61,12 @@ end
 
 function Portal:draw()
     if not self.isActive then return end
+    
+    if self.ps then
+        -- center particles at portal center
+        self.ps:setPosition(self.x, self.y)
+        love.graphics.draw(self.ps)
+    end
     
     -- Simple animated portal effect
     local pulse = math.sin(self.animationTimer * 4) * 0.3 + 0.7

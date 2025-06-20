@@ -180,9 +180,7 @@ function Projectile:draw()
     -- love.graphics.setColor(1, 0, 0)
     -- love.graphics.circle("fill", self.x, self.y, self.radius)
     -- love.graphics.setColor(1, 1, 1)
-    if self.toBeRemoved then 
-        return 
-    end
+    if self.toBeRemoved then return end
 
     love.graphics.draw(self.orbSprite, self.x - self.width / 2, self.y - self.height / 2)
 end

@@ -17,11 +17,13 @@ local Gamestate = require("libraries/hump/gamestate")
 
 -- for testing purposes, loading the safe room map after entering portal
 local saferoomMap
+local room2Map
 
 -- game state definitions
 local playing = {}
 local paused = {}
 local safeRoom = {}
+local room2 = {}
 local gameOver = {}
 
 local projectiles = {}
@@ -209,7 +211,7 @@ function love.load()
         local projectile, enemy, wall, player
 
         -- make function local to prevent overwriting similar outer variables
-        local function handlePlayerEnemyCollision(a, b)
+        local function handlePlayerCollisionEvents(a, b)
             -- Add defensive NIL checks
             -- made collision handler resilient to incomplete (user) collision data
             if not a or not b or not a.type or not b.type then
@@ -243,12 +245,21 @@ function love.load()
             player_obj, portal_obj = dataB, dataA
         end
         
-        if player_obj and portal_obj and Gamestate.current() == playing then
-            -- pendingRoomTransition = true
-            fading = true
-            fadeDirection = 1
-            fadeTimer = 0
-            nextState = safeRoom
+        if player_obj and portal_obj then
+            if Gamestate.current() == playing then
+                pendingRoomTransition = true
+                fading = true
+                fadeDirection = 1
+                fadeTimer = 0
+                nextState = safeRoom
+            elseif Gamestate.current() == safeRoom then
+                pendingRoomTransition = true
+                fading = true
+                fadeDirection = 1
+                fadeTimer = 0
+                nextState = room2
+            end
+
             if portal then
                 portal:destroy()
                 portal = nil
@@ -256,7 +267,7 @@ function love.load()
         end
 
         -- execute function
-        handlePlayerEnemyCollision(dataA, dataB)
+        handlePlayerCollisionEvents(dataA, dataB)
 
         -- Check for Projectile-Enemy collision
         if dataA and dataA.damage and dataA.owner and dataB and dataB.health and not dataB.damage then -- Heuristic eval: projectile has damage, enemy has health but not damage field
@@ -582,6 +593,7 @@ function playing:draw()
         end
     end
 
+    -- check to draw shot projectiles
     for _, p in ipairs(projectiles) do
         p:draw()
     end
@@ -633,13 +645,19 @@ function safeRoom:enter()
         player.collider:setLinearVelocity(0, 0)
     end
 
+    -- need to check for, update and draw projectiles again
+
     -- create store/shop logic
 
     -- add some NPC
 
     -- a way for the player to heal
 
-    -- a way to portal into the next world/levels
+    -- portal to room2
+    if not portal then
+        portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/3)
+        print("Safe room portal created")
+    end
 end
 
 function safeRoom:leave()
@@ -701,6 +719,18 @@ function safeRoom:update(dt)
         return -- halt other updates during fade
     end
 
+    if pendingRoomTransition then
+        fading = true
+        fadeDirection = 1
+        fadeTimer = 0
+        nextState = safeRoom
+        pendingRoomTransition = false
+        return
+    end
+
+    if not player.isDead then
+        player:update(dt)
+    end
     -- add other safe room specific logic
 
     -- safe room music
@@ -717,14 +747,24 @@ function safeRoom:draw()
     -- Draw player
     player:draw()
 
+    -- if exists, draw it
+    if portal then
+        portal:draw()
+    end
+
+    love.graphics.setBlendMode("add") -- for visibility
+    -- draw particles systems last after other entities
+    for _, ps in ipairs(globalParticleSystems) do
+        love.graphics.draw(ps)
+    end
+    love.graphics.setBlendMode("alpha")
+
     if fading and fadeAlpha > 0 then
         love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
         love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
         love.graphics.setColor(1, 1, 1, 1)
     end
 
-
-    
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
@@ -747,3 +787,145 @@ end
 -- refactor some of this code eventually
 -- especially since I need to account for loading different maps
 -- 6/17/2025
+
+function room2:enter()
+    print("Entering room 2")
+    room2Map = MapLoader.load("room2", world)
+
+    player.x = 140
+    player.y = love.graphics.getHeight() / 3
+    if player.collider then
+        player.collider:setPosition(player.x, player.y)
+        player.collider:setLinearVelocity(0, 0)
+    end
+
+    -- need to check for, update and draw projectiles again
+
+    -- spawn some random enemies
+    for i = 1, 5 do
+        spawnRandomEnemy()
+    end
+
+    -- portal reset
+    portal = nil
+end
+
+function room2:leave()
+    -- stop music, clear temp tables/objects, destroy portals, etc
+
+    -- clear particles
+    globalParticleSystems = {}
+
+    -- destroy current remaining portal
+    if portal then
+        portal:destroy();
+        portal = nil
+    end
+
+    -- reset flags
+    pendingRoomTransition = false
+    print("Leaving room 2 state, cleaning up resources.")
+end
+
+function room2:update(dt)
+    if room2 then room2Map:update(dt) end
+    if world then world:update(dt) end
+    player:update(dt)
+
+    -- update spawned enemies in room 2
+    for i, enemy in ipairs(enemies) do
+        enemy:update(dt)
+    end
+
+    if #enemies == 0 and not portal then
+        spawnPortal() -- spawn portal when enemies have been defeaated
+        print("Room 2 CLEARED. Portal spawned.")
+    end
+
+    if pendingRoomTransition then
+        fading = true
+        fadeDirection = 1
+        fadeTimer = 0
+        nextState = safeRoom
+        pendingRoomTransition = false
+    end
+    -- if fading then
+    --     -- SUPPOSED to clear particles when starting fade out
+    --     if fadeDirection == 1 and nextState == playing then
+    --         globalParticleSystems = {}
+    --     end
+
+    --     if fadeDirection == 1 then
+    --         -- Fade out (to black)
+    --         fadeTimer = fadeTimer + dt
+    --         fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
+    --         if fadeAlpha >= 1 then
+    --             -- Fade out complete, start hold
+    --             fadeHoldTimer = 0
+    --             fadeDirection = 0    -- 0 indicates hold phase
+    --         end
+    --     elseif fadeDirection == 0 then
+    --         -- Hold phase (fully black)
+    --         fadeHoldTimer = fadeHoldTimer + dt
+    --         fadeAlpha = 1
+    --         if fadeHoldTimer >= fadeHoldDuration then
+    --             -- Hold complete, switch state and start fade in
+    --             Gamestate.switch(nextState)
+    --             fadeDirection = -1
+    --             fadeTimer = 0
+    --         end
+    --     elseif fadeDirection == -1 then
+    --         -- Fade in (from black)
+    --         fadeTimer = fadeTimer + dt
+    --         fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
+    --         if fadeAlpha <= 0 then
+    --             fading = false
+    --             fadeAlpha = 0
+    --         end
+    --     end
+    --     return -- halt other updates during fade
+    -- end
+
+    -- if not player.isDead then
+    --     player:update(dt)
+    -- end
+end
+
+function room2:draw()
+    -- draw room
+    if room2Map then room2Map:draw() end
+
+    -- Draw player
+    if player then
+        player:draw()
+    end
+
+    -- draw spawned enemeis in room 2
+    for _, enemy in ipairs(enemies) do
+        if enemy.draw then enemy:draw() end
+    end
+
+    -- if portal exists, draw it
+    if portal and portal.draw then
+        portal:draw()
+    end
+
+    -- Room 2 room UI
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(scoreFont)
+    love.graphics.print("ROOM 2", 30, 50)
+    love.graphics.print("Press 'R' to start next round", 30, 80)
+    love.graphics.print("Health: " .. player.health, 30, 110)
+    love.graphics.print("Score: " .. playerScore, 30, 140)
+    love.graphics.print("Enemies: " .. #enemies, 30, 170)
+end
+
+function room2:keypressed(key)
+    if key == "r" then
+        -- Start next round
+        spawnRandomEnemy() -- Spawn enemies for next round
+        Gamestate.switch(playing)
+    elseif key == "escape" then
+        love.event.quit()
+    end
+end
