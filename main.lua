@@ -246,23 +246,25 @@ function love.load()
         end
         
         if player_obj and portal_obj then
-            if Gamestate.current() == playing then
-                pendingRoomTransition = true
-                fading = true
-                fadeDirection = 1
-                fadeTimer = 0
-                nextState = safeRoom
-            elseif Gamestate.current() == safeRoom then
-                pendingRoomTransition = true
-                fading = true
-                fadeDirection = 1
-                fadeTimer = 0
-                nextState = room2
-            end
+            if portal and portal.cooldownActive then
+                if Gamestate.current() == playing then
+                    pendingRoomTransition = true
+                    fading = true
+                    fadeDirection = 1
+                    fadeTimer = 0
+                    nextState = safeRoom
+                elseif Gamestate.current() == safeRoom then
+                    pendingRoomTransition = true
+                    fading = true
+                    fadeDirection = 1
+                    fadeTimer = 0
+                    nextState = room2
+                end
 
-            if portal then
-                portal:destroy()
-                portal = nil
+                if portal then
+                    portal:destroy()
+                    portal = nil
+                end
             end
         end
 
@@ -736,6 +738,10 @@ function safeRoom:update(dt)
     -- safe room music
 
     -- interaction sounds
+
+    if portal then
+        portal:update(dt)
+    end
 end
 
 function safeRoom:draw()
@@ -889,6 +895,10 @@ function room2:update(dt)
     -- if not player.isDead then
     --     player:update(dt)
     -- end
+
+    if portal then
+        portal:update(dt)
+    end
 end
 
 function room2:draw()

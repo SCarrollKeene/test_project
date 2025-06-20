@@ -20,8 +20,11 @@ function Portal:new(world, x, y)
         height = 64,
         type = "portal",
         world = world,
+
         isActive = true,
         animationTimer = 0,
+        cooldown = 1.0,
+        cooldownActive = false,
         ps = Particle.portalGlow(true) -- true only if emission burst
     }
     
@@ -57,6 +60,12 @@ function Portal:update(dt)
     self.ps:moveTo(self.x, self.y)
     -- self.ps:update(dt)
     self.animationTimer = self.animationTimer + dt
+
+    if self.cooldown > 0 then
+        self.cooldown = self.cooldown - dt
+    else
+        self.cooldownActive = true
+    end
 end
 
 function Portal:draw()
@@ -67,14 +76,19 @@ function Portal:draw()
         self.ps:setPosition(self.x, self.y)
         love.graphics.draw(self.ps)
     end
-    
-    -- Simple animated portal effect
-    local pulse = math.sin(self.animationTimer * 4) * 0.3 + 0.7
-    love.graphics.setColor(0.3, 0.7, 1.0, pulse)
-    love.graphics.circle("fill", self.x, self.y, 30)
-    love.graphics.setColor(1, 1, 1, 1)
 
-    love.graphics.print("Particles: " ..self.ps:getCount(), self.x, self.y - 40)
+    if self.cooldownActive then
+        -- Simple animated portal effect
+        local pulse = math.sin(self.animationTimer * 4) * 0.3 + 0.7
+        love.graphics.setColor(0.3, 0.7, 1.0, pulse)
+        love.graphics.circle("fill", self.x, self.y, 30)
+        love.graphics.setColor(1, 1, 1, 1)
+
+        love.graphics.print("Particles: " ..self.ps:getCount(), self.x, self.y - 40)
+    else
+        love.graphics.setColor(1, 0, 1)  -- Purple during cooldown
+    end
+    
 end
 
 function Portal:destroy()
