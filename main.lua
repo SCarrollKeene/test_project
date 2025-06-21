@@ -97,7 +97,7 @@ function love.keypressed(key)
     end
 end
 
-function spawnRandomEnemy()
+function spawnRandomEnemy(x, y)
     -- 6/20/25 no spawning in safe rooms!
     if Gamestate.current() == safeRoom then return end
 
@@ -126,13 +126,18 @@ function spawnRandomEnemy()
 
     -- Get random position within screen bounds
     -- minimum width and height from enemy to be used in calculating random x/y spawn points
-    local enemy_width, enemy_height = 32, 32  -- Default, or use actual frame size
-    local x = love.math.random(enemy_width, love.graphics.getWidth() - enemy_width)
-    local y = love.math.random(enemy_height, love.graphics.getHeight() - enemy_height)
-    
-    -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
-    local newEnemy = Enemy:new(world, randomBlob.name, x, y, enemy_width, enemy_height, nil, nil, randomBlob.health, randomBlob.speed, randomBlob.baseDamage, randomBlob.spritePath)
 
+    local enemy_width, enemy_height = 32, 32  -- Default, or use actual frame size
+    local spawnX = x or love.math.random(enemy_width, love.graphics.getWidth() - enemy_width)
+    local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight() - enemy_height)
+    -- local spawn = level.spawns[i]
+
+    -- for i = #level.spawns + 1, level.randomBlobs do
+        -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
+        local newEnemy = Enemy:new(
+            world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
+            randomBlob.health, randomBlob.speed, randomBlob.baseDamage, randomBlob.spritePath)
+    -- end
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
 
@@ -229,18 +234,6 @@ function love.load()
 
     -- enemy1:Taunt()
     --blob1:Taunt() -- method override not working 5/28/25
-
-    -- load all new enemy instances into one table
-    local new_enemies = { enemy1, blueBlob, violetBlob }
-
-    -- iterate through elements of new_enemies table, set the player as the target for all enemies, 
-    -- enemy assigned actual value of the enemy object itself at an index
-    -- i is assigned mumerical index of the current element starting at 1, cause, Lua
-    for i, enemy in ipairs(new_enemies) do
-        enemy:setTarget(player)
-        table.insert(enemies, enemy)
-        print("DEBUG:".."Added enemy " .. i .. " (" .. (enemy.name or "enemy") .. ") to table. Target set!")
-    end
 
     function beginContact(a, b, coll)
         local dataA = a:getUserData() -- both Should be the projectile/enemy data
@@ -669,7 +662,7 @@ function playing:draw()
         love.graphics.setFont(scoreFont)
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
-    love.graphics.print("ROOM 1", 30, 50)
+    love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel), 30, 50)
     love.graphics.print("Health: " .. player.health, 30, 80)
     love.graphics.print("Score: " .. playerScore, 30, 110)
     love.graphics.print("Press 'e' on keyboard to spawn more enemies.", 30, 140)
@@ -701,7 +694,7 @@ function safeRoom:enter()
     end
 
     -- prepare to load next level
-    LevelManager.currentLevel = LevelManager.currentLevel + 1
+    LevelManager.currentLevel = LevelManager.currentLevel
 end
 
 function safeRoom:leave()

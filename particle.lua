@@ -88,7 +88,7 @@ function Particle.portalGlow(isBurst)
     -- sets particle lifespan range (in seconds)
     ps:setParticleLifetime(0.6, 1.2)
 
-    -- particles emitted per second
+    -- particles emitted per second, the higher it is the more dense it gets
     -- ps:setEmissionRate(isBurst and 0 or 80) -- disable continuous if isBurst
     ps:setEmissionRate(80) -- continuous
 
@@ -101,6 +101,9 @@ function Particle.portalGlow(isBurst)
 
     -- speed range for particles as they are emitted, high value = particles move away from emitter faster
     ps:setSpeed(20, 60)
+
+    -- spin effect for portal, fast and different directional spin, I hope it works
+    ps:setSpin(-2.0, 2.0)
 
     -- particle acceleration force
     ps:setLinearAcceleration(-50, -50, 50, 50)
