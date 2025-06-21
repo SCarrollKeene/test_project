@@ -128,8 +128,8 @@ function spawnRandomEnemy(x, y)
     -- minimum width and height from enemy to be used in calculating random x/y spawn points
 
     local enemy_width, enemy_height = 32, 32  -- Default, or use actual frame size
-    local spawnX = x or love.math.random(enemy_width, love.graphics.getWidth() - enemy_width)
-    local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight() - enemy_height)
+    local spawnX = x or love.math.random(enemy_width, love.graphics.getWidth() or 800 - enemy_width)
+    local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight()or 600 - enemy_height)
     -- local spawn = level.spawns[i]
 
     -- for i = #level.spawns + 1, level.randomBlobs do
@@ -145,7 +145,7 @@ function spawnRandomEnemy(x, y)
         table.insert(enemies, newEnemy)
 
     -- debug
-    print(string.format("DEBUG: %s at x=%.1f, y=%.1f", randomBlob.name, x, y))
+    print(string.format("DEBUG: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))
 end
 
 function spawnPortal()
