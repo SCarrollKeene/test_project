@@ -6,6 +6,7 @@ local Particle = require("particle")
 local Blob = require("blob")
 local Tileset = require("tileset")
 local Map = require("map")
+local Walls = require("walls")
 local MapLoader = require("maploader")
 local LevelManager = require("levelmanager")
 local sti = require("libraries/sti")
@@ -162,6 +163,9 @@ function roomComplete()
 end
 
 function love.load()
+    world = wf.newWorld(0, 0)
+    -- initialize first
+    wallColliders = {}
     -- load player save data
     -- TODO: implement save game and load game logic later on 6/20/25
     -- local save = SaveSystem.loadGame()
@@ -172,8 +176,6 @@ function love.load()
     --     runData = createNewRun()
     --     metaData = loadDefaultMeta()
     -- end
-
-    world = wf.newWorld(0, 0)
 
     -- collision classes must load into the world first, per order of operations/how content is loaded, I believe
     world:addCollisionClass('player', {ignores = {}})
@@ -202,16 +204,16 @@ function love.load()
     -- Player:load(world, death_spritesheet_path)
     -- Blob:load()
 
-    local slime_spritesheet_path = "sprites/slime_black.png"
-    enemy1 = Enemy:new(world, "Black Blob", 800, 200, 32, 32, nil, nil, 60, 50, 5, slime_spritesheet_path)
+    -- local slime_spritesheet_path = "sprites/slime_black.png"
+    -- enemy1 = Enemy:new(world, "Black Blob", 800, 200, 32, 32, nil, nil, 60, 50, 5, slime_spritesheet_path)
 
-    --enemy1 = Enemy:new(world, name, 800, 200) -- revisit how to pass in only the args that I want 5/30/25
+    -- --enemy1 = Enemy:new(world, name, 800, 200) -- revisit how to pass in only the args that I want 5/30/25
 
-    local blueblob_spritesheet_path = "sprites/slime_blue.png"
-    blueBlob = Enemy:new(world, "Blue Blob", 700, 300, 32, 32, nil, nil, 120, 70, 10, blueblob_spritesheet_path)
+    -- local blueblob_spritesheet_path = "sprites/slime_blue.png"
+    -- blueBlob = Enemy:new(world, "Blue Blob", 700, 300, 32, 32, nil, nil, 120, 70, 10, blueblob_spritesheet_path)
 
-    local violetblob_spritesheet_path = "sprites/slime_violet.png"
-    violetBlob = Enemy:new(world, "Violet Blob", 750, 250, 32, 32, nil, nil, 180, 90, 15, violetblob_spritesheet_path)
+    -- local violetblob_spritesheet_path = "sprites/slime_violet.png"
+    -- violetBlob = Enemy:new(world, "Violet Blob", 750, 250, 32, 32, nil, nil, 180, 90, 15, violetblob_spritesheet_path)
 
     -- enemy1:setTarget(player)
     -- blueBlob:setTarget(player)
@@ -275,20 +277,17 @@ function love.load()
         if player_obj and portal_obj then
             if portal and portal.cooldownActive then
                 if Gamestate.current() == playing then
-                    pendingRoomTransition = true
-                    fading = true
-                    fadeDirection = 1
-                    fadeTimer = 0
                     nextState = safeRoom
                 elseif Gamestate.current() == safeRoom then
-                    LevelManager:loadLevel(LevelManager.currentLevel + 1)
-                    pendingRoomTransition = true
-                    fading = true
-                    fadeDirection = 1
-                    fadeTimer = 0
+                    -- LevelManager:loadLevel(LevelManager.currentLevel + 1)
+                    LevelManager.currentLevel = LevelManager.currentLevel + 1
                     nextState = playing
                 end
 
+                pendingRoomTransition = true
+                fading = true
+                fadeDirection = 1
+                fadeTimer = 0  
                 if portal then
                     portal:destroy()
                     portal = nil
@@ -376,6 +375,10 @@ end
 function playing:enter()
     print("Entered playing gamestate")
     LevelManager:loadLevel(LevelManager.currentLevel)
+
+    -- DEFER level loading to next frame
+    --vself.pendingLevelLoad = LevelManager.currentLevel
+
     -- reset for each new Room
     runData.cleared = false
     -- Reset player position and state
@@ -386,18 +389,34 @@ function playing:enter()
         player.collider:setPosition(player.x, player.y)
         player.collider:setLinearVelocity(0, 0)
     end
+
+    -- Recreate collider if missing
+    if not player.collider then
+        player:load(world)  
+    end
     
     -- Spawn initial enemies if needed
-    if #enemies == 0 then
-        spawnRandomEnemy()
-    end
+    -- if #enemies == 0 then
+    --     spawnRandomEnemy()
+    -- end
 end
 
 function playing:leave()
     -- stop music, clear temp tables/objects, destroy portals, etc
+    for _, collider in ipairs(wallColliders) do
+        if not collider:isDestroyed() then
+        collider:destroy()
+        end
+    end
+    wallColliders = {}
 
     -- clear particles
     globalParticleSystems = {}
+
+    -- destroy any remaining player/enemy colliders
+    for _, enemy in ipairs(enemies) do
+        if enemy.collider then enemy.collider:destroy() end
+    end
 
     -- destroy current remaining portal
     if portal then
@@ -423,6 +442,13 @@ function playing:update(dt)
     --     pendingRoomTransition = false
     --     return -- prevents any further update logic
     -- end
+
+    -- Needed to resolve Box2D locking when trying to create new colliders during the physics being updated
+    if self.pendingLevelLoad then
+        LevelManager:loadLevel(self.pendingLevelLoad)
+        self.pendingLevelLoad = nil
+        return  -- Skip rest of update this frame
+    end
 
     if fading then
         -- SUPPOSED to clear particles when starting fade out
@@ -605,7 +631,6 @@ end
 
 function playing:draw()
     print("playing:draw")
-    -- world:draw()
     -- draw map first, player should load on top of map
     if currentMap then currentMap:draw() end
         
@@ -659,19 +684,37 @@ function playing:draw()
     love.graphics.print("Health: " .. player.health, 30, 80)
     love.graphics.print("Score: " .. playerScore, 30, 110)
     love.graphics.print("Press 'e' on keyboard to spawn more enemies.", 30, 140)
+
+    world:draw()
+    -- for _, wall in ipairs(currentWalls) do
+    --     love.graphics.rectangle("line", wall:getX(), wall:getY(), wall:getWidth(), wall:getHeight())
+    -- end
 end
 
 function safeRoom:enter()
     print("Entering safe room")
-    saferoomMap = MapLoader.load("saferoommap", world)
+
+    -- passing in its map and walls, which is world, because of colliders
+    -- its not a combat level so this is how safe rooms and other rooms will handle
+    -- being loaded 6/22/25
+    currentMap, currentWalls = MapLoader.load("saferoommap", world)
+
+    for _, wall in ipairs(currentWalls) do
+        table.insert(wallColliders, wall)
+    end
     
-    player.x = love.graphics.getWidth() / 2
+    player.x = 140
     player.y = love.graphics.getHeight() / 2
+
     if player.collider then
         player.collider:setPosition(player.x, player.y)
         player.collider:setLinearVelocity(0, 0)
     end
 
+    -- Recreate collider if missing
+    if not player.collider then
+        player:load(world)  
+    end
     -- need to check for, update and draw projectiles again
 
     -- create store/shop logic
@@ -682,7 +725,7 @@ function safeRoom:enter()
 
     -- portal to room2
     if not portal then
-        portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/3)
+        portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
         print("Safe room portal created")
     end
 
@@ -692,9 +735,21 @@ end
 
 function safeRoom:leave()
     -- stop music, clear temp tables/objects, destroy portals, etc
+     -- Add wall cleanup:
+    for _, collider in ipairs(wallColliders) do
+        if not collider:isDestroyed() then
+        collider:destroy()
+        end
+    end
+    wallColliders = {}
 
     -- clear particles
     globalParticleSystems = {}
+
+    -- destroy any remaining player/enemy colliders
+    for _, enemy in ipairs(enemies) do
+        if enemy.collider then enemy.collider:destroy() end
+    end
 
     -- destroy current remaining portal
     if portal then
@@ -776,7 +831,7 @@ end
 
 function safeRoom:draw()
     -- Draw safe room background
-    if saferoomMap then saferoomMap:draw() end
+    if currentMap then currentMap:draw() end
     -- love.graphics.setColor(0.2, 0.5, 0.3, 1)
     -- love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
     
@@ -807,6 +862,7 @@ function safeRoom:draw()
     love.graphics.print("SAFE ROOM", 30, 50)
     love.graphics.print("Health: " .. player.health, 30,80)
     love.graphics.print("Score: " .. playerScore, 30, 110)
+    world:draw()
 end
 
 -- refactor some of this code eventually TODO: add level manager

@@ -9,8 +9,8 @@ return {
   height = 12,
   tilewidth = 64,
   tileheight = 64,
-  nextlayerid = 6,
-  nextobjectid = 1,
+  nextlayerid = 8,
+  nextobjectid = 10,
   properties = {},
   tilesets = {
     {
@@ -416,9 +416,236 @@ return {
           height = 26
         }
       }
+    },
+    {
+      name = "Decor",
+      firstgid = 57,
+      class = "",
+      tilewidth = 66,
+      tileheight = 77,
+      spacing = 0,
+      margin = 0,
+      columns = 0,
+      objectalignment = "unspecified",
+      tilerendersize = "tile",
+      fillmode = "stretch",
+      tileoffset = {
+        x = 0,
+        y = 0
+      },
+      grid = {
+        orientation = "orthogonal",
+        width = 1,
+        height = 1
+      },
+      properties = {},
+      wangsets = {},
+      tilecount = 22,
+      tiles = {
+        {
+          id = 0,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Box1.png",
+          width = 17,
+          height = 16
+        },
+        {
+          id = 1,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Box2.png",
+          width = 18,
+          height = 18
+        },
+        {
+          id = 2,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Box3.png",
+          width = 19,
+          height = 18
+        },
+        {
+          id = 3,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Box4.png",
+          width = 14,
+          height = 16
+        },
+        {
+          id = 4,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Dirt1.png",
+          width = 10,
+          height = 10
+        },
+        {
+          id = 5,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Dirt2.png",
+          width = 16,
+          height = 14
+        },
+        {
+          id = 6,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Dirt3.png",
+          width = 8,
+          height = 9
+        },
+        {
+          id = 7,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Dirt4.png",
+          width = 9,
+          height = 6
+        },
+        {
+          id = 8,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Dirt5.png",
+          width = 8,
+          height = 7
+        },
+        {
+          id = 9,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Dirt6.png",
+          width = 15,
+          height = 14
+        },
+        {
+          id = 10,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Lamp1.png",
+          width = 20,
+          height = 35
+        },
+        {
+          id = 11,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Lamp2.png",
+          width = 11,
+          height = 35
+        },
+        {
+          id = 12,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Lamp3.png",
+          width = 13,
+          height = 35
+        },
+        {
+          id = 13,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Lamp4.png",
+          width = 27,
+          height = 17
+        },
+        {
+          id = 14,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Lamp5.png",
+          width = 19,
+          height = 14
+        },
+        {
+          id = 15,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Lamp6.png",
+          width = 16,
+          height = 22
+        },
+        {
+          id = 16,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Log1.png",
+          width = 34,
+          height = 21
+        },
+        {
+          id = 17,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Log2.png",
+          width = 33,
+          height = 32
+        },
+        {
+          id = 18,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Log3.png",
+          width = 45,
+          height = 14
+        },
+        {
+          id = 19,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Log4.png",
+          width = 11,
+          height = 33
+        },
+        {
+          id = 20,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Tree1.png",
+          width = 66,
+          height = 77
+        },
+        {
+          id = 21,
+          image = "craftpix-free-fields-tileset/2 Objects/7 Decor/Tree2.png",
+          width = 29,
+          height = 26
+        }
+      }
     }
   },
   layers = {
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 6,
+      name = "Walls",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 2,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 0,
+          y = 0,
+          width = 1280,
+          height = 64,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 5,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 0,
+          y = 704,
+          width = 1280,
+          height = 64,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 6,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 1216,
+          y = 64,
+          width = 64,
+          height = 640,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        },
+        {
+          id = 7,
+          name = "",
+          type = "",
+          shape = "rectangle",
+          x = 0,
+          y = 64,
+          width = 64,
+          height = 640,
+          rotation = 0,
+          visible = true,
+          properties = {}
+        }
+      }
+    },
     {
       type = "tilelayer",
       x = 0,
@@ -533,18 +760,18 @@ return {
       properties = {},
       encoding = "lua",
       data = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 3221225522, 50, 49, 50, 50, 50, 50, 50, 50, 50, 2684354610, 49, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 3221225522, 3221225522, 50, 50, 50, 50, 50, 50, 50, 2684354610, 2684354610, 49, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 49, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 49, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 49, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 47, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 2684354610, 0, 0, 0,
-        0, 0, 49, 2684354610, 2684354610, 1610612786, 50, 50, 50, 50, 50, 50, 50, 50, 2684354610, 2684354610, 2684354610, 0, 0, 0,
-        0, 0, 49, 2684354610, 50, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 2684354610, 2684354610, 2684354610, 0, 0, 0,
-        0, 0, 49, 2684354610, 3221225522, 3221225522, 3221225522, 3221225522, 50, 50, 50, 50, 50, 50, 50, 2684354610, 49, 0, 0, 0
+        48, 48, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 0, 49, 0, 49,
+        0, 48, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 3221225522, 50, 49, 50, 50, 50, 50, 50, 50, 50, 2684354610, 49, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 3221225522, 3221225522, 50, 50, 50, 50, 50, 50, 50, 2684354610, 2684354610, 49, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 49, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 49, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 49, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 47, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 1610612786, 50, 0, 0, 0, 0, 0, 0, 50, 2684354610, 2684354610, 2684354610, 48, 0, 48,
+        0, 48, 49, 2684354610, 2684354610, 1610612786, 50, 50, 50, 50, 50, 50, 50, 50, 2684354610, 2684354610, 2684354610, 48, 0, 48,
+        0, 48, 49, 2684354610, 50, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 3221225522, 2684354610, 2684354610, 2684354610, 48, 0, 48,
+        49, 48, 49, 2684354610, 3221225522, 3221225522, 3221225522, 3221225522, 50, 50, 50, 50, 50, 50, 50, 2684354610, 49, 48, 49, 48
       }
     },
     {
@@ -576,6 +803,38 @@ return {
         0, 0, 0, 0, 0, 0, 0, 54, 53, 54, 53, 54, 53, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      }
+    },
+    {
+      type = "tilelayer",
+      x = 0,
+      y = 0,
+      width = 20,
+      height = 12,
+      id = 7,
+      name = "Decor",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      encoding = "lua",
+      data = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        77, 0, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 67, 0, 0, 0, 0, 0, 0, 57, 57, 57, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 58, 58, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 59, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 0, 77, 0,
+        77, 0, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 0, 77, 0,
+        77, 0, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 0, 77, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
       }
     }

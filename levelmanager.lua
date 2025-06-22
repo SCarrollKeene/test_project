@@ -3,22 +3,35 @@ local MapLoader = require("maploader")
 local LevelManager = {
     currentLevel = 1,
     levels = {
-        { map = "room1", enemies = 3, boss = false,
-        spawns = {
-            -- defining fixed positions for enemy spawn
-            { x = 800, y = 200 },
-            { x = 700, y = 300 },
-            { x = 600, y = 400 }
-        } },
-        { map = "room2", enemies = 5, boss = false,
-    spawns = {
-            { x = 800, y = 200 },
-            { x = 700, y = 300 },
-            { x = 600, y = 400 },
-            { x = 550, y = 450 },
-            { x = 450, y = 550 }
-        } },
-        { map = "room3", enemies = 7, boss = true }
+        { 
+            map = "room1", 
+            enemies = 3, 
+            boss = false,
+            spawns = {
+                -- defining fixed positions for enemy spawn
+                { x = 800, y = 200 },
+                { x = 700, y = 300 },
+                { x = 600, y = 400 }
+            } 
+        },
+        { 
+            map = "room2", 
+            enemies = 5, 
+            boss = false,
+            spawns = {
+            -- { x = 800, y = 200 },
+            -- { x = 700, y = 300 },
+            -- { x = 600, y = 400 },
+            -- { x = 550, y = 450 },
+            -- { x = 450, y = 550 }
+            } 
+        },
+        { 
+            map = "room3", 
+            enemies = 7, 
+            boss = false,
+            spawns = {} 
+        }
     }
 }
 
@@ -27,8 +40,24 @@ function LevelManager:loadLevel(index)
     self.currentLevel = index
     local level = self.levels[index]
 
-    -- load map, associate global world to map
-    currentMap = MapLoader.load(level.map, world)
+    -- Destroy previous walls first
+    for _, collider in ipairs(wallColliders) do
+        -- if not collider:isDestroyed() then
+            collider:destroy()
+        -- end
+    end
+
+    -- Reset global wall collider tracker
+    wallColliders = {}
+
+    -- clear existing enemies, good practice
+    enemies = {}
+    
+     -- Load new map
+    currentMap, currentWalls = MapLoader.load(level.map, world)
+
+    -- load map AND walls, associate global world to map
+    -- currentMap, currentWalls = MapLoader.load(level.map, world)
 
     -- load all new enemy instances into one table
     -- local new_enemies = { enemy1, blueBlob, violetBlob }
@@ -42,13 +71,20 @@ function LevelManager:loadLevel(index)
     --     print("DEBUG:".."Added enemy " .. i .. " (" .. (enemy.name or "enemy") .. ") to table. Target set!")
     -- end
 
+    -- Add new walls to tracker
+    for _, wall in ipairs(currentWalls) do
+        table.insert(wallColliders, wall)
+    end
+
+    -- initialize from spawns table in levels or an empty table if a spawns table is missing
+    local spawns = level.spawns or {}
     -- Spawn enemies using level-specific positions
-    for _, spawnPos in ipairs(self.levels[index].spawns) do
+    for _, spawnPos in ipairs(spawns) do
         spawnRandomEnemy(spawnPos.x, spawnPos.y) -- Fixed positions
     end
     
-    -- Spawn remaining enemies randomly
-    local remaining = self.levels[index].enemies - #self.levels[index].spawns
+    -- Spawn remaining enemies randomly (enemies in a level - index of spawns (ex: room1 has 3 enemies, 3 spawn points))
+    local remaining = level.enemies - #spawns
     for i = 1, remaining do
         spawnRandomEnemy() -- Random positions
     end

@@ -171,7 +171,6 @@ function Player:update(dt)
                 self.collider:setLinearVelocity(0, 0)
                 --set player collider back to 'player' after dashing
                 self.collider:setCollisionClass('player')
-                print('PLAYER DASH IS OVER')
             end
         end
     end
@@ -438,7 +437,6 @@ function Player:dash()
         -- set to dashing collider, phase through enemies
         -- self.type = 'player_dashing'
         self.collider:setCollisionClass('player_dashing')
-        print('PLAYER IS DASHING')
         self.collider:setLinearVelocity(dx * self.dashSpeed, dy * self.dashSpeed)
     end
 end
