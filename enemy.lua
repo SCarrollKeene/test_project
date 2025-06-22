@@ -110,14 +110,12 @@ function Enemy:load()
         colliderHeight, 
         10
     )
-
     self.collider:setFixedRotation(true)
     self.collider:setUserData(self) -- associate enemy obj w/ collider
-    self.collider:setObject(self)
     print("DEBUG: ENEMY collider created with W: "..self.width.."and H: "..self.height)
-    
     self.collider:setCollisionClass('enemy')
     -- self.collider:setMask('player', 'wall') -- Enemies collide with player, walls
+    self.collider:setObject(self)
 end
 
 function Enemy:setTarget(Player)

@@ -178,8 +178,12 @@ function love.load()
     -- collision classes must load into the world first, per order of operations/how content is loaded, I believe
     world:addCollisionClass('player', {ignores = {}})
     print("DEBUG: main.lua: Added collision class - " .. 'player')
-    world:addCollisionClass('enemy', {ignores = {}})
+    -- stops enemies from colliding/getting stuck on one another
+    world:addCollisionClass('enemy', {ignores = {'enemy'}})
     print("DEBUG: main.lua: Added collision class - " .. 'enemy')
+    -- ignore enemy/enemy collider when dashing
+    world:addCollisionClass('player_dashing', {ignores = {'enemy'}})
+    print("DEBUG: main.lua: Added collision class - " .. 'player_dashing')
     world:addCollisionClass('projectile', {ignores = {}})
     print("DEBUG: main.lua: Added collision class - " .. 'projectile')
     world:addCollisionClass('wall', {ignores = {}})
@@ -187,17 +191,6 @@ function love.load()
     world:addCollisionClass('portal', {ignores = {}})
     print("DEBUG: main.lua: Added collision class - " .. 'portal')
     -- You can also define interactions here
-
-    if world.collisionClassesSet then
-        print("DEBUG main.lua: Calling world:collisionClassesSet()")
-        world:collisionClassesSet()
-    elseif world.generateCategoriesMasks then
-        print("DEBUG main.lua: Calling world:generateCategoriesMasks()")
-        world:generateCategoriesMasks()
-    else
-        print("ERROR main.lua: Neither collisionClassesSet nor generateCategoriesMasks found on world object directly!")
-        -- This would be very problematic and might indicate an incomplete Windfield setup or version issue.
-    end
 
     Tileset:load()
     Map:load(world) -- idk if I need to pass world to may, this seems contingent upon Map creating the colliders, revisit
