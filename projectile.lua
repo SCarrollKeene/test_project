@@ -13,7 +13,7 @@ Projectile.image = nil
 -- time to attempt adding pooling, because optimization that's why
 local pool = {}
 
-local MAX_POOL_SIZE = 50 -- limit projectile pool size, doesn't seem to be doing its job at the moment 6/22/25
+local MAX_POOL_SIZE = 50 -- limit projectile pool size, doesn't seem to be doing its job at the moment, jk it might be 6/22/25
 
 local cleanupTimer = 0
 
@@ -23,7 +23,12 @@ function Projectile.getNewCreateCount()
     return newCreateCount
 end
 
-function Projectile.cleanPool()
+function Projectile.getCleanUpTimer()
+    return cleanupTimer or 0 -- return 0 if NIL
+end
+
+function Projectile.cleanPool(timerValue)
+    print("[CLEANUP] Function entered")
     local inactiveCount = 0
     local toRemove = {} -- pooled projectiles marked for removal
 
@@ -31,7 +36,9 @@ function Projectile.cleanPool()
         if not pool[i].active then
             inactiveCount = inactiveCount + 1
             if inactiveCount > MAX_POOL_SIZE then
+                print("[CLEANUP] MAX POOL SIZE IS LESS THAN INACTIVE COUNT")
                 table.remove(toRemove, i)
+                print("[CLEANUP] CLEANUP REMOVED PROJ FROM POOL")
             end
         end
     end
@@ -41,13 +48,15 @@ function Projectile.cleanPool()
     -- tries to maintain effeciency
     for _, i in ipairs(toRemove) do
         table.remove(pool, i)
+        print(string.format("[CLEANUP] Cleanup called at: %.2f seconds", timerValue))
     end
 end
 
 function Projectile.updatePool(dt)
     cleanupTimer = cleanupTimer + dt
-    if cleanupTimer >= 10 then  -- Every 10 seconds
-        Projectile.cleanPool()
+    if cleanupTimer >= 10 then
+        local currentTimer = cleanupTimer  -- Every 10 seconds
+        Projectile.cleanPool(currentTimer)
         cleanupTimer = 0
     end
 end

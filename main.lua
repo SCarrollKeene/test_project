@@ -49,6 +49,14 @@ local player = Player -- create new player instance, change player.lua to a cons
 -- local worldCollider = world:newRectangleCollider(350, 100, 80, 80)
 
 local enemies = {} -- enemies table to house all active enemies
+
+-- define enemy types and configurations in configuration table
+local randomBlobs = { 
+    { name = "Black Blob", spritePath = "sprites/slime_black.png", health = 60, speed = 50, baseDamage = 5 },
+    { name = "Blue Blob", spritePath = "sprites/slime_blue.png", health = 120, speed = 70, baseDamage = 10 }, 
+    { name = "Violet Blob", spritePath = "sprites/slime_violet.png", health = 180, speed = 90, baseDamage = 15 } 
+}
+
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
 local playerScore = 0
 local scoreFont = 0
@@ -104,6 +112,15 @@ function love.keypressed(key)
         end
         player.weapon.fireRate = 0.01  -- Rapid fire
     end
+
+    -- debug
+    if key == "t" then
+        debugMode = not debugMode -- Toggle enemy tracking lines
+    end
+
+    if Gamestate.current() == safeRoom then
+        return -- Prevent any attack actions in safe room
+    end
 end
 
 function spawnRandomEnemy(x, y)
@@ -111,50 +128,32 @@ function spawnRandomEnemy(x, y)
     if Gamestate.current() == safeRoom then return end
 
     -- CONCEPT 6/3/25, UPDATE 6/3/25 IT WORKS, had to google some things lol
-    -- load enemy types into table
-    -- iterate through table
-    -- randomize the enemeis that are picked in that table
-    -- randomize where they are placed after being picked out of table
-
-    -- Use the correct sprite path
-    local slime_spritesheet_path = "sprites/slime_black.png"
-    local blueblob_spritesheet_path = "sprites/slime_blue.png"
-    local violetblob_spritesheet_path = "sprites/slime_violet.png"
-
-    -- define enemy types and configurations in configuration table
-    local randomBlobs = { 
-        { name = "Black Blob", spritePath = slime_spritesheet_path, health = 60, speed = 50, baseDamage = 5 },
-        { name = "Blue Blob", spritePath = blueblob_spritesheet_path, health = 120, speed = 70, baseDamage = 10 }, 
-        { name = "Violet Blob", spritePath = violetblob_spritesheet_path, health = 180, speed = 90, baseDamage = 15 } 
-    }
 
     -- Pick a random enemy type from the randomBlobs configuration table
     local randomIndex = math.random(1, #randomBlobs) -- picks a random index between 1-3
-    print(#randomBlobs) -- returns number of entries in the #randomBlobs table
     local randomBlob = randomBlobs[randomIndex] -- returns a random blob from the table
 
     -- Get random position within screen bounds
     -- minimum width and height from enemy to be used in calculating random x/y spawn points
-
     local enemy_width, enemy_height = 32, 32  -- Default, or use actual frame size
     local spawnX = x or love.math.random(enemy_width, love.graphics.getWidth() or 800 - enemy_width)
     local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight()or 600 - enemy_height)
-    -- local spawn = level.spawns[i]
 
-    -- for i = #level.spawns + 1, level.randomBlobs do
-        -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
-        local newEnemy = Enemy:new(
-            world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
-            randomBlob.health, randomBlob.speed, randomBlob.baseDamage, randomBlob.spritePath)
-    -- end
+    -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
+    local newEnemy = Enemy:new(
+        world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
+        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, enemyImageCache[randomBlob.spritePath])
+
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
 
     -- add newEnemy into enemies table
         table.insert(enemies, newEnemy)
 
+    newEnemy.spriteIndex = randomIndex -- Store sprite index for rendering
+
     -- debug
-    print(string.format("DEBUG: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))
+    print(string.format("[SPAWN] Spawned at: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))
 end
 
 function spawnPortal()
@@ -211,33 +210,38 @@ function love.load()
     Projectile.loadAssets()
     Player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
     -- Player:load(world, death_spritesheet_path)
-    -- Blob:load()
 
-    -- local slime_spritesheet_path = "sprites/slime_black.png"
-    -- enemy1 = Enemy:new(world, "Black Blob", 800, 200, 32, 32, nil, nil, 60, 50, 5, slime_spritesheet_path)
+     -- Preload blob and all other enemy types
+    enemyImageCache = {}
+    for _, blob in ipairs(randomBlobs) do
+        local success, img = pcall(love.graphics.newImage, blob.spritePath)
+        if success then
+            enemyImageCache[blob.spritePath] = img
+        else
+            print("Failed to load enemy image: " .. blob.spritePath)
+            -- Fallback: 1x1 white pixel
+            enemyImageCache[blob.spritePath] = love.graphics.newImage(1, 1)
+        end
+    end
 
-    -- --enemy1 = Enemy:new(world, name, 800, 200) -- revisit how to pass in only the args that I want 5/30/25
-
-    -- local blueblob_spritesheet_path = "sprites/slime_blue.png"
-    -- blueBlob = Enemy:new(world, "Blue Blob", 700, 300, 32, 32, nil, nil, 120, 70, 10, blueblob_spritesheet_path)
-
-    -- local violetblob_spritesheet_path = "sprites/slime_violet.png"
-    -- violetBlob = Enemy:new(world, "Violet Blob", 750, 250, 32, 32, nil, nil, 180, 90, 15, violetblob_spritesheet_path)
-
-    -- enemy1:setTarget(player)
-    -- blueBlob:setTarget(player)
-    -- violetBlob:setTarget(player)
-
-    -- table.insert(enemies, enemy1)
-    -- table.insert(enemies, blueBlob)
-    -- table.insert(enemies, violetBlob)
-
-    -- print(enemy1:getName().." in table")
-    -- print(blueBlob:getName().." in table")
-    -- print(violetBlob:getName().." in table")
-
-    -- enemy1:Taunt()
-    --blob1:Taunt() -- method override not working 5/28/25
+    -- Create sprite batches and dynamic batch sizing for enemy sprites
+    -- 6/23/25 TODO: make this dynamic, so that it can handle more than 3 enemy types
+    -- ALSO FAILED at implementing dynamic sprite batch creation, so I hardcoded the enemyBatches table
+    enemyBatches = {
+        love.graphics.newSpriteBatch(enemyImageCache["sprites/slime_black.png"], 100),
+        love.graphics.newSpriteBatch(enemyImageCache["sprites/slime_blue.png"], 100),
+        love.graphics.newSpriteBatch(enemyImageCache["sprites/slime_violet.png"], 100)
+    }
+    -- enemyBatches = {}
+    -- for i, blob in ipairs(randomBlobs) do
+    --     local img = enemyImageCache[blob.spritePath]
+    --     if img then
+    --         enemyBatches[i] = love.graphics.newSpriteBatch(img, 100)
+    --     else
+    --         print("WARNING: Image not found for", blob.spritePath)
+    --         enemyBatches[i] = love.graphics.newSpriteBatch(love.graphics.newImage(1,1), 100)
+    --     end
+    -- end
 
     function beginContact(a, b, coll)
         local dataA = a:getUserData() -- both Should be the projectile/enemy data
@@ -285,6 +289,7 @@ function love.load()
         
         if player_obj and portal_obj then
             if portal and portal.cooldownActive then
+                portal_obj.sounds.portal:play()
                 if Gamestate.current() == playing then
                     nextState = safeRoom
                 elseif Gamestate.current() == safeRoom then
@@ -314,6 +319,12 @@ function love.load()
         elseif dataB and dataB.damage and dataB.owner and dataA and dataA.health and not dataA.damage then
             projectile = dataB
             enemy = dataA
+        end
+
+        -- Ignore Player-Enemy collision in safe room
+        if Gamestate.current() == safeRoom and 
+        (a.type == "player" and b.type == "enemy") then
+            return -- Ignore damage
         end
 
         -- Handle Projectile-Enemy collision
@@ -555,6 +566,7 @@ function playing:update(dt)
     end
 
     -- trying to make particle pool management performant
+    -- cleans up pool every 10 seconds, keeps pool at or below max pool size
     Projectile.updatePool(dt)
 
     -- Reduce physics updates during stress
@@ -573,7 +585,7 @@ function playing:update(dt)
     -- feels like a global action, maybe move this into main? or a sound file, hmm 5/29/25
     function love.mousepressed(x, y, button, istouch, presses)
         if not player.isDead and button == 1 then
-            sounds.blip:play()
+            sounds.blip:play() -- play projectile blip on mouse click
         end
 
         if not player.isDead and love.mouse.isDown(1) then
@@ -660,10 +672,9 @@ function playing:draw()
         player:draw()
     end
 
-    -- Iterate through the 'enemies' table to draw active enemies:
-    for _, active_enemy in ipairs(enemies) do
-        if active_enemy and active_enemy.draw then -- Check if it exists and has a draw method
-            active_enemy:draw()
+    for _, enemy in ipairs(enemies) do
+        if not enemy.toBeRemoved then
+            enemy:draw()
         end
     end
 
@@ -711,7 +722,7 @@ function playing:draw()
     love.graphics.print("New proj creation: " .. Projectile.getNewCreateCount(), 20, 230)
     love.graphics.print("Particle Systems: " .. #globalParticleSystems, 20, 260)
     love.graphics.print("Enemies: " .. #enemies, 20, 290)
-
+    love.graphics.print(string.format("Next cleanup in: %.1f", math.max(0, 10 - Projectile.getCleanUpTimer())), 20, 320)
     world:draw()
     -- for _, wall in ipairs(currentWalls) do
     --     love.graphics.rectangle("line", wall:getX(), wall:getY(), wall:getWidth(), wall:getHeight())
@@ -749,6 +760,8 @@ function safeRoom:enter()
     -- add some NPC
 
     -- a way for the player to heal
+
+    projectiles = {} -- Clear existing projectiles
 
     -- portal to room2
     if not portal then
@@ -857,6 +870,10 @@ function safeRoom:update(dt)
 end
 
 function safeRoom:draw()
+    print("safeRoom:draw")
+
+    -- Set the background color for the safe room
+    -- love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
     -- Draw safe room background
     if currentMap then currentMap:draw() end
     -- love.graphics.setColor(0.2, 0.5, 0.3, 1)

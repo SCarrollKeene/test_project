@@ -21,6 +21,10 @@ function Portal:new(world, x, y)
         type = "portal",
         world = world,
 
+        sounds = {
+            portal = love.audio.newSource("sounds/ghost.wav", "static")
+        },
+
         isActive = true,
         animationTimer = 0,
         cooldown = 1.0,

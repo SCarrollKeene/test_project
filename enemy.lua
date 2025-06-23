@@ -6,7 +6,7 @@ local flashShader = require "libraries/flashshader"
 local Enemy = {}
 Enemy.__index = Enemy
 
-function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, sprite)
+function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, spriteImage)
     local instance = {
         name = name or "Enemy",
         x = x or 0,
@@ -19,7 +19,7 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         speed = speed or 40,
         baseDamage = baseDamage or 5,
 
-        spriteSheet = nil, -- add sprite later on, possibly in main.lua find a test sprite to use
+        spriteSheet = spriteImage, -- add sprite later on, possibly in main.lua find a test sprite to use
         animations = {},
         currentAnimation = nil,
 
@@ -44,16 +44,51 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
     "Damage:", instance.baseDamage)
     setmetatable(instance, {__index = Enemy}) -- Enemy methods and fields/data will get looked up
 
-    if sprite then
-        local success, image_or_error = pcall(function() return love.graphics.newImage(sprite) end)
-        if success then
-            instance.spriteSheet = image_or_error -- This is your first line: self.spriteSheet = ...
-            print("Enemy spritesheet loaded successfully from:", sprite)
+    -- if sprite then
+    --     local success, image_or_error = pcall(function() return love.graphics.newImage(sprite) end)
+    --     if success then
+    --         instance.spriteSheet = image_or_error -- This is your first line: self.spriteSheet = ...
+    --         print("Enemy spritesheet loaded successfully from:", sprite)
 
-            local frameWidth = instance.spriteSheet:getWidth() / 3  -- Width of one animation frame
-            local frameHeight = instance.spriteSheet:getHeight() / 4 -- Height of one animation frame
+    --         local frameWidth = instance.spriteSheet:getWidth() / 3  -- Width of one animation frame
+    --         local frameHeight = instance.spriteSheet:getHeight() / 4 -- Height of one animation frame
 
-            instance.width = frameWidth
+    --         instance.width = frameWidth
+    --         instance.height = frameHeight
+    --         print(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
+
+    --         local grid = anim8.newGrid(frameWidth, frameHeight, 
+    --                                    instance.spriteSheet:getWidth(), instance.spriteSheet:getHeight())
+
+    --         instance.animations.idle = anim8.newAnimation(grid('1-3', 1), 0.30)
+    --         instance.animations.walk = anim8.newAnimation(grid('1-3', 2), 0.30)
+    --         instance.animations.death = anim8.newAnimation(grid('1-3', 4), 0.1)
+
+    --         if instance.animations.death then
+    --             instance.animations.death:onLoop(function(anim) anim:pauseAtEnd() end)
+    --         end
+
+    --         -- Set the initial animation to play
+    --         instance.currentAnimation = instance.animations.idle 
+    --         if instance.currentAnimation then
+    --             print("Enemy animations created. Default animation set to 'idle'.")
+    --         else
+    --             print("Warning: Could not set default animation 'idle'. Check animation definition.")
+    --         end
+
+    --         else
+    --             print(string.format("ERROR: Failed to load enemy spritesheet from path '%s'. Error: %s", sprite, tostring(image_or_error)))
+    --         end
+
+    --         else
+    --             print("DEBUG: No spritesheet path provided for enemy:", instance.name)
+    -- end
+
+    if instance.spriteSheet then
+        local frameWidth = instance.spriteSheet:getWidth() / 3  -- Width of one animation frame
+        local frameHeight = instance.spriteSheet:getHeight() / 4 -- Height of one animation frame
+
+        instance.width = frameWidth
             instance.height = frameHeight
             print(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
 
@@ -75,13 +110,6 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
             else
                 print("Warning: Could not set default animation 'idle'. Check animation definition.")
             end
-
-            else
-                print(string.format("ERROR: Failed to load enemy spritesheet from path '%s'. Error: %s", sprite, tostring(image_or_error)))
-            end
-
-            else
-                print("DEBUG: No spritesheet path provided for enemy:", instance.name)
     end
 
     -- Call this AFTER sprite is loaded and width/height are potentially updated
@@ -250,6 +278,13 @@ function Enemy:draw()
         love.graphics.setColor(1, 1, 1, 1) -- color reset
         -- love.graphics.pop()
         -- self.world:draw()
+
+    -- Show tracking line
+    if debugMode and self.target then
+        love.graphics.setColor(1, 0, 0)
+        love.graphics.line(self.x, self.y, self.target.x, self.target.y)
+        love.graphics.setColor(1, 1, 1)
+    end
 end
 
 -- take damage, deal damage and direction
