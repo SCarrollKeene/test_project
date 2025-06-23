@@ -6,6 +6,8 @@ local _imgCache = {}
 -- pool sparks for projecticles, better performance
 local pools = { baseSpark = {} }
 
+local MAX_POOL_SIZE = 50 -- limit particle pool
+
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)
     if not _imgCache[path] then
@@ -58,16 +60,22 @@ function Particle.getBaseSpark()
         ps:reset() -- clear particles
         ps:start() -- enable emits
         return ps
-    else
+    elseif #pools.baseSpark < MAX_POOL_SIZE then
         return Particle.baseSpark() -- use baseSpark to create ps
+    else
+        return nil -- skip particle creation if pool is full
     end
 end
 
 -- 
 function Particle.returnBaseSpark(ps)
-    ps:stop()
-    ps:reset()
-    table.insert(pools.baseSpark, ps)
+    if #pools.baseSpark < MAX_POOL_SIZE then
+        ps:stop()
+        ps:reset()
+        table.insert(pools.baseSpark, ps)
+    else
+        ps:release() -- destroy if particle pool is full
+    end
 end
 
 -- set isBurst == true when called in portal.lua

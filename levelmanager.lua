@@ -93,6 +93,8 @@ function LevelManager:loadLevel(index)
     if level.boss then
         spawnBossEnemy()
     end
+
+    projectilePool = {}
 end
 
 return LevelManager

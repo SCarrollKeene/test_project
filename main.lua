@@ -96,6 +96,14 @@ function love.keypressed(key)
     if key == "e" then
         spawnRandomEnemy()
     end
+
+    -- debug
+    if key == "f1" then  -- Stress test
+        for i=1, 100 do
+            spawnRandomEnemy(love.math.random(100, 700), love.math.random(100, 500))
+        end
+        player.weapon.fireRate = 0.01  -- Rapid fire
+    end
 end
 
 function spawnRandomEnemy(x, y)
@@ -200,6 +208,7 @@ function love.load()
     local mage_spritesheet_path = "sprites/mage-NESW.png"
     local dash_spritesheet_path = "sprites/dash.png"
     local death_spritesheet_path = "sprites/soulsplode.png"
+    Projectile.loadAssets()
     Player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
     -- Player:load(world, death_spritesheet_path)
     -- Blob:load()
@@ -403,12 +412,14 @@ end
 
 function playing:leave()
     -- stop music, clear temp tables/objects, destroy portals, etc
+     print("Walls before cleanup:", #wallColliders)
     for _, collider in ipairs(wallColliders) do
         if not collider:isDestroyed() then
         collider:destroy()
         end
     end
     wallColliders = {}
+    print("Walls after cleanup:", #wallColliders)
 
     -- clear particles
     globalParticleSystems = {}
@@ -543,6 +554,16 @@ function playing:update(dt)
         print("Culled", toRemove, "Particle systems")
     end
 
+    -- trying to make particle pool management performant
+    Projectile.updatePool(dt)
+
+    -- Reduce physics updates during stress
+    -- if love.timer.getFPS() < 30 then
+    --     world:update(dt * 0.5)  -- Half-speed physics
+    -- else
+    --     world:update(dt)
+    -- end
+
     -- if portal exists, update it
     if portal then
         portal:update(dt)
@@ -554,19 +575,19 @@ function playing:update(dt)
         if not player.isDead and button == 1 then
             sounds.blip:play()
         end
-    end
 
-    if not player.isDead and love.mouse.isDown(1) then
-        print("DEBUG: left mouse click detected")
-        local angle = math.atan2(
-            love.mouse.getY() - player.y, 
-            love.mouse.getX() - player.x
-        )
-        print("DEBUG: calculated angle: ", angle)
+        if not player.isDead and love.mouse.isDown(1) then
+            print("DEBUG: left mouse click detected")
+            local angle = math.atan2(
+                love.mouse.getY() - player.y, 
+                love.mouse.getX() - player.x
+            )
+            print("DEBUG: calculated angle: ", angle)
 
-        -- create projectiles with angle and speed
-        local newProjectile = player.weapon:shoot(world, player.x, player.y, angle, 200, player)
-        print("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
+            -- create projectiles with angle and speed
+            local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, 200, 10, player)
+            print("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
+
             if newProjectile then
                 print("Projectile created at x", newProjectile.x, "y:", newProjectile.y)
                 table.insert(projectiles, newProjectile)
@@ -574,6 +595,7 @@ function playing:update(dt)
             else
                 print("DEBUG: FAILED, returned NIL, Cooldown might be active or other issue in shoot.")
             end
+        end
     end
 
     if #projectiles == 0 then
@@ -680,10 +702,15 @@ function playing:draw()
         love.graphics.setFont(scoreFont)
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
-    love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel), 30, 50)
-    love.graphics.print("Health: " .. player.health, 30, 80)
-    love.graphics.print("Score: " .. playerScore, 30, 110)
-    love.graphics.print("Press 'e' on keyboard to spawn more enemies.", 30, 140)
+    love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel), 20, 50)
+    love.graphics.print("Health: " .. player.health, 20,80)
+    love.graphics.print("Score: " .. playerScore, 20, 110)
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
+    love.graphics.print("Active projectiles: " .. #projectiles, 20, 170)
+    love.graphics.print("Pool size: " .. Projectile.getPoolSize(), 20, 200)
+    love.graphics.print("New proj creation: " .. Projectile.getNewCreateCount(), 20, 230)
+    love.graphics.print("Particle Systems: " .. #globalParticleSystems, 20, 260)
+    love.graphics.print("Enemies: " .. #enemies, 20, 290)
 
     world:draw()
     -- for _, wall in ipairs(currentWalls) do
@@ -859,9 +886,10 @@ function safeRoom:draw()
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
-    love.graphics.print("SAFE ROOM", 30, 50)
-    love.graphics.print("Health: " .. player.health, 30,80)
-    love.graphics.print("Score: " .. playerScore, 30, 110)
+    love.graphics.print("SAFE ROOM", 20, 50)
+    love.graphics.print("Health: " .. player.health, 20,80)
+    love.graphics.print("Score: " .. playerScore, 20, 110)
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
     world:draw()
 end
 

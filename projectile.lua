@@ -6,25 +6,69 @@ local Projectile = {}
 Projectile.__index = Projectile -- points back at the table itself, is used when you set the metatable of an obj
 
 sounds = {}
-local image = love.graphics.newImage("sprites/orb_red.png")
 sounds.blip = love.audio.newSource("sounds/blip.wav", "static")
+
+Projectile.image = nil
+
+-- time to attempt adding pooling, because optimization that's why
+local pool = {}
+
+local MAX_POOL_SIZE = 50 -- limit projectile pool size, doesn't seem to be doing its job at the moment 6/22/25
+
+local cleanupTimer = 0
+
+local newCreateCount = 0
+
+function Projectile.getNewCreateCount()
+    return newCreateCount
+end
+
+function Projectile.cleanPool()
+    local inactiveCount = 0
+    local toRemove = {} -- pooled projectiles marked for removal
+
+    for i = #pool, 1, -1 do
+        if not pool[i].active then
+            inactiveCount = inactiveCount + 1
+            if inactiveCount > MAX_POOL_SIZE then
+                table.remove(toRemove, i)
+            end
+        end
+    end
+
+    -- second pass through removed marked projectiles,
+    -- removes excess inactive projs, prevents bloat under stress,
+    -- tries to maintain effeciency
+    for _, i in ipairs(toRemove) do
+        table.remove(pool, i)
+    end
+end
+
+function Projectile.updatePool(dt)
+    cleanupTimer = cleanupTimer + dt
+    if cleanupTimer >= 10 then  -- Every 10 seconds
+        Projectile.cleanPool()
+        cleanupTimer = 0
+    end
+end
 
 -- constructor function, if you wanted to create multiple projectiles with different methods/data
 function Projectile:new(world, x, y, angle, speed, radius, damage, owner)
     local self = {
+        newCreateCount = newCreateCount + 1,
         x = x,
         y = y,
         angle = angle,
         speed = speed or 300,
         radius = radius or 10,
-        width = radius * 2,
-        height = radius * 2,
+        image = Projectile.image,
+        width = 20,
+        height = 20,
         damage = damage or 10, -- store damage
         world = world,
         owner = owner, --store the owner of the shot projectile, in this case, the player
         ignoreTarget = owner,
-        orbSprite = image,
-
+        
         type = "projectile",
 
         toBeRemoved = false, -- flag to eventually remove projectiles/enemy
@@ -68,6 +112,17 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner)
     end
 
     return self
+end
+
+function Projectile.loadAssets()
+    local success, img = pcall(love.graphics.newImage, "sprites/orb_red.png")
+    if success then
+        Projectile.image = img
+        print("PROJECTILE image loaded successfully from:", img)
+    else
+        print("Projectile image error:", img)
+        Projectile.image = love.graphics.newImage(1, 1) -- 1x1 white pixel
+    end
 end
 
 function Projectile:destroySelf()
@@ -129,6 +184,13 @@ end
 
 function Projectile:load()
     -- if we needed to load sounds and images
+    -- preload projecticles at start of game
+    for i = 1, 100 do
+        local proj = Projectile:new(world, 0, 0, 0, 0, 0, nil)
+        proj.active = false
+        proj.collider:setActive(false) -- disable physics
+        table.insert(projectilePool, proj)
+    end
 end
 
 function Projectile:update(dt)
@@ -182,7 +244,73 @@ function Projectile:draw()
     -- love.graphics.setColor(1, 1, 1)
     if self.toBeRemoved then return end
 
-    love.graphics.draw(self.orbSprite, self.x - self.width / 2, self.y - self.height / 2)
+    if self.image then
+        local imgWidth = self.image:getWidth()
+        local imgHeight = self.image:getHeight()
+        love.graphics.draw(self.image, self.x - imgWidth / 2, self.y - imgHeight / 2)
+    else
+        -- Fallback: Draw debug shape
+        love.graphics.setColor(1, 0, 0)
+        love.graphics.circle("fill", self.x, self.y, 10)
+        love.graphics.setColor(1, 1, 1)
+    end 
+end
+
+function Projectile.getProjectile(world, x, y, angle, speed, damage, owner)
+    for _, p in ipairs(pool) do
+        if not p.active then
+            p:reactivate(world, x, y, angle, speed, damage, owner)
+            return p
+        end
+    end
+
+     -- Fallback: Expand pool if needed
+    local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner)
+    newProj.active = true
+    newProj:reactivate(world, x, y, angle, speed, damage, owner)
+    table.insert(pool, newProj)
+    return newProj
+end
+
+-- debug methods for optimization
+function Projectile.getPoolSize()
+    return #pool
+end
+
+function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
+    -- to turn this baby back on, its essentially just the collider table with its collider props set again
+    self.world = world
+    self.x = x
+    self.y = y
+    self.image = Projectile.image
+    self.angle = angle
+    self.speed = speed
+    self.damage = damage
+    self.owner = owner
+    self.toBeRemoved = false
+    self.active = true
+
+    if not self.collider then
+        self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 10)
+        self.collider:setFixedRotation(true)
+        self.collider:setSensor(true)
+        self.collider:setUserData(self)
+        self.collider:setCollisionClass('projectile')
+    else
+        self.collider:setPosition(x, y)
+        self.collider:setLinearVelocity(math.cos(angle) * speed, math.sin(angle) * speed)
+    end
+end
+
+function Projectile:deactivate()
+    self.active = false
+    self.toBeRemoved = true
+    if self.collider then
+        self.collider:setActive(false)
+    end
+    if self.particleTrail then
+        self.particleTrail:stop()
+    end
 end
 
 return Projectile
