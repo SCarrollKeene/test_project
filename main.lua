@@ -14,6 +14,7 @@ local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
 local SaveSystem = require("save_game_data")
+local Debug = require("game_debug")
 
 -- current run data and persistent game data
 local runData = {
@@ -101,6 +102,9 @@ function love.keypressed(key)
         love.event.quit()
     end
 
+    -- enable debug mode
+    Debug.keypressed(key)
+
     if key == "e" then
         spawnRandomEnemy()
     end
@@ -111,11 +115,6 @@ function love.keypressed(key)
             spawnRandomEnemy(love.math.random(100, 700), love.math.random(100, 500))
         end
         player.weapon.fireRate = 0.01  -- Rapid fire
-    end
-
-    -- debug
-    if key == "t" then
-        debugMode = not debugMode -- Toggle enemy tracking lines
     end
 
     if Gamestate.current() == safeRoom then
@@ -440,6 +439,10 @@ function playing:leave()
         if enemy.collider then enemy.collider:destroy() end
     end
 
+    projectiles = {} -- clear projectiles table
+
+    -- need to destroy any remaining projectile colliders on :leave()
+
     -- destroy current remaining portal
     if portal then
         portal:destroy();
@@ -694,6 +697,9 @@ function playing:draw()
     --     end
     -- end
 
+    Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
+    Debug.drawEnemyTracking(enemies, player)
+
     love.graphics.setBlendMode("add") -- for visibility
     -- draw particles systems last after other entities
     for _, ps in ipairs(globalParticleSystems) do
@@ -716,17 +722,10 @@ function playing:draw()
     love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel), 20, 50)
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
-    love.graphics.print("Active projectiles: " .. #projectiles, 20, 170)
-    love.graphics.print("Pool size: " .. Projectile.getPoolSize(), 20, 200)
-    love.graphics.print("New proj creation: " .. Projectile.getNewCreateCount(), 20, 230)
-    love.graphics.print("Particle Systems: " .. #globalParticleSystems, 20, 260)
-    love.graphics.print("Enemies: " .. #enemies, 20, 290)
-    love.graphics.print(string.format("Next cleanup in: %.1f", math.max(0, 10 - Projectile.getCleanUpTimer())), 20, 320)
-    world:draw()
     -- for _, wall in ipairs(currentWalls) do
     --     love.graphics.rectangle("line", wall:getX(), wall:getY(), wall:getWidth(), wall:getHeight())
     -- end
+    Debug.drawCollisions(world)
 end
 
 function safeRoom:enter()
@@ -753,6 +752,15 @@ function safeRoom:enter()
     if not player.collider then
         player:load(world)  
     end
+
+    -- need to check if projectile collider exists, if not, recreate it
+    -- need to also make sure that remaining projectile colliders are destroyed on :leave()
+    -- if not projectile.collider then
+    --     -- Recreate projectile collider if missing
+    --     Projectile.loadAssets() -- Ensure assets are loaded before creating projectiles
+    --     Projectile.createCollider(world, player.x, player.y) -- Create a new collider for the projectile
+    -- end
+
     -- need to check for, update and draw projectiles again
 
     -- create store/shop logic
@@ -900,14 +908,15 @@ function safeRoom:draw()
         love.graphics.setColor(1, 1, 1, 1)
     end
 
+    Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
+
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
     love.graphics.print("SAFE ROOM", 20, 50)
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
-    world:draw()
+    Debug.drawCollisions(world)
 end
 
 -- refactor some of this code eventually TODO: add level manager

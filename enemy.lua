@@ -280,11 +280,11 @@ function Enemy:draw()
         -- self.world:draw()
 
     -- Show tracking line
-    if debugMode and self.target then
-        love.graphics.setColor(1, 0, 0)
-        love.graphics.line(self.x, self.y, self.target.x, self.target.y)
-        love.graphics.setColor(1, 1, 1)
-    end
+    -- if debugMode and self.target then
+    --     love.graphics.setColor(1, 0, 0)
+    --     love.graphics.line(self.x, self.y, self.target.x, self.target.y)
+    --     love.graphics.setColor(1, 1, 1)
+    -- end
 end
 
 -- take damage, deal damage and direction
