@@ -125,15 +125,19 @@ function Loading:draw()
     local x = (love.graphics.getWidth() - barWidth) / 2
     local y = love.graphics.getHeight() * 0.7
     
+    -- BG, dark gray
     love.graphics.setColor(0.3, 0.3, 0.3)
     love.graphics.rectangle("fill", x, y, barWidth, barHeight)
     
-    love.graphics.setColor(0.1, 0.8, 0.1)
+    -- Progress bar, bright teal, 3.51 contrast on current BG
+    love.graphics.setColor(0, 0.7, 0.7)
     love.graphics.rectangle("fill", x, y, barWidth * progress, barHeight)
     
+    -- Border, white
     love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle("line", x, y, barWidth, barHeight)
     
+    -- Text, white
     love.graphics.printf("Loading: " .. math.floor(progress * 100) .. "%", 
         x, y - 30, barWidth, "center")
 end

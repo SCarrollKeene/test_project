@@ -125,7 +125,7 @@ end
 
 function spawnRandomEnemy(x, y, cache)
     local state = Gamestate.current()
-    local enemyCache = cache or state.enemyImageCache or {} -- Use the current state's enemy image mapCache
+    local enemyCache = cache or state.enemyImageCache or {} -- Use the current state's enemy image cache, not global
 
     -- 6/20/25 no spawning in safe rooms!
     if Gamestate.current() == safeRoom then return end
