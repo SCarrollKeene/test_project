@@ -85,31 +85,31 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
     -- end
 
     if instance.spriteSheet then
-        local frameWidth = instance.spriteSheet:getWidth() / 3  -- Width of one animation frame
+        local frameWidth = instance.spriteSheet:getWidth() / 3 -- Width of one animation frame
         local frameHeight = instance.spriteSheet:getHeight() / 4 -- Height of one animation frame
 
         instance.width = frameWidth
-            instance.height = frameHeight
-            print(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
+        instance.height = frameHeight
+        print(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
 
-            local grid = anim8.newGrid(frameWidth, frameHeight, 
-                                       instance.spriteSheet:getWidth(), instance.spriteSheet:getHeight())
+        local grid = anim8.newGrid(frameWidth, frameHeight,
+        instance.spriteSheet:getWidth(), instance.spriteSheet:getHeight())
 
-            instance.animations.idle = anim8.newAnimation(grid('1-3', 1), 0.30)
-            instance.animations.walk = anim8.newAnimation(grid('1-3', 2), 0.30)
-            instance.animations.death = anim8.newAnimation(grid('1-3', 4), 0.1)
+        instance.animations.idle = anim8.newAnimation(grid('1-3', 1), 0.30)
+        instance.animations.walk = anim8.newAnimation(grid('1-3', 2), 0.30)
+        instance.animations.death = anim8.newAnimation(grid('1-3', 4), 0.1)
 
-            if instance.animations.death then
-                instance.animations.death:onLoop(function(anim) anim:pauseAtEnd() end)
-            end
+        if instance.animations.death then
+            instance.animations.death:onLoop(function(anim) anim:pauseAtEnd() end)
+        end
 
-            -- Set the initial animation to play
-            instance.currentAnimation = instance.animations.idle 
-            if instance.currentAnimation then
-                print("Enemy animations created. Default animation set to 'idle'.")
-            else
-                print("Warning: Could not set default animation 'idle'. Check animation definition.")
-            end
+        -- Set the initial animation to play
+        instance.currentAnimation = instance.animations.idle
+        if instance.currentAnimation then
+            print("Enemy animations created. Default animation set to 'idle'.")
+        else
+            print("Warning: Could not set default animation 'idle'. Check animation definition.")
+        end
     end
 
     -- Call this AFTER sprite is loaded and width/height are potentially updated
@@ -241,7 +241,9 @@ function Enemy:update(dt)
     self.x = cur_x
     self.y = cur_y
 
-    self.currentAnimation:update(dt)
+    if self.currentAnimation and self.currentAnimation.update then
+        self.currentAnimation:update(dt)
+    end
 end
 
 --  function Enemy:move(dt)

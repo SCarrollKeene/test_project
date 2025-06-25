@@ -9,6 +9,7 @@ local Map = require("map")
 local Walls = require("walls")
 local MapLoader = require("maploader")
 local LevelManager = require("levelmanager")
+local Loading = require("loading")
 local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
@@ -122,7 +123,10 @@ function love.keypressed(key)
     end
 end
 
-function spawnRandomEnemy(x, y)
+function spawnRandomEnemy(x, y, cache)
+    local state = Gamestate.current()
+    local enemyCache = cache or state.enemyImageCache or {} -- Use the current state's enemy image mapCache
+
     -- 6/20/25 no spawning in safe rooms!
     if Gamestate.current() == safeRoom then return end
 
@@ -138,10 +142,15 @@ function spawnRandomEnemy(x, y)
     local spawnX = x or love.math.random(enemy_width, love.graphics.getWidth() or 800 - enemy_width)
     local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight()or 600 - enemy_height)
 
+    local img = enemyCache[randomBlob.spritePath]
+    if not img then
+        print("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
+    end
+
     -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
     local newEnemy = Enemy:new(
         world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
-        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, enemyImageCache[randomBlob.spritePath])
+        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, img)
 
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
@@ -210,38 +219,6 @@ function love.load()
     Player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
     -- Player:load(world, death_spritesheet_path)
 
-     -- Preload blob and all other enemy types
-    enemyImageCache = {}
-    for _, blob in ipairs(randomBlobs) do
-        local success, img = pcall(love.graphics.newImage, blob.spritePath)
-        if success then
-            enemyImageCache[blob.spritePath] = img
-        else
-            print("Failed to load enemy image: " .. blob.spritePath)
-            -- Fallback: 1x1 white pixel
-            enemyImageCache[blob.spritePath] = love.graphics.newImage(1, 1)
-        end
-    end
-
-    -- Create sprite batches and dynamic batch sizing for enemy sprites
-    -- 6/23/25 TODO: make this dynamic, so that it can handle more than 3 enemy types
-    -- ALSO FAILED at implementing dynamic sprite batch creation, so I hardcoded the enemyBatches table
-    enemyBatches = {
-        love.graphics.newSpriteBatch(enemyImageCache["sprites/slime_black.png"], 100),
-        love.graphics.newSpriteBatch(enemyImageCache["sprites/slime_blue.png"], 100),
-        love.graphics.newSpriteBatch(enemyImageCache["sprites/slime_violet.png"], 100)
-    }
-    -- enemyBatches = {}
-    -- for i, blob in ipairs(randomBlobs) do
-    --     local img = enemyImageCache[blob.spritePath]
-    --     if img then
-    --         enemyBatches[i] = love.graphics.newSpriteBatch(img, 100)
-    --     else
-    --         print("WARNING: Image not found for", blob.spritePath)
-    --         enemyBatches[i] = love.graphics.newSpriteBatch(love.graphics.newImage(1,1), 100)
-    --     end
-    -- end
-
     function beginContact(a, b, coll)
         local dataA = a:getUserData() -- both Should be the projectile/enemy data
         local dataB = b:getUserData() -- based on the collision check if statement below
@@ -291,10 +268,12 @@ function love.load()
                 portal_obj.sounds.portal:play()
                 if Gamestate.current() == playing then
                     nextState = safeRoom
+                    nextStateParams = {world, enemyImageCache, mapCache} -- pass saferooms cache, may rename this enemyImageCache variable later on
                 elseif Gamestate.current() == safeRoom then
                     -- LevelManager:loadLevel(LevelManager.currentLevel + 1)
                     LevelManager.currentLevel = LevelManager.currentLevel + 1
-                    nextState = playing
+                    nextState = Loading -- switch to loading screen before loading next level
+                    nextStateParams = {world, playing, randomBlobs} -- randomBlobs = enemy types
                 end
 
                 pendingRoomTransition = true
@@ -387,13 +366,17 @@ function love.load()
     --     end
     -- })
     Gamestate.registerEvents()
-    Gamestate.switch(playing)
+    Gamestate.switch(Loading, world, playing, randomBlobs)
 end
 
 -- Entering playing gamestate
-function playing:enter()
+function playing:enter(previous_state, world, enemyImageCache, mapCache)
     print("Entered playing gamestate")
-    LevelManager:loadLevel(LevelManager.currentLevel)
+    self.world = world
+    self.enemyImageCache = enemyImageCache
+    self.mapCache = mapCache
+
+    LevelManager:loadLevel(LevelManager.currentLevel, enemyImageCache)
 
     -- DEFER level loading to next frame
     --vself.pendingLevelLoad = LevelManager.currentLevel
@@ -418,6 +401,14 @@ function playing:enter()
     -- if #enemies == 0 then
     --     spawnRandomEnemy()
     -- end
+
+    -- Reload enemy animations
+    for i, enemy in ipairs(enemies) do
+        if enemy.spriteSheet then
+            enemy.currentAnimation = enemy.animations.idle
+            -- enemy.currentAnimation:reset()
+        end
+    end
 end
 
 function playing:leave()
@@ -496,7 +487,7 @@ function playing:update(dt)
             fadeAlpha = 1
             if fadeHoldTimer >= fadeHoldDuration then
                 -- Hold complete, switch state and start fade in
-                Gamestate.switch(nextState)
+                Gamestate.switch(nextState, unpack(nextStateParams))
                 fadeDirection = -1
                 fadeTimer = 0
             end
@@ -728,7 +719,11 @@ function playing:draw()
     Debug.drawCollisions(world)
 end
 
-function safeRoom:enter()
+function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
+    self.world = world
+    self.enemyImageCache = enemyImageCache
+    self.mapCache = mapCache
+
     print("Entering safe room")
 
     -- passing in its map and walls, which is world, because of colliders
@@ -838,7 +833,7 @@ function safeRoom:update(dt)
             fadeAlpha = 1
             if fadeHoldTimer >= fadeHoldDuration then
                 -- Hold complete, switch state and start fade in
-                Gamestate.switch(nextState)
+                Gamestate.switch(nextState, unpack(nextStateParams))
                 fadeDirection = -1
                 fadeTimer = 0
             end

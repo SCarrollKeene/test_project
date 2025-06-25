@@ -19,11 +19,11 @@ local LevelManager = {
             enemies = 5, 
             boss = false,
             spawns = {
-            -- { x = 800, y = 200 },
-            -- { x = 700, y = 300 },
-            -- { x = 600, y = 400 },
-            -- { x = 550, y = 450 },
-            -- { x = 450, y = 550 }
+                { x = 800, y = 200 },
+                { x = 700, y = 300 },
+                { x = 600, y = 400 },
+                { x = 550, y = 450 },
+                { x = 450, y = 550 }
             } 
         },
         { 
@@ -78,9 +78,10 @@ function LevelManager:loadLevel(index)
 
     -- initialize from spawns table in levels or an empty table if a spawns table is missing
     local spawns = level.spawns or {}
+
     -- Spawn enemies using level-specific positions
     for _, spawnPos in ipairs(spawns) do
-        spawnRandomEnemy(spawnPos.x, spawnPos.y) -- Fixed positions
+        spawnRandomEnemy(spawnPos.x, spawnPos.y, enemyImageCache) -- Fixed positions
     end
     
     -- Spawn remaining enemies randomly (enemies in a level - index of spawns (ex: room1 has 3 enemies, 3 spawn points))
@@ -95,6 +96,16 @@ function LevelManager:loadLevel(index)
     end
 
     projectilePool = {}
+
+    -- Reset existing enemies
+    for i, enemy in ipairs(enemies) do
+        if enemy.spriteSheet and enemy.animations then
+            enemy.currentAnimation = enemy.animations.idle
+            if enemy.currentAnimation then
+                enemy.currentAnimation:reset()
+            end
+        end
+    end
 end
 
 return LevelManager
