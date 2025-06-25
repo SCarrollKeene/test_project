@@ -140,6 +140,7 @@ function spawnRandomEnemy(x, y, cache)
     local img = enemyCache[randomBlob.spritePath]
      if not img then
         print("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
+        return -- Exit if image is missing
     end
 
     -- BEGIN POOL logic
@@ -419,6 +420,15 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
 
     self.projectileBatch = love.graphics.newSpriteBatch(Projectile.image, 1000)  -- 1000 = initial capacity
 
+     -- Initialize enemy batches for current enemy file
+    self.enemyBatches = {}
+    
+    for _, blob in ipairs(randomBlobs) do
+        local img = enemyImageCache[blob.spritePath]
+        if img then
+            self.enemyBatches[img] = love.graphics.newSpriteBatch(img, 200) -- 200 = initial capacity
+        end
+    end
 
     -- reset for each new Room
     runData.cleared = false
@@ -442,11 +452,39 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     -- end
 
     -- Reload enemy animations
-    for i, enemy in ipairs(enemies) do
-        if enemy.spriteSheet then
-            enemy.currentAnimation = enemy.animations.idle
-            -- enemy.currentAnimation:reset()
+    -- for i, enemy in ipairs(enemies) do
+    --     if enemy.spriteSheet then
+    --         enemy.currentAnimation = enemy.animations.idle
+    --         -- enemy.currentAnimation:reset()
+    --     end
+    -- end
+
+     -- Enemy batching
+    for _, batch in pairs(self.enemyBatches) do
+        batch:clear()
+    end
+    
+    local toDrawIndividually = {}
+
+    for _, enemy in ipairs(enemies) do
+        if not enemy.toBeRemoved and enemy.spriteSheet then
+            if enemy.currentAnimation and enemy.currentAnimation.getFrame then
+                local quad = enemy.currentAnimation:getFrame()
+                -- ... add to batch
+            else
+                print("WARN: Missing animation for enemy", enemy.name)
+            end
         end
+    end
+    
+    -- Draw batched enemies
+    for _, batch in pairs(self.enemyBatches) do
+        love.graphics.draw(batch)
+    end
+    
+    -- Draw individual enemies (flashing or fallback)
+    for _, enemy in ipairs(toDrawIndividually) do
+        enemy:draw()
     end
 end
 
@@ -732,6 +770,10 @@ function playing:draw()
     love.graphics.draw(self.projectileBatch)
     print("Projectiles in batch:", self.projectileBatch:getCount())
 
+    -- Enemy rendering
+    for _, batch in pairs(self.enemyBatches) do
+        batch:clear()
+    end
 
     -- draw portal
     if portal then

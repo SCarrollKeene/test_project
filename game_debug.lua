@@ -25,7 +25,17 @@ function Debug.draw(projectiles, enemies, globalParticleSystems, projectileBatch
     -- Projectile batch info
     local batchActive = projectileBatch and "YES" or "NO"
     love.graphics.print("Projectile Batch Active: " .. batchActive, 20, 410)
-    love.graphics.print("Draw Calls: " .. love.graphics.getStats().drawcalls, 20, 440)
+     local batched = 0
+    local individual = 0
+    for _, enemy in ipairs(enemies) do
+        if not enemy.toBeRemoved then
+            if enemy.isFlashing then individual = individual + 1
+            else batched = batched + 1 end
+        end
+    end
+    love.graphics.print("Batched Enemies: " .. batched, 20, 440)
+    love.graphics.print("Individual Enemies: " .. individual, 20, 470)
+    love.graphics.print("Draw Calls: " .. love.graphics.getStats().drawcalls, 20, 500)
 
      -- Show reuse stats
     local deadCount = 0

@@ -136,10 +136,13 @@ function Enemy:reset(x, y, blob, img)
     self.toBeRemoved = false
 
      -- Reinitialize animations safely
-    if self.spriteSheet then
-        local frameWidth = self.spriteSheet:getWidth() / 3
-        local frameHeight = self.spriteSheet:getHeight() / 4
-        local grid = anim8.newGrid(frameWidth, frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
+    if img then  -- Use the new img parameter instead of self.spriteSheet
+        self.spriteSheet = img
+        local frameWidth = math.floor(self.spriteSheet:getWidth() / 3)
+        local frameHeight = math.floor(self.spriteSheet:getHeight() / 4)
+        local grid = anim8.newGrid(frameWidth, frameHeight, 
+                                  self.spriteSheet:getWidth(), 
+                                  self.spriteSheet:getHeight())
         
         self.animations = {
             idle = anim8.newAnimation(grid('1-3', 1), 0.30),
@@ -147,16 +150,14 @@ function Enemy:reset(x, y, blob, img)
             death = anim8.newAnimation(grid('1-3', 4), 0.1)
         }
         
-        -- reset animations
         if self.animations.death then
             self.animations.death:onLoop(function(anim) anim:pauseAtEnd() end)
         end
         
         self.currentAnimation = self.animations.idle
-        if self.currentAnimation then
-            self.currentAnimation:resume()
-        end
+        -- call new animations start at frame 1
     else
+        print("[ENEMY:RESET] No image provided for: " .. self.name)
         self.animations = {}
         self.currentAnimation = nil
     end
@@ -313,10 +314,16 @@ function Enemy:draw()
         if self.isFlashing then
         love.graphics.setShader(flashShader)
             flashShader:send("WhiteFactor", 1.0)
-        else
-            love.graphics.setShader()
         end
+        -- Draw normally (batched or individual)
+        self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+        
+        if self.isFlashing then
+            love.graphics.setShader()  -- Reset shader after flashing
+        end
+
         love.graphics.setColor(1,1,1,1) -- Ensure sprite is drawn with full color
+
         -- Draw centered: self.x, self.y are center; anim8 draws from top-left by default
         -- So, we need to offset by half the frame width/height.
         -- self.width and self.height should be the frame dimensions.
