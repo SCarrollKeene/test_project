@@ -47,8 +47,8 @@ local gameOver = {}
 
 local projectiles = {}
 local player = Player -- create new player instance, change player.lua to a constructor pattern if you want multiple players
--- local world = wf.newWorld(0, 0) -- where physics objects exist, maybe move to love.load later, still learning how this connects everything
--- local worldCollider = world:newRectangleCollider(350, 100, 80, 80)
+
+-- local enemyPool = {} -- time to attempt enemy pooling
 
 local enemies = {} -- enemies table to house all active enemies
 
@@ -124,17 +124,36 @@ function love.keypressed(key)
 end
 
 function spawnRandomEnemy(x, y, cache)
+    print("[SPAWNRANDOMENEMY POOL] Total enemies:", #enemyPool) -- debug preloaded pool status
     local state = Gamestate.current()
-    local enemyCache = cache or state.enemyImageCache or {} -- Use the current state's enemy image cache, not global
 
     -- 6/20/25 no spawning in safe rooms!
-    if Gamestate.current() == safeRoom then return end
+    if state == safeRoom then return end
 
-    -- CONCEPT 6/3/25, UPDATE 6/3/25 IT WORKS, had to google some things lol
+    local enemyCache = cache or (state and state.enemyImageCache) or {} -- Use the current state's enemy image cache, not global
 
     -- Pick a random enemy type from the randomBlobs configuration table
     local randomIndex = math.random(1, #randomBlobs) -- picks a random index between 1-3
     local randomBlob = randomBlobs[randomIndex] -- returns a random blob from the table
+
+    -- Check if the image is already cached
+    local img = enemyCache[randomBlob.spritePath]
+
+    -- BEGIN POOL logic
+    -- Try to reuse from pool
+    for i, e in ipairs(enemyPool) do
+        if e.isDead then
+            e:reset(x or love.math.random(32, love.graphics.getWidth() - 32),
+                    y or love.math.random(32, love.graphics.getHeight() - 32),
+                    randomBlob, img)
+            e:setTarget(player)
+            e.isDead = false
+            e.toBeRemoved = false
+            table.insert(enemies, e)
+            return
+        end
+    end
+    -- END POOL LOGIC
 
     -- Get random position within screen bounds
     -- minimum width and height from enemy to be used in calculating random x/y spawn points
@@ -142,11 +161,11 @@ function spawnRandomEnemy(x, y, cache)
     local spawnX = x or love.math.random(enemy_width, love.graphics.getWidth() or 800 - enemy_width)
     local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight()or 600 - enemy_height)
 
-    local img = enemyCache[randomBlob.spritePath]
     if not img then
         print("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
     end
 
+    -- IF no pool THEN create new enemy instance
     -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
     local newEnemy = Enemy:new(
         world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
@@ -181,6 +200,7 @@ function love.load()
     world = wf.newWorld(0, 0)
     -- initialize first
     wallColliders = {}
+    enemyPool = {} -- initialize enemy pool, again?
     -- load player save data
     -- TODO: implement save game and load game logic later on 6/20/25
     -- local save = SaveSystem.loadGame()
@@ -351,6 +371,13 @@ function love.load()
     end
 
     world:setCallbacks(beginContact, nil, nil, nil) -- We only need beginContact for this
+
+    -- Preload 100 enemies into enemy pool
+    for i = 1, 100 do
+        local e = Enemy:new(world, "Preloaded", 0, 0, 32, 32, nil, nil, 100, 50, 10, nil)
+        e.isDead = true -- Mark as reusable
+        table.insert(enemyPool, e)
+    end
 
     -- sounds = {}
     -- sounds.music = love.audio.newSource("sounds/trance_battle_bpm140.mp3", "stream")

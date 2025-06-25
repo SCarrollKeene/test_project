@@ -22,7 +22,15 @@ function Debug.draw(projectiles, enemies, globalParticleSystems)
     love.graphics.print("New proj creation: " .. Projectile.getNewCreateCount(), 20, 230)
     love.graphics.print("Particle Systems: " .. #globalParticleSystems, 20, 260)
     love.graphics.print("Enemies: " .. #enemies, 20, 290)
-    love.graphics.print(string.format("Next cleanup in: %.1f", math.max(0, 10 - Projectile.getCleanUpTimer())), 20, 320)
+    love.graphics.print("Enemy pool size: " .. #enemyPool, 20, 320)
+    love.graphics.print(string.format("Next cleanup in: %.1f", math.max(0, 10 - Projectile.getCleanUpTimer())), 20, 350)
+
+     -- Show reuse stats
+    local deadCount = 0
+    for _, e in ipairs(enemyPool) do
+        if e.isDead then deadCount = deadCount + 1 end
+    end
+    love.graphics.print("Reusable enemies: " .. deadCount, 20, 380)
 end
 
 -- supposed to draw all collisions in the world, but its not working as intended

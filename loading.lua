@@ -116,6 +116,7 @@ function Loading:loadNextAsset()
         end
         self.loaded = self.loaded + #assets.maps
     end
+    print("[LOADING] loading asset: ", assets)
 end
 
 function Loading:draw()

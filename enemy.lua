@@ -125,6 +125,55 @@ end
 -- Obstacle collision and avoidance, bump.lua
 -- Line of Sight (LOS), navigate around obstacles, check for walls/gaps, example: MP_potential_step (like in Gamemaker) or tile based pathfinding
 
+function Enemy:reset(x, y, blob, img)
+    self.x = x
+    self.y = y
+    self.health = blob.health
+    self.speed = blob.speed
+    self.baseDamage = blob.baseDamage
+    self.spriteSheet = img
+    self.isDead = false
+    self.toBeRemoved = false
+
+     -- Reinitialize animations safely
+    if self.spriteSheet then
+        local frameWidth = self.spriteSheet:getWidth() / 3
+        local frameHeight = self.spriteSheet:getHeight() / 4
+        local grid = anim8.newGrid(frameWidth, frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
+        
+        self.animations = {
+            idle = anim8.newAnimation(grid('1-3', 1), 0.30),
+            walk = anim8.newAnimation(grid('1-3', 2), 0.30),
+            death = anim8.newAnimation(grid('1-3', 4), 0.1)
+        }
+        
+        -- reset animations
+        if self.animations.death then
+            self.animations.death:onLoop(function(anim) anim:pauseAtEnd() end)
+        end
+        
+        self.currentAnimation = self.animations.idle
+        if self.currentAnimation then
+            self.currentAnimation:resume()
+        end
+    else
+        self.animations = {}
+        self.currentAnimation = nil
+    end
+
+    -- Reinitialize collider
+    if not self.collider then
+        self:load()
+    else
+        self.collider:setPosition(x, y)
+        self.collider:setActive(true)
+    end
+end
+
+-- function Enemy.getEnemyPool()
+--     return #enemyPool -- Return the enemy pool, or an empty table if not set
+-- end
+
 function Enemy:load()
     local colliderHeight = self.height * 0.8 -- used to reduce blob collider height
     local colliderWidth = self.width * 0.7
