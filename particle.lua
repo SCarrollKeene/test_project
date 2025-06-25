@@ -6,7 +6,7 @@ local _imgCache = {}
 -- pool sparks for projecticles, better performance
 local pools = { baseSpark = {} }
 
-local MAX_POOL_SIZE = 50 -- limit particle pool
+local MAX_POOL_SIZE = 40 -- limit particle pool
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)

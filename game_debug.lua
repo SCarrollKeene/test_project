@@ -12,18 +12,20 @@ function Debug.keypressed(key)
     end
 end
 
-function Debug.draw(projectiles, enemies, globalParticleSystems)
+function Debug.draw(projectiles, enemies, globalParticleSystems, projectileBatch)
     if not Debug.mode then return end
-
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
     love.graphics.print("Active projectiles: " .. #projectiles, 20, 170)
-    love.graphics.print("Pool size: " .. Projectile.getPoolSize(), 20, 200)
+    love.graphics.print("Projectile pool size: " .. Projectile.getPoolSize(), 20, 200)
     love.graphics.print("New proj creation: " .. Projectile.getNewCreateCount(), 20, 230)
     love.graphics.print("Particle Systems: " .. #globalParticleSystems, 20, 260)
     love.graphics.print("Enemies: " .. #enemies, 20, 290)
     love.graphics.print("Enemy pool size: " .. #enemyPool, 20, 320)
     love.graphics.print(string.format("Next cleanup in: %.1f", math.max(0, 10 - Projectile.getCleanUpTimer())), 20, 350)
+    -- Projectile batch info
+    local batchActive = projectileBatch and "YES" or "NO"
+    love.graphics.print("Projectile Batch Active: " .. batchActive, 20, 410)
+    love.graphics.print("Draw Calls: " .. love.graphics.getStats().drawcalls, 20, 440)
 
      -- Show reuse stats
     local deadCount = 0

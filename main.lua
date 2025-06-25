@@ -174,7 +174,9 @@ function spawnRandomEnemy(x, y, cache)
     newEnemy:setTarget(player)
 
     -- add newEnemy into enemies table
-        table.insert(enemies, newEnemy)
+    table.insert(enemies, newEnemy)
+    -- add newly created enemies into the pool as well
+    table.insert(enemyPool, newEnemy)
 
     newEnemy.spriteIndex = randomIndex -- Store sprite index for rendering
 
@@ -199,7 +201,8 @@ function love.load()
     world = wf.newWorld(0, 0)
     -- initialize first
     wallColliders = {}
-    enemyPool = {} -- initialize enemy pool, again?
+    enemyPool = {} -- initialize enemy pool
+
     -- load player save data
     -- TODO: implement save game and load game logic later on 6/20/25
     -- local save = SaveSystem.loadGame()
@@ -379,6 +382,14 @@ function love.load()
         e.isDead = true -- Mark as reusable
         table.insert(enemyPool, e)
     end
+    
+    -- Preload 100 projectiles into the correct pool
+    -- for i = 1, 100 do
+    --     local proj = Projectile:new(world, 0, 0, 0, 0, 0, nil)
+    --     proj.active = true -- make preloaded projectiles active
+    --     proj.collider:setActive(false)
+    -- table.insert(Projectile.pool, proj)
+    -- end
 
     -- sounds = {}
     -- sounds.music = love.audio.newSource("sounds/trance_battle_bpm140.mp3", "stream")
@@ -406,8 +417,8 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
 
     LevelManager:loadLevel(LevelManager.currentLevel, enemyImageCache)
 
-    -- DEFER level loading to next frame
-    --vself.pendingLevelLoad = LevelManager.currentLevel
+    self.projectileBatch = love.graphics.newSpriteBatch(Projectile.image, 1000)  -- 1000 = initial capacity
+
 
     -- reset for each new Room
     runData.cleared = false
@@ -694,6 +705,7 @@ function playing:draw()
         player:draw()
     end
 
+    -- draw enemies
     for _, enemy in ipairs(enemies) do
         if not enemy.toBeRemoved then
             enemy:draw()
@@ -701,9 +713,25 @@ function playing:draw()
     end
 
     -- check to draw shot projectiles
+    -- for _, p in ipairs(projectiles) do
+    --     p:draw()
+    -- end
+
+    -- draw projectiles using sprite batch for performance
+
+    -- Projectile batching
+    self.projectileBatch:clear()
     for _, p in ipairs(projectiles) do
-        p:draw()
+        -- Verify position is numeric
+        if type(p.x) == "number" and type(p.y) == "number" then
+            self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
+        else
+            print("WARN: Invalid projectile position", p.x, p.y)
+        end
     end
+    love.graphics.draw(self.projectileBatch)
+    print("Projectiles in batch:", self.projectileBatch:getCount())
+
 
     -- draw portal
     if portal then
@@ -716,7 +744,7 @@ function playing:draw()
     --     end
     -- end
 
-    Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
+    Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize) -- Draws debug overlay
     Debug.drawEnemyTracking(enemies, player)
 
     love.graphics.setBlendMode("add") -- for visibility
@@ -741,6 +769,7 @@ function playing:draw()
     love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel), 20, 50)
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
     -- for _, wall in ipairs(currentWalls) do
     --     love.graphics.rectangle("line", wall:getX(), wall:getY(), wall:getWidth(), wall:getHeight())
     -- end
@@ -939,6 +968,7 @@ function safeRoom:draw()
     love.graphics.print("SAFE ROOM", 20, 50)
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
     Debug.drawCollisions(world)
 end
 

@@ -12,8 +12,9 @@ Projectile.image = nil
 
 -- time to attempt adding pooling, because optimization that's why
 local pool = {}
+Projectile.pool = pool -- expose the pool table for external access
 
-local MAX_POOL_SIZE = 50 -- limit projectile pool size, doesn't seem to be doing its job at the moment, jk it might be 6/22/25
+local MAX_POOL_SIZE = 60 -- limit projectile pool size, doesn't seem to be doing its job at the moment, jk it might be 6/22/25
 
 local cleanupTimer = 0
 
@@ -191,16 +192,18 @@ function Projectile:onHitEnemy(enemy_target)
     end
 end
 
-function Projectile:load()
-    -- if we needed to load sounds and images
-    -- preload projecticles at start of game
-    for i = 1, 100 do
-        local proj = Projectile:new(world, 0, 0, 0, 0, 0, nil)
-        proj.active = false
-        proj.collider:setActive(false) -- disable physics
-        table.insert(projectilePool, proj)
-    end
-end
+-- function Projectile:load()
+
+-- end
+
+-- function Projectile.preload(count)
+--     for i = 1, count do
+--         local proj = Projectile:new(0, 0, 0, 0, 0, nil)
+--         proj.active = false
+--         proj.collider:setActive(false)
+--         table.insert(pool, proj)
+--     end
+-- end
 
 function Projectile:update(dt)
     print("Projectile:updated(dt) triggered")
