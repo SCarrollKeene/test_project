@@ -68,10 +68,10 @@ end
 
 function Loading:calculateTotalAssets()
     local count = 0
-    for _, category in pairs(assets) do
-        count = count + #category
-    end
-    return count
+    -- for _, category in pairs(assets) do
+    --     count = count + #category
+    -- end
+    -- return count
 end
 
 function Loading:update(dt)
