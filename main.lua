@@ -124,7 +124,7 @@ function love.keypressed(key)
 end
 
 function spawnRandomEnemy(x, y, cache)
-    print("[SPAWNRANDOMENEMY POOL] Total enemies:", #enemyPool) -- debug preloaded pool status
+    print("[FROM SPAWNRANDOMENEMY POOL] Total enemies:", #enemyPool) -- debug preloaded pool status
     local state = Gamestate.current()
 
     -- 6/20/25 no spawning in safe rooms!
@@ -138,6 +138,9 @@ function spawnRandomEnemy(x, y, cache)
 
     -- Check if the image is already cached
     local img = enemyCache[randomBlob.spritePath]
+     if not img then
+        print("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
+    end
 
     -- BEGIN POOL logic
     -- Try to reuse from pool
@@ -160,10 +163,6 @@ function spawnRandomEnemy(x, y, cache)
     local enemy_width, enemy_height = 32, 32  -- Default, or use actual frame size
     local spawnX = x or love.math.random(enemy_width, love.graphics.getWidth() or 800 - enemy_width)
     local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight()or 600 - enemy_height)
-
-    if not img then
-        print("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
-    end
 
     -- IF no pool THEN create new enemy instance
     -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
@@ -374,7 +373,9 @@ function love.load()
 
     -- Preload 100 enemies into enemy pool
     for i = 1, 100 do
-        local e = Enemy:new(world, "Preloaded", 0, 0, 32, 32, nil, nil, 100, 50, 10, nil)
+        local randomIndex = math.random(1, #randomBlobs) -- Pick a random blob type
+        local randomBlob = randomBlobs[randomIndex] -- Get a random blob configuration
+        local e = Enemy:new(world, randomBlob.name, 0, 0, 32, 32, nil, nil, 100, 50, 10, nil)
         e.isDead = true -- Mark as reusable
         table.insert(enemyPool, e)
     end

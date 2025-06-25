@@ -165,6 +165,12 @@ function Enemy:reset(x, y, blob, img)
     if not self.collider then
         self:load()
     else
+        -- Calculate centered position like in Enemy:load()
+        -- local colliderHeight = self.height * 0.8
+        -- local colliderWidth = self.width * 0.7
+        -- local centerX = x + (self.width - colliderWidth)/2
+        -- local centerY = y + (self.height - colliderHeight)/2
+        -- self.collider:setPosition(centerX, centerY)
         self.collider:setPosition(x, y)
         self.collider:setActive(true)
     end
@@ -231,7 +237,7 @@ function Enemy:update(dt)
         self.currentAnimation:update(dt)
     end
 
-    print("DEBUG: Enemy:update - Self name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
+    print("DEBUG: Enemy:update: " .. "Name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
 
     local isMoving = false
     -- AI: Decide movement direction/velocity
