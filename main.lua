@@ -13,6 +13,7 @@ local Loading = require("loading")
 local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
+local flashShader = require("libraries/flashshader")
 local Gamestate = require("libraries/hump/gamestate")
 local SaveSystem = require("save_game_data")
 local Debug = require("game_debug")
@@ -463,16 +464,24 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     for _, batch in pairs(self.enemyBatches) do
         batch:clear()
     end
-    
-    local toDrawIndividually = {}
+
+    local toDrawIndividually = {} -- Table to hold enemies that need to be drawn individually (flashing or fallback)
+
+    local individualCount = #toDrawIndividually
+    print("[DRAW DEBUG]: Individual enemies to draw:", individualCount)
 
     for _, enemy in ipairs(enemies) do
-        if not enemy.toBeRemoved and enemy.spriteSheet then
-            if enemy.currentAnimation and enemy.currentAnimation.getFrame then
-                local quad = enemy.currentAnimation:getFrame()
-                -- ... add to batch
+        if not enemy.toBeRemoved and enemy.spriteSheet and enemy.currentAnimation then
+            if enemy.isFlashing then
+                table.insert(toDrawIndividually, enemy)
             else
-                print("WARN: Missing animation for enemy", enemy.name)
+                local batch = self.enemyBatches[enemy.spriteSheet]
+                if batch and enemy.currentAnimation.getFrame then
+                    local quad = enemy.currentAnimation:getFrame()
+                    batch:add(quad, enemy.x, enemy.y, 0, 1, 1, enemy.width/2, enemy.height/2)
+                else
+                    table.insert(toDrawIndividually, enemy)
+                end
             end
         end
     end
@@ -483,8 +492,22 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     end
     
     -- Draw individual enemies (flashing or fallback)
+    -- Draw individual enemies (flashing or fallback)
+-- Draw individual enemies (flashing or fallback)
     for _, enemy in ipairs(toDrawIndividually) do
-        enemy:draw()
+        if enemy.currentAnimation and enemy.spriteSheet then
+            if enemy.isFlashing then
+                love.graphics.setShader(flashShader)
+                flashShader:send("WhiteFactor", 1.0)
+            else
+                love.graphics.setShader()
+            end
+            enemy.currentAnimation:draw(enemy.spriteSheet, enemy.x, enemy.y, 0, 1, 1, enemy.width/2, enemy.height/2)
+            love.graphics.setShader() -- Reset shader
+        else
+            -- Fallback drawing for enemies without animation
+            enemy:draw()
+        end
     end
 end
 
@@ -775,6 +798,42 @@ function playing:draw()
         batch:clear()
     end
 
+    -- Enemy batching
+    for _, batch in pairs(self.enemyBatches) do batch:clear() end
+
+    local toDrawIndividually = {}
+    for _, enemy in ipairs(enemies) do
+        if not enemy.toBeRemoved and enemy.spriteSheet then
+            if enemy.isFlashing then
+                table.insert(toDrawIndividually, enemy)
+            else
+                local batch = self.enemyBatches[enemy.spriteSheet]
+                if batch then
+                    -- SAFEGUARD: Check if animation exists and has getFrame
+                    if enemy.currentAnimation and enemy.currentAnimation.getFrame then
+                        local quad = enemy.currentAnimation:getFrame()
+                        batch:add(quad, enemy.x, enemy.y, 0, 1, 1, enemy.width/2, enemy.height/2)
+                    else
+                        print("WARN: Missing animation for", enemy.name)
+                        table.insert(toDrawIndividually, enemy)  -- Fallback to individual draw
+                    end
+                else
+                    table.insert(toDrawIndividually, enemy)
+                end
+            end
+        end
+    end
+
+    -- Draw batched enemies
+    for _, batch in pairs(self.enemyBatches) do
+        love.graphics.draw(batch)
+    end
+
+    -- Draw individual enemies (flashing or fallback) WITH SHADER SUPPORT
+    for _, enemy in ipairs(toDrawIndividually) do
+        enemy:draw()  -- This handles the animation drawing, hopefully with flashshader still intact
+    end
+
     -- draw portal
     if portal then
         portal:draw()
@@ -786,7 +845,7 @@ function playing:draw()
     --     end
     -- end
 
-    Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize) -- Draws debug overlay
+    Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize)
     Debug.drawEnemyTracking(enemies, player)
 
     love.graphics.setBlendMode("add") -- for visibility
@@ -975,7 +1034,7 @@ function safeRoom:draw()
     print("safeRoom:draw")
 
     -- Set the background color for the safe room
-    -- love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
+    love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
     -- Draw safe room background
     if currentMap then currentMap:draw() end
     -- love.graphics.setColor(0.2, 0.5, 0.3, 1)

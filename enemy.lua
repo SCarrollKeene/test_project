@@ -1,7 +1,7 @@
 local Utils = require("utils")
 local anim8 = require("libraries/anim8")
 local wf = require "libraries/windfield"
-local flashShader = require "libraries/flashshader"
+local flashShader = require("libraries/flashshader")
 
 local Enemy = {}
 Enemy.__index = Enemy
@@ -128,12 +128,14 @@ end
 function Enemy:reset(x, y, blob, img)
     self.x = x
     self.y = y
+    self.name = blob.name
     self.health = blob.health
     self.speed = blob.speed
     self.baseDamage = blob.baseDamage
     self.spriteSheet = img
     self.isDead = false
     self.toBeRemoved = false
+    self.isFlashing = false
 
      -- Reinitialize animations safely
     if img then  -- Use the new img parameter instead of self.spriteSheet
@@ -157,7 +159,7 @@ function Enemy:reset(x, y, blob, img)
         self.currentAnimation = self.animations.idle
         -- call new animations start at frame 1
     else
-        print("[ENEMY:RESET] No image provided for: " .. self.name)
+        -- print("[ENEMY:RESET] No image provided for: " .. self.name)
         self.animations = {}
         self.currentAnimation = nil
     end
@@ -312,22 +314,17 @@ end
 function Enemy:draw()
     if self.currentAnimation and self.spriteSheet then
         if self.isFlashing then
-        love.graphics.setShader(flashShader)
+            love.graphics.setShader(flashShader)
             flashShader:send("WhiteFactor", 1.0)
         end
+        
         -- Draw normally (batched or individual)
         self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
-        
-        if self.isFlashing then
-            love.graphics.setShader()  -- Reset shader after flashing
-        end
-
-        love.graphics.setColor(1,1,1,1) -- Ensure sprite is drawn with full color
 
         -- Draw centered: self.x, self.y are center; anim8 draws from top-left by default
         -- So, we need to offset by half the frame width/height.
         -- self.width and self.height should be the frame dimensions.
-        self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
+
 
         love.graphics.setShader() -- Always reset after drawing
 
@@ -352,6 +349,7 @@ function Enemy:takeDamage(dmg)
 
     -- Utils.takeDamage(self, dmg)
     self.health = self.health - dmg
+    print(self.name .. " was hit! Flash on hit activated")
     print(string.format("%s took %.2f damage. Health is now %.2f", self.name, dmg, self.health))
     if self.health <= 0 then
         self:die()

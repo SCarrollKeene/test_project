@@ -271,10 +271,12 @@ end
 function Projectile.getProjectile(world, x, y, angle, speed, damage, owner)
     for _, p in ipairs(pool) do
         if not p.active then
+            print("[POOL] Reusing projectile")
             p:reactivate(world, x, y, angle, speed, damage, owner)
             return p
         end
     end
+     print("[POOL] Creating new projectile")
 
      -- Fallback: Expand pool if needed
     local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner)
