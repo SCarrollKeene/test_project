@@ -37,6 +37,9 @@ function Debug.draw(projectiles, enemies, globalParticleSystems, projectileBatch
     love.graphics.print("Individual Enemies: " .. individual, 20, 470)
     love.graphics.print("Draw Calls: " .. love.graphics.getStats().drawcalls, 20, 500)
     -- love.graphics.print("Flashing Enemies: " .. #toDrawIndividually, 20, 500)
+    local active, inactive = Projectile.getStats()
+    love.graphics.print("Projectiles: "..active.." active, "..inactive.." inactive", 20, 530)
+
 
      -- Show reuse stats
     local deadCount = 0

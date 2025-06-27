@@ -336,8 +336,8 @@ function love.load()
             -- update when enemy can also launch projectiles 5/30/25
             if projectile and enemy and projectile.owner ~= enemy then
                 
-                print(string.format("Collision: Projectile (owner: %s, damage: %.2f) vs Enemy (%s, health: %.2f)",
-                (projectile.owner and projectile.owner.name) or "Unknown", projectile.damage, enemy.name, enemy.health))
+                --print(string.format("PLAYER-ENEMY COLLISION: Projectile (owner: %s, damage: %.2f) vs Enemy (%s, health: %.2f)",
+                -- (projectile.owner and projectile.owner.name) or "Unknown", projectile.damage, enemy.name, enemy.health))
                 
                 projectile:onHitEnemy(enemy) -- Projectile handles its collision consequence
                 -- enemy:takeDamage(projectile.damage) -- Enemy's own method is called
@@ -358,6 +358,9 @@ function love.load()
             (dataB and dataB.type == "wall" and dataA and dataA.damage) then
             -- One is wall, one is projectile
             local projectile = dataA.damage and dataA or dataB
+             -- projectile:destroySelf()  -- destroy projectile on wall collision
+            dataB:deactivate() -- deactivate projectile
+            dataB:destroySelf() -- destroy projectile
 
             if projectile.collider then
                 local px, py = projectile.collider:getPosition()
@@ -751,6 +754,17 @@ function playing:update(dt)
     end
 
     world:update(dt)
+
+    -- Projectile cleanup (maybe move to projectile.lua later on)
+    for i = #projectiles, 1, -1 do
+        local p = projectiles[i]
+        if p.toBeRemoved and p.collider then
+            p.collider:destroy()
+            p.collider = nil
+            table.remove(projectiles, i)
+        end
+    end
+
     player.weapon:update(dt)
 end
 

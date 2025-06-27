@@ -1,5 +1,6 @@
 local Utils = require("utils")
 local wf = require("libraries/windfield")
+local Timer = require("libraries/hump/timer")
 local Particle = require("particle")
 
 local Projectile = {}
@@ -31,7 +32,7 @@ end
 function Projectile.cleanPool(timerValue)
     print("[CLEANUP] Function entered")
     local inactiveCount = 0
-    local toRemove = {} -- pooled projectiles marked for removal
+    local toRemove = {} -- excess pooled inactive projectiles marked for removal
 
     for i = #pool, 1, -1 do
         if not pool[i].active then
@@ -138,13 +139,17 @@ end
 function Projectile:destroySelf()
     if self.isDestroyed then return end -- Prevent multiple destructions
 
-    print(string.format("Projectile:destroySelf - Destroying projectile (Owner: %s)", (self.owner and self.owner.name) or "Unknown"))
+    print(string.format("[DESTROY] - Destroying projectile (Owner: %s)",
+     (self.owner and self.owner.name) or "Unknown"))
+     self:deactivate() -- Deactivate the projectile
+
+    -- Remove the collider if it exists
     if self.collider then
         self.collider:destroy()
         self.collider = nil
     end
 
-    self.toBeRemoved = true
+    -- self.toBeRemoved = true
     self.isDestroyed = true -- Add a flag to prevent re-entry
 
     -- stop emitting
@@ -167,7 +172,7 @@ end
 function Projectile:onHitEnemy(enemy_collided_with)
     if self.isDestroyed then return end
 
-    print(string.format("Projectile:onHitEnemy - Projectile (Owner: %s) hit Enemy: %s", 
+    print(string.format("[ON HIT] - Projectile (Owner: %s) hit Enemy: %s", 
         (self.owner and self.owner.name) or "Unknown", 
         (enemy_collided_with and enemy_collided_with.name) or "Unknown Enemy"))
 
@@ -178,6 +183,7 @@ function Projectile:onHitEnemy(enemy_collided_with)
         enemy_collided_with:takeDamage(self.damage)
     end
     
+    self:deactivate() -- Deactivate the projectile
     self:destroySelf() -- Call the generic cleanup, :destroySelf()
 end
 
@@ -206,16 +212,12 @@ end
 -- end
 
 function Projectile:update(dt)
-    print("Projectile:updated(dt) triggered")
     print(string.format("Projectile: angle=%.2f, speed=%.2f", self.angle, self.speed))
-    -- Add this check:
     if not self.collider then
         self.toBeRemoved = true -- handle collider being destroyed
         print("Projectile:update - Collider is nil for this projectile. Skipping further update.")
         return -- Exit the function if the collider is nil
     end
-
-    print(string.format("Projectile: angle=%.2f, speed=%.2f", self.angle, self.speed))
 
     -- self.ax = self.x + math.cos(self.angle) * self.speed * dt
     -- self.by = self.y + math.sin(self.angle) * self.speed * dt
@@ -226,6 +228,7 @@ function Projectile:update(dt)
     -- Check if projectile is off-screen
      if self.x + self.radius < 0 or self.x - self.radius > love.graphics.getWidth() or
        self.y + self.radius < 0 or self.y - self.radius > love.graphics.getHeight() then
+        print(string.format("[OFF SCREEN] Projectile (owner: %s) off-screen, destroying", (self.owner and self.owner.name) or "Unknown"))
         self:destroySelf()
         return -- exit immediately after destroy
     end
@@ -271,12 +274,12 @@ end
 function Projectile.getProjectile(world, x, y, angle, speed, damage, owner)
     for _, p in ipairs(pool) do
         if not p.active then
-            print("[POOL] Reusing projectile")
+            print("[REUSE] Reusing inactive projectile")
             p:reactivate(world, x, y, angle, speed, damage, owner)
             return p
         end
     end
-     print("[POOL] Creating new projectile")
+     print("[EXPAND POOL] Creating new projectile")
 
      -- Fallback: Expand pool if needed
     local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner)
@@ -291,8 +294,18 @@ function Projectile.getPoolSize()
     return #pool
 end
 
+-- get state for resued projectiles after deactivation
+function Projectile.getStats()
+  local active, inactive = 0, 0
+  for _, p in ipairs(pool) do
+    if p.active then active = active + 1 else inactive = inactive + 1 end
+  end
+  return active, inactive
+end
+
 function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     -- to turn this baby back on, its essentially just the collider table with its collider props set again
+    print("[REACTIVATE] Reactivating projectile", self)
     self.world = world
     self.x = x
     self.y = y
@@ -303,6 +316,10 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     self.owner = owner
     self.toBeRemoved = false
     self.active = true
+
+    if self.collider then
+        self.collider:setActive(true)
+    end
 
     if not self.collider then
         self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 10)
@@ -317,11 +334,13 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
 end
 
 function Projectile:deactivate()
+    print("[DEACTIVATE] Deactivated projectile", self)
+
     self.active = false
     self.toBeRemoved = true
-    if self.collider then
-        self.collider:setActive(false)
-    end
+    -- if self.collider then
+    --     self.collider:setActive(false)
+    -- end
     if self.particleTrail then
         self.particleTrail:stop()
     end
