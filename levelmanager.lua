@@ -20,10 +20,10 @@ local LevelManager = {
             boss = false,
             spawns = {
                 { x = 800, y = 200 },
+                { x = 750, y = 250 },
                 { x = 700, y = 300 },
-                { x = 600, y = 400 },
-                { x = 550, y = 450 },
-                { x = 450, y = 550 }
+                { x = 650, y = 350 },
+                { x = 600, y = 550 }
             } 
         },
         { 
@@ -31,6 +31,23 @@ local LevelManager = {
             enemies = 7, 
             boss = false,
             spawns = {} 
+        },
+        { 
+            map = "room4", 
+            enemies = 10, 
+            boss = false,
+            spawns = {
+                { x = 800, y = 200 },
+                { x = 750, y = 250 },
+                { x = 700, y = 300 },
+                { x = 600, y = 350 },
+                { x = 650, y = 400 },
+                { x = 650, y = 450 },
+                { x = 650, y = 200 },
+                { x = 600, y = 250 },
+                { x = 600, y = 300 },
+                { x = 600, y = 350 }
+            } 
         }
     }
 }

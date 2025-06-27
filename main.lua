@@ -13,7 +13,6 @@ local Loading = require("loading")
 local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
-local flashShader = require("libraries/flashshader")
 local Gamestate = require("libraries/hump/gamestate")
 local SaveSystem = require("save_game_data")
 local Debug = require("game_debug")
@@ -155,6 +154,7 @@ function spawnRandomEnemy(x, y, cache)
             e.isDead = false
             e.toBeRemoved = false
             table.insert(enemies, e)
+            print("[POOL REUSE] Reactivating as:", randomBlob.name)
             return
         end
     end
@@ -181,6 +181,7 @@ function spawnRandomEnemy(x, y, cache)
     table.insert(enemyPool, newEnemy)
 
     newEnemy.spriteIndex = randomIndex -- Store sprite index for rendering
+    print("[NEW ENEMY from Spawn Random Enemy] Created:", randomBlob.name)
 
     -- debug
     print(string.format("[SPAWN] Spawned at: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))

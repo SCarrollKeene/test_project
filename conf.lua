@@ -4,5 +4,5 @@ function love.conf(t)
    t.version = "11.5"
    t.console = true -- attach a console, boolean, windows only
    t.window.width = 1280
-   t.window.height = 720  
+   t.window.height = 768  
 end
