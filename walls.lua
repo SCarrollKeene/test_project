@@ -14,6 +14,7 @@ function Walls.load(world, map)
             -- static so walls don't move
             wall:setType('static')
             wall:setCollisionClass('wall')
+            wall:setUserData({ type = 'wall' }) -- Add metadata
             -- insert wall data into walls table
             table.insert(walls, wall)
         end
