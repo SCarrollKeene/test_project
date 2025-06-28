@@ -66,7 +66,7 @@ function Projectile.cleanPool(timerValue)
 
     print(string.format("[CLEANUP] Removed %d inactive projectiles at %.2f seconds", #toRemove, timerValue))
 
-    -- Additionally, xlean particles for remaining inactive ones
+    -- Additionally, clean particles for remaining inactive ones
     for i = #pool, 1, -1 do
         if not pool[i].active and pool[i].particleTrail then
             pool[i].particleTrail:reset()
@@ -217,6 +217,9 @@ function Projectile:onHitEnemy(enemy_target)
         print("Projectile hit enemy, directly calling enemy:takeDamage.")
         enemy_target:takeDamage(self.damage)  
     end
+
+    self:deactivate() -- Deactivate the projectile
+    self:destroySelf() -- Call the generic cleanup, :destroySelf()
 end
 
 -- function Projectile:load()
