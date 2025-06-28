@@ -39,7 +39,12 @@ function Projectile.cleanPool(timerValue)
             inactiveCount = inactiveCount + 1
             if inactiveCount > MAX_POOL_SIZE then
                 print("[CLEANUP] MAX POOL SIZE IS LESS THAN INACTIVE COUNT")
-                table.remove(toRemove, i)
+                -- Return particle to global pool
+                if pool[i].particleTrail then
+                    Particle.returnBaseSpark(pool[i].particleTrail)
+                    pool[i].particleTrail = nil
+                end
+                table.insert(toRemove, i)
                 print("[CLEANUP] CLEANUP REMOVED PROJ FROM POOL")
             end
         end
@@ -48,9 +53,25 @@ function Projectile.cleanPool(timerValue)
     -- second pass through removed marked projectiles,
     -- removes excess inactive projs, prevents bloat under stress,
     -- tries to maintain effeciency
-    for _, i in ipairs(toRemove) do
-        table.remove(pool, i)
-        print(string.format("[CLEANUP] Cleanup called at: %.2f seconds", timerValue))
+    -- for _, i in ipairs(toRemove) do
+    --     table.remove(pool, i)
+    --     print(string.format("[CLEANUP] Cleanup called at: %.2f seconds", timerValue))
+    -- end
+
+     -- Remove in reverse order to preserve indices
+    for i = #toRemove, 1, -1 do
+        local index = toRemove[i]
+        table.remove(pool, index)
+    end
+
+    print(string.format("[CLEANUP] Removed %d inactive projectiles at %.2f seconds", #toRemove, timerValue))
+
+    -- Additionally, xlean particles for remaining inactive ones
+    for i = #pool, 1, -1 do
+        if not pool[i].active and pool[i].particleTrail then
+            pool[i].particleTrail:reset()
+            pool[i].particleTrail:stop()
+        end
     end
 end
 
@@ -141,7 +162,7 @@ function Projectile:destroySelf()
 
     print(string.format("[DESTROY] - Destroying projectile (Owner: %s)",
      (self.owner and self.owner.name) or "Unknown"))
-     self:deactivate() -- Deactivate the projectile
+     self:deactivate() -- Deactivate/reset the projectile
 
     -- Remove the collider if it exists
     if self.collider then
@@ -155,18 +176,18 @@ function Projectile:destroySelf()
     -- stop emitting
     -- TODO #1: debate remove from global particle system table
     -- TODO #2: do not remove from globalps from here if I want particles to fade out
-    if self.particleTrail then
+    -- if self.particleTrail then
         -- stop emitting
         -- self.particleTrail:setEmissionRate(0)
-        self.particleTrail:stop()-- Stop emitting and reset if needed
+        -- self.particleTrail:stop()-- Stop emitting and reset if needed
 
         -- If using pooling, return it:
-        Timer.after(1.0, function() -- wait for particle to fade
-            Particle.returnBaseSpark(self.particleTrail)
-        -- If not pooling, just set to nil
-        -- self.particleTrail = nil
-        end)
-    end
+        -- Timer.after(1.0, function() -- wait for particle to fade
+        --     Particle.returnBaseSpark(self.particleTrail)
+        -- -- If not pooling, just set to nil
+        -- -- self.particleTrail = nil
+        -- end)
+    -- end
 end
 
 function Projectile:onHitEnemy(enemy_collided_with)
@@ -180,7 +201,7 @@ function Projectile:onHitEnemy(enemy_collided_with)
     if self.owner and self.owner.dealDamage then
         Utils.dealDamage(self.owner, enemy_collided_with, self.damage)
     elseif enemy_collided_with and enemy_collided_with.takeDamage then
-        enemy_collided_with:takeDamage(self.damage)
+        enemy_collided_with:takeDamage(self.damage) -- Fallback if owner not set
     end
     
     self:deactivate() -- Deactivate the projectile
@@ -194,7 +215,7 @@ function Projectile:onHitEnemy(enemy_target)
         Utils.dealDamage(self.owner, enemy_target, self.damage)
     elseif enemy_target and enemy_target.takeDamage then
         print("Projectile hit enemy, directly calling enemy:takeDamage.")
-        enemy_target:takeDamage(self.damage) -- Fallback if owner not set 
+        enemy_target:takeDamage(self.damage)  
     end
 end
 
@@ -305,7 +326,7 @@ end
 
 function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     -- to turn this baby back on, its essentially just the collider table with its collider props set again
-    print("[REACTIVATE] Reactivating projectile", self)
+    print("[REACTIVATE] Reactivating projectiles and particles", self)
     self.world = world
     self.x = x
     self.y = y
@@ -320,6 +341,29 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     if self.collider then
         self.collider:setActive(true)
     end
+
+    -- reactivate baseSpark particle system
+    -- Reset particle system
+    if self.particleTrail then
+        -- Return existing particle if it's still active
+        if self.particleTrail:isActive() then
+            Particle.returnBaseSpark(self.particleTrail)
+        end
+        -- Get new particle
+        self.particleTrail = Particle.getBaseSpark()
+    else
+        -- Create new particle if missing
+        self.particleTrail = Particle.getBaseSpark()
+    end
+
+    -- Initialize particle
+    local offset = 10
+    local trailX = x - math.cos(angle) * offset
+    local trailY = y - math.sin(angle) * offset
+    self.particleTrail:setPosition(trailX, trailY)
+    self.particleTrail:reset()
+    self.particleTrail:emit(1)
+    table.insert(globalParticleSystems, self.particleTrail)
 
     if not self.collider then
         self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 10)
@@ -343,6 +387,7 @@ function Projectile:deactivate()
     -- end
     if self.particleTrail then
         self.particleTrail:stop()
+        self.particleTrail:reset() -- reset the baseSpark particle system
     end
 end
 
