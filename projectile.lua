@@ -42,7 +42,7 @@ function Projectile.cleanPool(timerValue)
                 -- Return particle to global pool
                 if pool[i].particleTrail then
                     Particle.returnBaseSpark(pool[i].particleTrail)
-                    pool[i].particleTrail = nil
+                    -- pool[i].particleTrail = nil
                 end
                 table.insert(toRemove, i)
                 print("[CLEANUP] CLEANUP REMOVED PROJ FROM POOL")
@@ -158,20 +158,27 @@ function Projectile.loadAssets()
 end
 
 function Projectile:destroySelf()
+     print("[DESTROY SELF] collision at:", self.x, self.y)
     if self.isDestroyed then return end -- Prevent multiple destructions
 
     print(string.format("[DESTROY] - Destroying projectile (Owner: %s)",
      (self.owner and self.owner.name) or "Unknown"))
-     self:deactivate() -- Deactivate/reset the projectile
+
+    if type(self.deactivate) == "function" then
+        self:deactivate() -- Deactivate the projectile particles
+    end
+    -- self:deactivate() -- Deactivate the projectile particles
 
     -- Remove the collider if it exists
-    if self.collider then
+    if self.collider and not self.collider:isDestroyed() then
         self.collider:destroy()
-        self.collider = nil
+        self.collider = nil -- possibly not needed anymore since walls has metadata of type 'wall'
     end
 
     -- self.toBeRemoved = true
+    -- self.isActive = false -- Set active to false to prevent further updates, reuse eligible
     self.isDestroyed = true -- Add a flag to prevent re-entry
+    -- self.toBeRemoved = true -- Flag to remove from the game loop
 
     -- stop emitting
     -- TODO #1: debate remove from global particle system table
@@ -188,39 +195,65 @@ function Projectile:destroySelf()
         -- -- self.particleTrail = nil
         -- end)
     -- end
+
+    -- Return particles to pool safely
+    if self.particleTrail then
+        Particle.returnBaseSpark(self.particleTrail)
+        self.particleTrail = nil
+    end
 end
 
-function Projectile:onHitEnemy(enemy_collided_with)
+function Projectile:onHitEnemy(enemy)
     if self.isDestroyed then return end
-
+    
     print(string.format("[ON HIT] - Projectile (Owner: %s) hit Enemy: %s", 
         (self.owner and self.owner.name) or "Unknown", 
-        (enemy_collided_with and enemy_collided_with.name) or "Unknown Enemy"))
+         (enemy and enemy.name) or "Unknown Enemy"))
 
-    -- applying damage
+    -- applying damage based on owner
     if self.owner and self.owner.dealDamage then
-        Utils.dealDamage(self.owner, enemy_collided_with, self.damage)
-    elseif enemy_collided_with and enemy_collided_with.takeDamage then
-        enemy_collided_with:takeDamage(self.damage) -- Fallback if owner not set
+        Utils.dealDamage(self.owner, enemy, self.damage)
+    -- Direct damage fallback if owner not set
+    elseif enemy and enemy.takeDamage then
+        enemy:takeDamage(self.damage)
     end
     
-    self:deactivate() -- Deactivate the projectile
+    -- Unified destruction sequence
+    -- self:deactivate() -- Deactivate the projectile
     self:destroySelf() -- Call the generic cleanup, :destroySelf()
 end
 
--- alter this later if enemies will also launch projectiles
--- this could possibly be a utils function later
-function Projectile:onHitEnemy(enemy_target)
-    if self.owner and self.owner.dealDamage then
-        Utils.dealDamage(self.owner, enemy_target, self.damage)
-    elseif enemy_target and enemy_target.takeDamage then
-        print("Projectile hit enemy, directly calling enemy:takeDamage.")
-        enemy_target:takeDamage(self.damage)  
-    end
+-- function Projectile:onHitEnemy(enemy_collided_with)
+--     if self.isDestroyed then return end
 
-    self:deactivate() -- Deactivate the projectile
-    self:destroySelf() -- Call the generic cleanup, :destroySelf()
-end
+--     print(string.format("[ON HIT] - Projectile (Owner: %s) hit Enemy: %s", 
+--         (self.owner and self.owner.name) or "Unknown", 
+--         (enemy_collided_with and enemy_collided_with.name) or "Unknown Enemy"))
+
+--     -- applying damage
+--     if self.owner and self.owner.dealDamage then
+--         Utils.dealDamage(self.owner, enemy_collided_with, self.damage)
+--     elseif enemy_collided_with and enemy_collided_with.takeDamage then
+--         enemy_collided_with:takeDamage(self.damage) -- Fallback if owner not set
+--     end
+    
+--     self:deactivate() -- Deactivate the projectile
+--     self:destroySelf() -- Call the generic cleanup, :destroySelf()
+-- end
+
+-- -- alter this later if enemies will also launch projectiles
+-- -- this could possibly be a utils function later
+-- function Projectile:onHitEnemy(enemy_target)
+--     if self.owner and self.owner.dealDamage then
+--         Utils.dealDamage(self.owner, enemy_target, self.damage)
+--     elseif enemy_target and enemy_target.takeDamage then
+--         print("Projectile hit enemy, directly calling enemy:takeDamage.")
+--         enemy_target:takeDamage(self.damage)  
+--     end
+
+--     self:deactivate() -- Deactivate the projectile
+--     self:destroySelf() -- Call the generic cleanup, :destroySelf()
+-- end
 
 -- function Projectile:load()
 
@@ -236,6 +269,8 @@ end
 -- end
 
 function Projectile:update(dt)
+    if self.isDestroyed then return end  -- Critical safety check if marked for removal
+
     print(string.format("Projectile: angle=%.2f, speed=%.2f", self.angle, self.speed))
     if not self.collider then
         self.toBeRemoved = true -- handle collider being destroyed
@@ -297,8 +332,8 @@ end
 
 function Projectile.getProjectile(world, x, y, angle, speed, damage, owner)
     for _, p in ipairs(pool) do
-        if not p.active then
-            print("[REUSE] Reusing inactive projectile")
+        if not p.active then -- skip destroyed projectiles
+            print("[REUSE] Reusing inactive projectile, was destroyed:", p.isDestroyed)
             p:reactivate(world, x, y, angle, speed, damage, owner)
             return p
         end
@@ -329,7 +364,7 @@ end
 
 function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     -- to turn this baby back on, its essentially just the collider table with its collider props set again
-    print("[REACTIVATE] Reactivating projectiles and particles", self)
+    print("[REACTIVATE] Reactivating projectiles and particles state:", self)
     self.world = world
     self.x = x
     self.y = y
@@ -338,46 +373,48 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     self.speed = speed
     self.damage = damage
     self.owner = owner
-    self.toBeRemoved = false
-    self.active = true
+    self.isDestroyed = false -- reset destroyed state
+    self.toBeRemoved = false -- reset removal flag
+    self.active = true -- set active flag to true
 
-    if self.collider then
-        self.collider:setActive(true)
+
+     -- Remove invalid collider reference
+    if self.collider and self.collider:isDestroyed() then
+        self.collider = nil
     end
 
-    -- reactivate baseSpark particle system
-    -- Reset particle system
-    if self.particleTrail then
-        -- Return existing particle if it's still active
-        if self.particleTrail:isActive() then
-            Particle.returnBaseSpark(self.particleTrail)
-        end
-        -- Get new particle
-        self.particleTrail = Particle.getBaseSpark()
-    else
-        -- Create new particle if missing
-        self.particleTrail = Particle.getBaseSpark()
-    end
-
-    -- Initialize particle
-    local offset = 10
-    local trailX = x - math.cos(angle) * offset
-    local trailY = y - math.sin(angle) * offset
-    self.particleTrail:setPosition(trailX, trailY)
-    self.particleTrail:reset()
-    self.particleTrail:emit(1)
-    table.insert(globalParticleSystems, self.particleTrail)
-
+    -- recreate collider if it doesn't exist or is destroyed
     if not self.collider then
-        self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 10)
+        self.collider = world:newBSGRectangleCollider(x, y, self.width, self.height, 10)
         self.collider:setFixedRotation(true)
         self.collider:setSensor(true)
         self.collider:setUserData(self)
         self.collider:setCollisionClass('projectile')
     else
+        -- If the collider already exists, just update its position and velocity
         self.collider:setPosition(x, y)
         self.collider:setLinearVelocity(math.cos(angle) * speed, math.sin(angle) * speed)
     end
+
+    -- reactivate baseSpark particle system
+    -- Reset particles system
+    if self.particleTrail then
+        -- Return existing particle if it's still active
+            Particle.returnBaseSpark(self.particleTrail)
+    end
+        -- Get new particle
+        -- Create new particle if missing
+        self.particleTrail = Particle.getBaseSpark()
+        self.particleTrail:reset()
+        self.particleTrail:start()
+
+    -- Initialize particle position
+    local offset = 10
+    local trailX = x - math.cos(angle) * offset
+    local trailY = y - math.sin(angle) * offset
+    self.particleTrail:setPosition(trailX, trailY)
+    self.particleTrail:emit(1)
+   -- table.insert(globalParticleSystems, self.particleTrail)
 end
 
 function Projectile:deactivate()

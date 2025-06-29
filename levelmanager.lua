@@ -123,6 +123,14 @@ function LevelManager:loadLevel(index)
             end
         end
     end
+
+    -- destroy any remaining prjectiles
+    -- for i = #projectiles, 1, -1 do
+    --     if projectiles[i].collider then
+    --         projectiles[i].collider:destroy()
+    --     end
+    --     table.remove(projectiles, i)
+    -- end
 end
 
 return LevelManager

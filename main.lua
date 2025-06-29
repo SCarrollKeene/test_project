@@ -226,7 +226,7 @@ function love.load()
     -- ignore enemy/enemy collider when dashing
     world:addCollisionClass('player_dashing', {ignores = {'enemy'}})
     print("DEBUG: main.lua: Added collision class - " .. 'player_dashing')
-    world:addCollisionClass('projectile', {ignores = {}})
+    world:addCollisionClass('projectile', {ignores = {'projectile'}})
     print("DEBUG: main.lua: Added collision class - " .. 'projectile')
     world:addCollisionClass('wall', {ignores = {}})
     print("DEBUG: main.lua: Added collision class - " .. 'wall')
@@ -354,28 +354,23 @@ function love.load()
         end
 
         -- Check for Projectile-Wall collision
-        if (dataA and dataA.type == "wall" and dataB and dataB.damage) or
-            (dataB and dataB.type == "wall" and dataA and dataA.damage) then
+        if (dataA and dataA.type == "wall" and dataB and dataB.type == "projectile") then
+            dataB:destroySelf() -- destroy projectile on wall collision
+        elseif (dataB and dataB.type == "wall" and dataA and dataA.type == "projectile") then
+            dataA:destroySelf() -- destroy projectile on wall collision
             -- One is wall, one is projectile
-            local projectile = dataA.damage and dataA or dataB
+            -- local projectile = dataA.type and dataA or dataB
              -- projectile:destroySelf()  -- destroy projectile on wall collision
-            dataB:deactivate() -- deactivate projectile
-            dataB:destroySelf() -- destroy projectile
-
-            if projectile.collider then
-                local px, py = projectile.collider:getPosition()
-                print(string.format("COLLISION: Projectile vs Wall at: ".. "PX: " .. "(%.1f) " .. "PY :" .. "(%.1f)", px, py))
-            else
-                print("COLLISION: Projectile vs Wall (collider already destroyed)")
-            end
-
-            -- Destroy projectile collider and remove from table
-            projectile.toBeRemoved = true -- flag for removal from the projectiles table
-            if projectile.collider then 
-                projectile.collider:destroy() 
-                projectile.collider = nil -- set projectile collider to nil after projectile is destroyed because its no longer active
-            end
+            -- dataB:deactivate() -- deactivate projectile
+            -- projectile:destroySelf() -- destroy projectile
         end
+
+        -- Destroy projectile collider and remove from table
+        -- projectile.toBeRemoved = true -- flag for removal from the projectiles table
+        -- if projectile.collider then 
+        --     projectile.collider:destroy() 
+        --     projectile.collider = nil -- set projectile collider to nil after projectile is destroyed because its no longer active
+        -- end
     end
 
     world:setCallbacks(beginContact, nil, nil, nil) -- We only need beginContact for this
@@ -756,12 +751,32 @@ function playing:update(dt)
     world:update(dt)
 
     -- Projectile cleanup (maybe move to projectile.lua later on)
+    -- for i = #projectiles, 1, -1 do
+    --     local p = projectiles[i]
+    --     if p.toBeRemoved then
+    --         -- if p.collider then
+    --         --     p.collider:destroy()
+    --         --     -- p.collider = nil, possibly not needed anymore since walls has metadata of type 'wall'
+    --         -- end
+    --         table.remove(projectiles, i)
+    --     else
+    --         p:update(dt) -- Update projectile position
+    --         -- Off-screen check
+    --         if p.x + p.width < 0 or p.x - p.width > love.graphics.getWidth() or 
+    --             p.y + p.height < 0 or p.y - p.height > love.graphics.getHeight() then
+    --             p:destroySelf()
+    --         end
+    --     end
+    -- end
+
+    -- Projectile cleanup v.2 6/29/25
     for i = #projectiles, 1, -1 do
         local p = projectiles[i]
-        if p.toBeRemoved and p.collider then
-            p.collider:destroy()
-            p.collider = nil
+        -- p:update(dt)
+
+        if p.isDestroyed then
             table.remove(projectiles, i)
+            print("DEBUG: Removed projectile at index", i, "from projectiles table.")
         end
     end
 

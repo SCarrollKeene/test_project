@@ -342,7 +342,7 @@ end
 
 -- take damage, deal damage and direction
 function Enemy:takeDamage(dmg)
-    if self.isDead then return end -- no more damage taken if dead
+    if self.isDead or self.isFlashing then return end -- no more damage taken if dead or if already flashing
 
     self.isFlashing = true
     self.flashTimer = self.flashDuration
