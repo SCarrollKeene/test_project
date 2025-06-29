@@ -397,17 +397,17 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
         self.collider:setLinearVelocity(math.cos(angle) * speed, math.sin(angle) * speed)
     end
 
-    -- reactivate baseSpark particle system
+    -- reactivate existing baseSpark particle system
     -- Reset particles system
     if self.particleTrail then
         -- Return existing particle if it's still active
-            Particle.returnBaseSpark(self.particleTrail)
-    end
-        -- Get new particle
-        -- Create new particle if missing
-        self.particleTrail = Particle.getBaseSpark()
+            --Particle.returnBaseSpark(self.particleTrail)
         self.particleTrail:reset()
         self.particleTrail:start()
+    else
+        -- Get new particles if missing
+        self.particleTrail = Particle.getBaseSpark()
+    end  
 
     -- Initialize particle position
     local offset = 10
