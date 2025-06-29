@@ -72,9 +72,9 @@ function Particle.returnBaseSpark(ps)
     if #pools.baseSpark < MAX_POOL_SIZE then
         ps:stop()
         ps:reset()
-        table.insert(pools.baseSpark, ps)
-    else
-        ps:release() -- destroy if particle pool is full
+        -- table.insert(pools.baseSpark, ps)
+    -- else
+        -- ps:release() -- destroy if particle pool is full
     end
 end
 

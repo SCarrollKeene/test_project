@@ -199,7 +199,8 @@ function Projectile:destroySelf()
     -- Return particles to pool safely
     if self.particleTrail then
         Particle.returnBaseSpark(self.particleTrail)
-        self.particleTrail = nil
+        --self.particleTrail = nil
+        self.particleTrail:stop() -- Stop the particle system
     end
 end
 
@@ -414,7 +415,7 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     local trailY = y - math.sin(angle) * offset
     self.particleTrail:setPosition(trailX, trailY)
     self.particleTrail:emit(1)
-   -- table.insert(globalParticleSystems, self.particleTrail)
+    table.insert(globalParticleSystems, self.particleTrail)
 end
 
 function Projectile:deactivate()
