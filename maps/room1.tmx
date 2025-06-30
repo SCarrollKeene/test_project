@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="12" tilewidth="64" tileheight="64" infinite="0" nextlayerid="7" nextobjectid="9">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="12" tilewidth="64" tileheight="64" infinite="0" nextlayerid="8" nextobjectid="13">
  <editorsettings>
   <export target="room1.lua" format="lua"/>
  </editorsettings>
@@ -156,7 +156,7 @@
    <image source="craftpix-free-fields-tileset/2 Objects/9 Bush/6.png" width="40" height="26"/>
   </tile>
  </tileset>
- <objectgroup id="6" name="Walls">
+ <objectgroup id="6" name="Walls" locked="1">
   <object id="1" x="0" y="0" width="1280" height="64"/>
   <object id="2" x="512" y="192" width="256" height="64"/>
   <object id="3" x="512" y="512" width="256" height="64"/>
@@ -164,7 +164,13 @@
   <object id="5" x="0" y="64" width="64" height="640"/>
   <object id="6" x="1216" y="64" width="64" height="640"/>
  </objectgroup>
- <layer id="1" name="Ground" width="20" height="12">
+ <objectgroup id="7" name="EnemySpawns">
+  <object id="9" x="960" y="128" width="128" height="128"/>
+  <object id="10" x="832" y="256" width="128" height="128"/>
+  <object id="11" x="960" y="384" width="128" height="128"/>
+  <object id="12" x="832" y="512" width="128" height="128"/>
+ </objectgroup>
+ <layer id="1" name="Ground" width="20" height="12" locked="1">
   <data encoding="csv">
 1,2684354561,1,2684354561,1,2684354561,1,2684354561,1,2684354561,1,2684354561,1,2684354561,1,2684354561,1,2684354561,1,2684354561,
 1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,
@@ -180,7 +186,7 @@
 1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473,1610612737,3221225473
 </data>
  </layer>
- <layer id="2" name="Shadow" width="20" height="12">
+ <layer id="2" name="Shadow" width="20" height="12" locked="1">
   <data encoding="csv">
 22,22,22,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,2684354582,
 2684354582,21,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,21,2684354582,
@@ -196,7 +202,7 @@
 22,22,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,3221225494,2684354582
 </data>
  </layer>
- <layer id="3" name="Decor" width="20" height="12">
+ <layer id="3" name="Decor" width="20" height="12" locked="1">
   <data encoding="csv">
 43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,40,
 43,0,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,44,0,43,
@@ -212,7 +218,7 @@
 43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,43
 </data>
  </layer>
- <layer id="4" name="Flower" width="20" height="12">
+ <layer id="4" name="Flower" width="20" height="12" locked="1">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -228,7 +234,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="5" name="Bush" width="20" height="12">
+ <layer id="5" name="Bush" width="20" height="12" locked="1">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,58,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,62,0,

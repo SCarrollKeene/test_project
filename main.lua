@@ -9,6 +9,7 @@ local Map = require("map")
 local Walls = require("walls")
 local MapLoader = require("maploader")
 local LevelManager = require("levelmanager")
+local WaveManager = require("wavemanager")
 local Loading = require("loading")
 local sti = require("libraries/sti")
 local Projectile = require("projectile")
@@ -123,7 +124,7 @@ function love.keypressed(key)
     end
 end
 
-function spawnRandomEnemy(x, y, cache)
+function spawnRandomEnemy(x, y, cache, enemyTypes)
     print("[FROM SPAWNRANDOMENEMY POOL] Total enemies:", #enemyPool) -- debug preloaded pool status
     local state = Gamestate.current()
 
@@ -135,6 +136,33 @@ function spawnRandomEnemy(x, y, cache)
     -- Pick a random enemy type from the randomBlobs configuration table
     local randomIndex = math.random(1, #randomBlobs) -- picks a random index between 1-3
     local randomBlob = randomBlobs[randomIndex] -- returns a random blob from the table
+
+    -- Filter based on enemyTypes if provided
+    local availableBlobs = {}
+    if enemyTypes  and #enemyTypes > 0 then
+        -- create a filtered list of available blobs based on enemyTypes
+        for _, blob in ipairs(randomBlobs) do
+            for _, allowedType in ipairs(enemyTypes) do
+                if blob.name == allowedType then
+                    table.insert(availableBlobs, blob)
+                    break -- Exit inner loop if match found
+                end
+            end
+        end
+    else
+        -- If no specific types provided, use all available blobs
+        availableBlobs = randomBlobs
+    end
+
+    -- fall back to all types if filtered list is empty
+    if #availableBlobs == 0 then
+        print("[SPAWNRANDOMENEMY] No valid enemy types to spawn, using all random blobs.")
+        availableBlobs = randomBlobs -- Use all blobs if none match the filter
+    end
+
+    -- select random enemy from filtered list
+    local randomBlobIndex = love.math.random(1, #availableBlobs) -- Pick a random blob type from available blobs
+    local randomBlob = availableBlobs[randomBlobIndex] -- Get a random blob configuration
 
     -- Check if the image is already cached
     local img = enemyCache[randomBlob.spritePath]
@@ -185,6 +213,11 @@ function spawnRandomEnemy(x, y, cache)
 
     -- debug
     print(string.format("[SPAWN] Spawned at: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))
+
+    -- if wave.boss then
+    --     spawnBossEnemy()
+    --     return
+    -- end
 end
 
 function spawnPortal()
@@ -417,6 +450,9 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     self.mapCache = mapCache
 
     LevelManager:loadLevel(LevelManager.currentLevel, enemyImageCache, projectiles)
+     -- Initialize wave manager
+    local levelData = LevelManager.levels[LevelManager.currentLevel]
+    self.waveManager = WaveManager.new(levelData)
 
     self.projectileBatch = love.graphics.newSpriteBatch(Projectile.image, 1000)  -- 1000 = initial capacity
 
@@ -460,8 +496,19 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     -- end
 
      -- Enemy batching
+    -- for _, batch in pairs(self.enemyBatches) do
+    --     batch:clear()
+    -- end
+
+     -- Single draw call for batching all enemies of same type
     for _, batch in pairs(self.enemyBatches) do
         batch:clear()
+        for _, enemy in ipairs(enemies) do
+            if enemy.spriteSheet == batch.texture then
+                batch:addQuad(quad, enemy.x, enemy.y)
+            end
+        end
+        love.graphics.draw(batch)
     end
 
     local toDrawIndividually = {} -- Table to hold enemies that need to be drawn individually (flashing or fallback)
@@ -780,6 +827,18 @@ function playing:update(dt)
         end
     end
 
+    if self.waveManager then
+        self.waveManager:update(dt, function(enemyTypes)
+            -- Pass enemyTypes to spawner
+            LevelManager:spawnRandomInZone(self.enemyImageCache, enemyTypes)
+        end)
+        
+        -- Wave completion check
+        if self.waveManager.active and #enemies == 0 and not portal then
+            roomComplete()
+        end
+    end
+
     player.weapon:update(dt)
 end
 
@@ -897,10 +956,11 @@ function playing:draw()
         love.graphics.setFont(scoreFont)
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
-    love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel), 20, 50)
+    love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel - 1), 20, 50)
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
     love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
+    love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
     -- for _, wall in ipairs(currentWalls) do
     --     love.graphics.rectangle("line", wall:getX(), wall:getY(), wall:getWidth(), wall:getHeight())
     -- end

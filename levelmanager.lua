@@ -4,7 +4,33 @@ local LevelManager = {
     currentLevel = 1,
     levels = {
         { 
+            map = "room0", 
+            -- waves stress test
+            -- waves = {
+            --     { enemyCount = 50, delay = 1.0, spawnInterval = 0.2, enemyTypes = nil, boss = false }
+            -- },
+
+            -- enemy spawns per wave, seconds between waves, ms between each spawn, nil means random enemy type, no boss in this level
+            --waves = {},
+            -- enemies = 3, 
+            -- boss = false,
+            waves = {
+                { enemyCount = 3, delay = 1.0, spawnInterval = 0.2, enemyTypes = {"Black Blob"}, boss = false },
+                { enemyCount = 6, delay = 2.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+                { enemyCount = 9, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+                { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+                { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+            },
+            spawns = {
+                -- defining fixed positions for enemy spawn
+                { x = 800, y = 200 },
+                { x = 700, y = 300 },
+                { x = 600, y = 400 }
+            }
+        },
+        { 
             map = "room1", 
+            waves = {},
             enemies = 3, 
             boss = false,
             spawns = {
@@ -15,7 +41,8 @@ local LevelManager = {
             } 
         },
         { 
-            map = "room2", 
+            map = "room2",
+            waves = {}, 
             enemies = 5, 
             boss = false,
             spawns = {
@@ -27,13 +54,15 @@ local LevelManager = {
             } 
         },
         { 
-            map = "room3", 
+            map = "room3",
+            waves = {}, 
             enemies = 7, 
             boss = false,
             spawns = {} 
         },
         { 
-            map = "room4", 
+            map = "room4",
+            waves = {}, 
             enemies = 10, 
             boss = false,
             spawns = {
@@ -93,24 +122,53 @@ function LevelManager:loadLevel(index, enemyImageCache, projectiles)
         table.insert(wallColliders, wall)
     end
 
+    self.spawnZones = {} -- Reset enemy spawn zones for the new level
+    if currentMap.layers["EnemySpawns"] then
+        for _, zone in ipairs(currentMap.layers["EnemySpawns"].objects) do
+            -- Create spawn zones for enemies
+            table.insert(self.spawnZones, {
+                x = zone.x,
+                y = zone.y,
+                width = zone.width,
+                height = zone.height
+            })
+        end
+    end
+
     -- initialize from spawns table in levels or an empty table if a spawns table is missing
     local spawns = level.spawns or {}
 
-    -- Spawn enemies using level-specific positions
-    for _, spawnPos in ipairs(spawns) do
-        spawnRandomEnemy(spawnPos.x, spawnPos.y, enemyImageCache) -- Fixed positions
+    if level.waves then
+        -- Spawn enemies using level-specific positions
+        for _, spawnPos in ipairs(spawns) do
+            spawnRandomEnemy(spawnPos.x, spawnPos.y, enemyImageCache) -- Fixed positions
+        end
+    else
+        -- Spawn enemies using level-specific positions
+        for _, spawnPos in ipairs(spawns) do
+            spawnRandomEnemy(spawnPos.x, spawnPos.y, enemyImageCache) -- Fixed positions
+        end
+
+        local remaining = level.enemies - #spawns
+        for i = 1, remaining do
+            spawnRandomEnemy() -- Random positions
+        end
+        
+        if level.boss then
+            spawnBossEnemy() -- Spawn boss if defined in level
+        end
     end
     
     -- Spawn remaining enemies randomly (enemies in a level - index of spawns (ex: room1 has 3 enemies, 3 spawn points))
-    local remaining = level.enemies - #spawns
-    for i = 1, remaining do
-        spawnRandomEnemy() -- Random positions
-    end
+    -- local remaining = level.enemies - #spawns
+    -- for i = 1, remaining do
+    --     spawnRandomEnemy() -- Random positions
+    -- end
 
-    -- need to make boss to go with boss logic
-    if level.boss then
-        spawnBossEnemy()
-    end
+    -- -- need to make boss to go with boss logic
+    -- if level.boss then
+    --     spawnBossEnemy()
+    -- end
 
     projectilePool = {}
 
@@ -129,6 +187,16 @@ function LevelManager:loadLevel(index, enemyImageCache, projectiles)
         projectiles[i]:destroySelf()
         table.remove(projectiles, i)
     end
+end
+
+function LevelManager:spawnRandomInZone(enemyImageCache, enemyTypes)
+    if #self.spawnZones == 0 then return end
+
+    local zone = self.spawnZones[love.math.random(#self.spawnZones)]
+    local x = zone.x + love.math.random(0, zone.w)
+    local y = zone.y + love.math.random(0, zone.h)
+
+    spawnRandomEnemy(x, y, enemyImageCache, enemyTypes)
 end
 
 return LevelManager
