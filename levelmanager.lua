@@ -52,7 +52,7 @@ local LevelManager = {
     }
 }
 
-function LevelManager:loadLevel(index)
+function LevelManager:loadLevel(index, enemyImageCache, projectiles)
     -- each level recieves an index
     self.currentLevel = index
     local level = self.levels[index]
@@ -124,13 +124,11 @@ function LevelManager:loadLevel(index)
         end
     end
 
-    -- destroy any remaining prjectiles
-    -- for i = #projectiles, 1, -1 do
-    --     if projectiles[i].collider then
-    --         projectiles[i].collider:destroy()
-    --     end
-    --     table.remove(projectiles, i)
-    -- end
+    -- destroy any remaining prjectiles on level load
+    for i = #projectiles, 1, -1 do
+        projectiles[i]:destroySelf()
+        table.remove(projectiles, i)
+    end
 end
 
 return LevelManager

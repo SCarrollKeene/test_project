@@ -416,7 +416,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
 
-    LevelManager:loadLevel(LevelManager.currentLevel, enemyImageCache)
+    LevelManager:loadLevel(LevelManager.currentLevel, enemyImageCache, projectiles)
 
     self.projectileBatch = love.graphics.newSpriteBatch(Projectile.image, 1000)  -- 1000 = initial capacity
 
@@ -952,9 +952,21 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- a way for the player to heal
 
-    projectiles = {} -- Clear existing projectiles
+    -- projectiles = {} -- Clear existing projectiles, not doing anything
 
-    -- portal to room2
+    -- destroy any remaining active projectiles on level load in list
+    for i = #projectiles, 1, -1 do
+        projectiles[i]:destroySelf()
+        table.remove(projectiles, i)
+    end
+
+    -- reset ALL projectiles in the pool, active and inactive
+    for i = #Projectile.pool, 1, -1 do
+        Projectile.pool[i]:destroySelf()
+        table.remove(Projectile.pool, i)
+    end
+
+    -- portal to next room/level
     if not portal then
         portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
         print("Safe room portal created")
