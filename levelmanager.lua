@@ -16,10 +16,10 @@ local LevelManager = {
             -- boss = false,
             waves = {
                 { enemyCount = 3, delay = 1.0, spawnInterval = 0.2, enemyTypes = {"Black Blob"}, boss = false },
-                { enemyCount = 6, delay = 2.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
-                { enemyCount = 9, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
-                { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
-                { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+                -- { enemyCount = 6, delay = 2.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+                -- { enemyCount = 9, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+                -- { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
+                -- { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
             },
             spawns = {
                 -- defining fixed positions for enemy spawn

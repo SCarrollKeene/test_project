@@ -4,8 +4,6 @@ local Enemy = require("enemy")
 local Portal = require("portal")
 local Particle = require("particle")
 local Blob = require("blob")
-local Tileset = require("tileset")
-local Map = require("map")
 local Walls = require("walls")
 local MapLoader = require("maploader")
 local LevelManager = require("levelmanager")
@@ -15,6 +13,7 @@ local sti = require("libraries/sti")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
+local Camera = require("libraries/hump/camera")
 local SaveSystem = require("save_game_data")
 local Debug = require("game_debug")
 
@@ -38,7 +37,6 @@ local metaData = {
 
 -- for testing purposes, loading the safe room map after entering portal
 local saferoomMap
-local room2Map
 
 -- game state definitions
 local playing = {}
@@ -267,9 +265,6 @@ function love.load()
     print("DEBUG: main.lua: Added collision class - " .. 'portal')
     -- You can also define interactions here
 
-    Tileset:load()
-    Map:load(world) -- idk if I need to pass world to may, this seems contingent upon Map creating the colliders, revisit
-    
     local mage_spritesheet_path = "sprites/mage-NESW.png"
     local dash_spritesheet_path = "sprites/dash.png"
     local death_spritesheet_path = "sprites/soulsplode.png"
@@ -449,6 +444,23 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
 
+    -- >> SPATIAL PARTIONING GRID START 7/1/25 <<
+
+    self.gridCellSize = 200 -- Each cell is 200x200 pixels, tweak for performance.
+    self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
+    self.gridHeight = math.ceil(768 / self.gridCellSize)
+    self.spatialGrid = {} -- This will hold all the enemies, sorted into cells.
+    
+    -- Pre-populate the grid with empty tables to avoid errors
+    for x = 1, self.gridWidth do
+        self.spatialGrid[x] = {}
+        for y = 1, self.gridHeight do
+            self.spatialGrid[x][y] = {}
+        end
+    end
+
+    -- >> SPATIAL PARTIONING GRID END 7/1/25 <<
+
     LevelManager:loadLevel(LevelManager.currentLevel, enemyImageCache, projectiles)
      -- Initialize wave manager
     local levelData = LevelManager.levels[LevelManager.currentLevel]
@@ -599,11 +611,6 @@ end
 
 function playing:update(dt)
     print("playing:update")
-    -- if pendingRoomTransition then
-    --     Gamestate.switch(safeRoom)
-    --     pendingRoomTransition = false
-    --     return -- prevents any further update logic
-    -- end
 
     -- Needed to resolve Box2D locking when trying to create new colliders during the physics being updated
     if self.pendingLevelLoad then
@@ -669,10 +676,52 @@ function playing:update(dt)
     -- AND updating projectile direction control by player : UPDATE: works now for player attacking enemy
 
     -- change enemy to a diff name to not conflict or be confused with enemy module 6/1/25
-    for i, enemy in ipairs(enemies) do
-        enemy:update(dt) -- update handles movement towards its target, the player
-       print("DEBUG: SUCCESS, Enemies table size NOW:", #enemies)
+    -- old enemy update loop
+    -- for i, enemy in ipairs(enemies) do
+    --     enemy:update(dt) -- update handles movement towards its target, the player
+    --    print("DEBUG: SUCCESS, Enemies table size NOW:", #enemies)
+    -- end
+
+    -- >> START OF NEW LOOP ENEMY UPDATE LOGIC 7/1/25 <<
+
+    -- 1. Clear the grid from the previous frame
+    for x = 1, self.gridWidth do
+        for y = 1, self.gridHeight do
+            self.spatialGrid[x][y] = {}
+        end
     end
+
+    -- 2. Populate the grid with the current positions of all enemies
+    for _, enemy in ipairs(enemies) do
+        local gridX = math.floor(enemy.x / self.gridCellSize) + 1
+        local gridY = math.floor(enemy.y / self.gridCellSize) + 1
+
+        -- Ensure the enemy is within the grid bounds before inserting
+        if gridX >= 1 and gridX <= self.gridWidth and gridY >= 1 and gridY <= self.gridHeight then
+            table.insert(self.spatialGrid[gridX][gridY], enemy)
+        end
+    end
+
+    -- 3. Determine the player's grid cell
+    local playerGridX = math.floor(player.x / self.gridCellSize) + 1
+    local playerGridY = math.floor(player.y / self.gridCellSize) + 1
+
+    -- 4. Only update enemies in the player's cell and the 8 neighboring cells
+    for dx = -1, 1 do
+        for dy = -1, 1 do
+            local checkX = playerGridX + dx
+            local checkY = playerGridY + dy
+
+            -- Make sure the neighboring cell is valid
+            if checkX >= 1 and checkX <= self.gridWidth and checkY >= 1 and checkY <= self.gridHeight then
+                -- This is a "hot" cell, so update every enemy inside it
+                for _, enemy in ipairs(self.spatialGrid[checkX][checkY]) do
+                    enemy:update(dt) -- This is the expensive AI update call
+                end
+            end
+        end
+    end
+-- >> END OF NEW LOOP 7/1/25 <<
 
     if #enemies == 0 and not portal then
         spawnPortal()
@@ -848,107 +897,110 @@ end
 
 function playing:draw()
     print("playing:draw")
-    -- draw map first, player should load on top of map
-    if currentMap then currentMap:draw() end
-        
-    if not player.isDead then
-        player:draw()
-    end
 
-    -- draw enemies
-    for _, enemy in ipairs(enemies) do
-        if not enemy.toBeRemoved then
-            enemy:draw()
+        -- draw map first, player should load on top of map
+        if currentMap then 
+            currentMap:draw() 
         end
-    end
-
-    -- check to draw shot projectiles
-    -- for _, p in ipairs(projectiles) do
-    --     p:draw()
-    -- end
-
-    -- draw projectiles using sprite batch for performance
-
-    -- Projectile batching
-    self.projectileBatch:clear()
-    for _, p in ipairs(projectiles) do
-        -- Verify position is numeric
-        if type(p.x) == "number" and type(p.y) == "number" then
-            self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
-        else
-            print("WARN: Invalid projectile position", p.x, p.y)
+            
+        if not player.isDead then
+            player:draw()
         end
-    end
-    love.graphics.draw(self.projectileBatch)
-    print("Projectiles in batch:", self.projectileBatch:getCount())
 
-    -- Enemy rendering
-    for _, batch in pairs(self.enemyBatches) do
-        batch:clear()
-    end
+        -- draw enemies
+        for _, enemy in ipairs(enemies) do
+            if not enemy.toBeRemoved then
+                enemy:draw()
+            end
+        end
 
-    -- Enemy batching
-    for _, batch in pairs(self.enemyBatches) do batch:clear() end
+        -- check to draw shot projectiles
+        -- for _, p in ipairs(projectiles) do
+        --     p:draw()
+        -- end
 
-    local toDrawIndividually = {}
-    for _, enemy in ipairs(enemies) do
-        if not enemy.toBeRemoved and enemy.spriteSheet then
-            if enemy.isFlashing then
-                table.insert(toDrawIndividually, enemy)
+        -- draw projectiles using sprite batch for performance
+
+        -- Projectile batching
+        self.projectileBatch:clear()
+        for _, p in ipairs(projectiles) do
+            -- Verify position is numeric
+            if type(p.x) == "number" and type(p.y) == "number" then
+                self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
             else
-                local batch = self.enemyBatches[enemy.spriteSheet]
-                if batch then
-                    -- SAFEGUARD: Check if animation exists and has getFrame
-                    if enemy.currentAnimation and enemy.currentAnimation.getFrame then
-                        local quad = enemy.currentAnimation:getFrame()
-                        batch:add(quad, enemy.x, enemy.y, 0, 1, 1, enemy.width/2, enemy.height/2)
-                    else
-                        print("WARN: Missing animation for", enemy.name)
-                        table.insert(toDrawIndividually, enemy)  -- Fallback to individual draw
-                    end
-                else
+                print("WARN: Invalid projectile position", p.x, p.y)
+            end
+        end
+        love.graphics.draw(self.projectileBatch)
+        print("Projectiles in batch:", self.projectileBatch:getCount())
+
+        -- Enemy rendering
+        for _, batch in pairs(self.enemyBatches) do
+            batch:clear()
+        end
+
+        -- Enemy batching
+        for _, batch in pairs(self.enemyBatches) do batch:clear() end
+
+        local toDrawIndividually = {}
+        for _, enemy in ipairs(enemies) do
+            if not enemy.toBeRemoved and enemy.spriteSheet then
+                if enemy.isFlashing then
                     table.insert(toDrawIndividually, enemy)
+                else
+                    local batch = self.enemyBatches[enemy.spriteSheet]
+                    if batch then
+                        -- SAFEGUARD: Check if animation exists and has getFrame
+                        if enemy.currentAnimation and enemy.currentAnimation.getFrame then
+                            local quad = enemy.currentAnimation:getFrame()
+                            batch:add(quad, enemy.x, enemy.y, 0, 1, 1, enemy.width/2, enemy.height/2)
+                        else
+                            print("WARN: Missing animation for", enemy.name)
+                            table.insert(toDrawIndividually, enemy)  -- Fallback to individual draw
+                        end
+                    else
+                        table.insert(toDrawIndividually, enemy)
+                    end
                 end
             end
         end
-    end
 
-    -- Draw batched enemies
-    for _, batch in pairs(self.enemyBatches) do
-        love.graphics.draw(batch)
-    end
+        -- Draw batched enemies
+        for _, batch in pairs(self.enemyBatches) do
+            love.graphics.draw(batch)
+        end
 
-    -- Draw individual enemies (flashing or fallback) WITH SHADER SUPPORT
-    for _, enemy in ipairs(toDrawIndividually) do
-        enemy:draw()  -- This handles the animation drawing, hopefully with flashshader still intact
-    end
+        -- Draw individual enemies (flashing or fallback) WITH SHADER SUPPORT
+        for _, enemy in ipairs(toDrawIndividually) do
+            enemy:draw()  -- This handles the animation drawing, hopefully with flashshader still intact
+        end
 
-    -- draw portal
-    if portal then
-        portal:draw()
-    end
+        -- draw portal
+        if portal then
+            portal:draw()
+        end
 
-    -- function love.keypressed(key)
-    --     if key == "z" then
-    --         sounds.music:stop()
-    --     end
-    -- end
+        -- function love.keypressed(key)
+        --     if key == "z" then
+        --         sounds.music:stop()
+        --     end
+        -- end
 
-    Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize)
-    Debug.drawEnemyTracking(enemies, player)
+        Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize)
+        Debug.drawEnemyTracking(enemies, player)
 
-    love.graphics.setBlendMode("add") -- for visibility
-    -- draw particles systems last after other entities
-    for _, ps in ipairs(globalParticleSystems) do
-        love.graphics.draw(ps)
-    end
-    love.graphics.setBlendMode("alpha")
+        love.graphics.setBlendMode("add") -- for visibility
+        -- draw particles systems last after other entities
+        for _, ps in ipairs(globalParticleSystems) do
+            love.graphics.draw(ps)
+        end
+        love.graphics.setBlendMode("alpha")
 
-    if fading and fadeAlpha > 0 then
-        love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
-        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
-        love.graphics.setColor(1, 1, 1, 1)
-    end
+        if fading and fadeAlpha > 0 then
+            love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
+            love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+            love.graphics.setColor(1, 1, 1, 1)
+        end
 
      -- Display player score
      -- debate change to an event system or callback function later when enemy dies or check for when the enemy is dead
@@ -1135,20 +1187,20 @@ end
 function safeRoom:draw()
     print("safeRoom:draw")
 
-    -- Set the background color for the safe room
-    love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
-    -- Draw safe room background
-    if currentMap then currentMap:draw() end
-    -- love.graphics.setColor(0.2, 0.5, 0.3, 1)
-    -- love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
-    
-    -- Draw player
-    player:draw()
+        -- Set the background color for the safe room
+        love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
+        -- Draw safe room background
+        if currentMap then currentMap:draw() end
+        -- love.graphics.setColor(0.2, 0.5, 0.3, 1)
+        -- love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        
+        -- Draw player
+        player:draw()
 
-    -- if exists, draw it
-    if portal then
-        portal:draw()
-    end
+        -- if exists, draw it
+        if portal then
+            portal:draw()
+        end
 
     love.graphics.setBlendMode("add") -- for visibility
     -- draw particles systems last after other entities
@@ -1178,149 +1230,6 @@ end
 -- refactor some of this code eventually TODO: add level manager
 -- especially since I need to account for loading different maps
 -- 6/17/2025
-
--- function room2:enter()
---     print("Entering room 2")
---     room2Map = MapLoader.load("room2", world)
-
---     -- reset for each new Room
---     runData.currentRoom = runData.currentRoom + 1
---     runData.cleared = false
-
---     player.x = 140
---     player.y = love.graphics.getHeight() / 3
---     if player.collider then
---         player.collider:setPosition(player.x, player.y)
---         player.collider:setLinearVelocity(0, 0)
---     end
-
---     -- need to check for, update and draw projectiles again
-
---     -- spawn some random enemies
---     for i = 1, 5 do
---         spawnRandomEnemy()
---     end
-
---     -- portal reset
---     portal = nil
--- end
-
--- function room2:leave()
---     -- stop music, clear temp tables/objects, destroy portals, etc
-
---     -- clear particles
---     globalParticleSystems = {}
-
---     -- destroy current remaining portal
---     if portal then
---         portal:destroy();
---         portal = nil
---     end
-
---     -- reset flags
---     pendingRoomTransition = false
---     print("Leaving room 2 state, cleaning up resources.")
---     -- save game after clearing initial room
---     SaveSystem.saveGame(runData, metaData)
--- end
-
--- function room2:update(dt)
---     if room2 then room2Map:update(dt) end
---     if world then world:update(dt) end
---     player:update(dt)
-
---     -- update spawned enemies in room 2
---     for i, enemy in ipairs(enemies) do
---         enemy:update(dt)
---     end
-
---     if #enemies == 0 and not portal then
---         spawnPortal() -- spawn portal when enemies have been defeaated
---         print("Room 2 CLEARED. Portal spawned.")
---     end
-
---     if pendingRoomTransition then
---         fading = true
---         fadeDirection = 1
---         fadeTimer = 0
---         nextState = safeRoom
---         pendingRoomTransition = false
---     end
---     -- if fading then
---     --     -- SUPPOSED to clear particles when starting fade out
---     --     if fadeDirection == 1 and nextState == playing then
---     --         globalParticleSystems = {}
---     --     end
-
---     --     if fadeDirection == 1 then
---     --         -- Fade out (to black)
---     --         fadeTimer = fadeTimer + dt
---     --         fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
---     --         if fadeAlpha >= 1 then
---     --             -- Fade out complete, start hold
---     --             fadeHoldTimer = 0
---     --             fadeDirection = 0    -- 0 indicates hold phase
---     --         end
---     --     elseif fadeDirection == 0 then
---     --         -- Hold phase (fully black)
---     --         fadeHoldTimer = fadeHoldTimer + dt
---     --         fadeAlpha = 1
---     --         if fadeHoldTimer >= fadeHoldDuration then
---     --             -- Hold complete, switch state and start fade in
---     --             Gamestate.switch(nextState)
---     --             fadeDirection = -1
---     --             fadeTimer = 0
---     --         end
---     --     elseif fadeDirection == -1 then
---     --         -- Fade in (from black)
---     --         fadeTimer = fadeTimer + dt
---     --         fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
---     --         if fadeAlpha <= 0 then
---     --             fading = false
---     --             fadeAlpha = 0
---     --         end
---     --     end
---     --     return -- halt other updates during fade
---     -- end
-
---     -- if not player.isDead then
---     --     player:update(dt)
---     -- end
-
---     if portal then
---         portal:update(dt)
---     end
--- end
-
--- function room2:draw()
---     -- draw room
---     if room2Map then room2Map:draw() end
-
---     -- Draw player
---     if player then
---         player:draw()
---     end
-
---     -- draw spawned enemeis in room 2
---     for _, enemy in ipairs(enemies) do
---         if enemy.draw then enemy:draw() end
---     end
-
---     -- if portal exists, draw it
---     if portal and portal.draw then
---         portal:draw()
---     end
-
---     -- Room 2 room UI
---     love.graphics.setColor(1, 1, 1, 1)
---     love.graphics.setFont(scoreFont)
---     love.graphics.print("ROOM 2", 30, 50)
---     love.graphics.print("Press 'R' to start next round", 30, 80)
---     love.graphics.print("Health: " .. player.health, 30, 110)
---     love.graphics.print("Score: " .. playerScore, 30, 140)
---     love.graphics.print("Enemies: " .. #enemies, 30, 170)
--- end
-
 
 -- TODO: make ESC key global for quiting no matter what game state they are in
 function love.quit()
