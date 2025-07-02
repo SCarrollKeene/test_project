@@ -1,3 +1,4 @@
+local cam = require("camera")
 local Projectile = require("projectile")  -- Assuming you have a Projectile module
 -- move to a utilities folder later
 
@@ -67,38 +68,5 @@ function Debug.drawEnemyTracking(enemies, player)
         end
     end
 end
-
--- function Debug.drawCollisions(world, camera, playerX, playerY)
---     if not world or not camera or not world.getColliders then return end
-
---     local maxDistance = 500  -- Maximum distance from player to draw colliders
---     local colliders = world:getColliders()
---     local maxDistanceSq = maxDistance * maxDistance
-    
---     for _, collider in ipairs(colliders) do
---         if not collider:isDestroyed() then
---             local x, y = collider:getPosition()
---             local w, h = collider:getWidth(), collider:getHeight()
---             local ox, oy = collider:getOffset()  -- Get offset if exists
-            
---             -- Distance check (squared for performance)
---             local dx, dy = x - playerX, y - playerY
---             if dx*dx + dy*dy < maxDistanceSq then
---                 -- Convert to camera space
---                 local cx, cy = camera:worldToCamera(x, y)
-                
---                 -- Draw with camera-adjusted position
---                 love.graphics.setColor(0, 1, 0, 0.7)  -- Green with transparency
---                 love.graphics.rectangle("line", cx + (ox or 0), cy + (oy or 0), w, h)
-                
---                 -- Optional: Draw center point
---                 love.graphics.setColor(1, 0, 0, 1)
---                 love.graphics.circle("fill", cx + w/2, cy + h/2, 3)
---             end
---         end
---     end
---     love.graphics.setColor(1, 1, 1, 1)  -- Reset color to white
--- end
-
 
 return Debug

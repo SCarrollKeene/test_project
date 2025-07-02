@@ -154,7 +154,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.weapon = Weapon:new(2, Projectile, 15) -- fireRate, projectileClass, baseDamage class params/args from Weapon class
 end
 
-function Player:update(dt)
+function Player:update(dt, mapW, mapH)
     -- Handle dash cooldown
     if self.dashCooldownTimer > 0 then
         self.dashCooldownTimer = self.dashCooldownTimer - dt
@@ -231,7 +231,7 @@ function Player:update(dt)
         self.x, self.y = self.collider:getPosition()
     end
 
-    self:checkBoundaries() --change to reflect collider now: checkBoundaries(self.x, self,y) 6/1/25
+    self:checkBoundaries(mapW, mapH) --change to reflect collider now: checkBoundaries(self.x, self,y) 6/1/25
     self.weapon:update(dt)
 end
 
@@ -310,15 +310,20 @@ function Player:move(dt)
     end
 end
 
-function Player:checkBoundaries()
+function Player:checkBoundaries(mapW, mapH)
+    local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
+    local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
     local newX, newY = self.x, self.y
     local halfWidth = self.width / 2
     local halfHeight = self.height / 2
 
+    -- clamp player to map boundaries
     if self.x - halfWidth < 0 then newX = halfWidth end
-    if self.x + halfWidth > love.graphics.getWidth() then newX = love.graphics.getWidth() - halfWidth end
+    --if self.x + halfWidth > love.graphics.getWidth() then newX = love.graphics.getWidth() - halfWidth end
+    if self.x + halfWidth > mapW then newX = mapW - halfWidth end
     if self.y - halfHeight < 0 then newY = halfHeight end
-    if self.y + halfHeight > love.graphics.getHeight() then newY = love.graphics.getHeight() - halfHeight end
+    -- if self.y + halfHeight > love.graphics.getHeight() then newY = love.graphics.getHeight() - halfHeight end
+    if self.y + halfHeight > mapH then newY = mapH - halfHeight end
 
     if newX ~= self.x or newY ~= self.y then
         self.x = newX

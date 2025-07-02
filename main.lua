@@ -14,8 +14,13 @@ local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
 local Camera = require("libraries/hump/camera")
+-- local camera = require("camera")
 local SaveSystem = require("save_game_data")
 local Debug = require("game_debug")
+
+
+local cam = Camera()
+cam:zoomTo(1.5)
 
 -- current run data and persistent game data
 local runData = {
@@ -115,6 +120,10 @@ function love.keypressed(key)
             spawnRandomEnemy(love.math.random(100, 700), love.math.random(100, 500))
         end
         player.weapon.fireRate = 0.01  -- Rapid fire
+    end
+
+    if key == "f5" then
+        Debug.showWalls = not Debug.showWalls
     end
 
     if Gamestate.current() == safeRoom then
@@ -462,6 +471,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     -- >> SPATIAL PARTIONING GRID END 7/1/25 <<
 
     LevelManager:loadLevel(LevelManager.currentLevel, enemyImageCache, projectiles)
+
      -- Initialize wave manager
     local levelData = LevelManager.levels[LevelManager.currentLevel]
     self.waveManager = WaveManager.new(levelData)
@@ -611,6 +621,16 @@ end
 
 function playing:update(dt)
     print("playing:update")
+    -- After player:update(dt, mapW, mapH) or player:update(dt)
+    local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
+    local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
+    local w, h = love.graphics.getWidth(), love.graphics.getHeight()
+    local px, py = player.x, player.y
+
+    -- Clamp the camera so it doesn't scroll past the map edges
+    local camX = math.max(w/2 / cam.scale, math.min(px, mapW - w/2 / cam.scale))
+    local camY = math.max(h/2 / cam.scale, math.min(py, mapH - h/2 / cam.scale))
+    cam:lookAt(camX, camY)
 
     -- Needed to resolve Box2D locking when trying to create new colliders during the physics being updated
     if self.pendingLevelLoad then
@@ -666,7 +686,9 @@ function playing:update(dt)
     end
 
     if not player.isDead then
-        player:update(dt)
+        local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
+        local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
+        player:update(dt, mapW, mapH)
     end
     -- enemy1:update(dt)
     -- blob1:update(dt)
@@ -779,9 +801,12 @@ function playing:update(dt)
 
         if not player.isDead and love.mouse.isDown(1) then
             print("DEBUG: left mouse click detected")
+            local mx, my = cam:worldCoords(love.mouse.getX(), love.mouse.getY())
             local angle = math.atan2(
-                love.mouse.getY() - player.y, 
-                love.mouse.getX() - player.x
+                -- love.mouse.getY() - player.y, 
+                -- love.mouse.getX() - player.x
+                my - player.y, 
+                mx - player.x
             )
             print("DEBUG: calculated angle: ", angle)
 
@@ -898,10 +923,23 @@ end
 function playing:draw()
     print("playing:draw")
 
-        -- draw map first, player should load on top of map
-        if currentMap then 
-            currentMap:draw() 
-        end
+    -- Calculate camera offset and scale
+    local camX, camY = cam:position()
+    local scale = cam.scale or 1
+    local tx = camX - love.graphics.getWidth() / 2 / scale
+    local ty = camY - love.graphics.getHeight() / 2 / scale
+
+    -- draw map first, player should load on top of map
+    if currentMap then
+        local mapW = currentMap.width * currentMap.tilewidth
+        local mapH = currentMap.height * currentMap.tileheight
+        tx = math.max(0, math.min(tx, mapW - love.graphics.getWidth() / scale))
+        ty = math.max(0, math.min(ty, mapH - love.graphics.getHeight() / scale))
+        -- Clamp tx/ty as above
+        currentMap:draw(-tx, -ty, scale, scale)
+    end
+
+    cam:attach()
             
         if not player.isDead then
             player:draw()
@@ -988,6 +1026,7 @@ function playing:draw()
 
         Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize)
         Debug.drawEnemyTracking(enemies, player)
+        Debug.drawCollisions(world)
 
         love.graphics.setBlendMode("add") -- for visibility
         -- draw particles systems last after other entities
@@ -1002,6 +1041,8 @@ function playing:draw()
             love.graphics.setColor(1, 1, 1, 1)
         end
 
+    cam:detach()
+
      -- Display player score
      -- debate change to an event system or callback function later when enemy dies or check for when the enemy is dead
     if scoreFont then
@@ -1013,10 +1054,6 @@ function playing:draw()
     love.graphics.print("Score: " .. playerScore, 20, 110)
     love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
-    -- for _, wall in ipairs(currentWalls) do
-    --     love.graphics.rectangle("line", wall:getX(), wall:getY(), wall:getWidth(), wall:getHeight())
-    -- end
-    Debug.drawCollisions(world)
 end
 
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
@@ -1038,6 +1075,11 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     player.x = 140
     player.y = love.graphics.getHeight() / 2
 
+    -- destory collider to make sure its in the right position
+    -- if player.collider then
+    --     player.collider:destroy()
+    -- end
+
     if player.collider then
         player.collider:setPosition(player.x, player.y)
         player.collider:setLinearVelocity(0, 0)
@@ -1048,14 +1090,6 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         player:load(world)  
     end
 
-    -- need to check if projectile collider exists, if not, recreate it
-    -- need to also make sure that remaining projectile colliders are destroyed on :leave()
-    -- if not projectile.collider then
-    --     -- Recreate projectile collider if missing
-    --     Projectile.loadAssets() -- Ensure assets are loaded before creating projectiles
-    --     Projectile.createCollider(world, player.x, player.y) -- Create a new collider for the projectile
-    -- end
-
     -- need to check for, update and draw projectiles again
 
     -- create store/shop logic
@@ -1063,8 +1097,6 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     -- add some NPC
 
     -- a way for the player to heal
-
-    -- projectiles = {} -- Clear existing projectiles, not doing anything
 
     -- destroy any remaining active projectiles on level load in list
     for i = #projectiles, 1, -1 do
@@ -1078,6 +1110,11 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         table.remove(Projectile.pool, i)
     end
 
+    if portal then
+        portal:destroy()  -- This should destroy both the collider and the object
+        portal = nil
+    end
+
     -- portal to next room/level
     if not portal then
         portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
@@ -1086,6 +1123,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- prepare to load next level
     LevelManager.currentLevel = LevelManager.currentLevel
+
 end
 
 function safeRoom:leave()
@@ -1122,7 +1160,19 @@ end
 function safeRoom:update(dt)
     if saferoomMap then saferoomMap:update(dt) end
     if world then world:update(dt) end
-    player:update(dt)
+
+    -- cam update
+    local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
+    local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
+    local w, h = love.graphics.getWidth(), love.graphics.getHeight()
+    local px, py = player.x, player.y
+
+    player:update(dt, mapW, mapH)
+
+    -- Clamp the camera so it doesn't scroll past the map edges
+    local camX = math.max(w/2 / cam.scale, math.min(px, mapW - w/2 / cam.scale))
+    local camY = math.max(h/2 / cam.scale, math.min(py, mapH - h/2 / cam.scale))
+    cam:lookAt(camX, camY)
 
     if fading then
         -- SUPPOSED to clear particles when starting fade out
@@ -1187,13 +1237,32 @@ end
 function safeRoom:draw()
     print("safeRoom:draw")
 
-        -- Set the background color for the safe room
-        love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
         -- Draw safe room background
-        if currentMap then currentMap:draw() end
+        --if currentMap then currentMap:draw() end
         -- love.graphics.setColor(0.2, 0.5, 0.3, 1)
         -- love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+
+    -- Calculate camera offset and scale
+    local camX, camY = cam:position()
+    local scale = cam.scale or 1
+    local tx = camX - love.graphics.getWidth() / 2 / scale
+    local ty = camY - love.graphics.getHeight() / 2 / scale
+
+    -- draw map first, player should load on top of map
+    if currentMap then
+        local mapW = currentMap.width * currentMap.tilewidth
+        local mapH = currentMap.height * currentMap.tileheight
+        tx = math.max(0, math.min(tx, mapW - love.graphics.getWidth() / scale))
+        ty = math.max(0, math.min(ty, mapH - love.graphics.getHeight() / scale))
+        -- Clamp tx/ty as above
+        currentMap:draw(-tx, -ty, scale, scale)
+    end
+
+    cam:attach()
         
+        -- Set the background color for the safe room
+        love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
+
         -- Draw player
         player:draw()
 
@@ -1217,6 +1286,7 @@ function safeRoom:draw()
 
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
 
+    cam:detach()
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
