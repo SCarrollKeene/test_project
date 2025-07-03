@@ -227,12 +227,24 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
     -- end
 end
 
+-- based on window coords
+-- function spawnPortal()
+--     local portalX = love.graphics.getWidth() / 2
+--     local portalY = love.graphics.getHeight() / 2
+--     portal = Portal:new(world, portalX, portalY)
+--     print("A portal has spawned! Traverse to " ..runData.currentRoom.. " room.")
+-- end
+
+-- based on [Player collider] recreated at map coords:
 function spawnPortal()
-    local portalX = love.graphics.getWidth() / 2
-    local portalY = love.graphics.getHeight() / 2
+    local mapW = currentMap.width * currentMap.tilewidth
+    local mapH = currentMap.height * currentMap.tileheight
+    local portalX = mapW / 2
+    local portalY = mapH / 2
     portal = Portal:new(world, portalX, portalY)
     print("A portal has spawned! Traverse to " ..runData.currentRoom.. " room.")
 end
+
 
 function roomComplete()
     runData.cleared = true
@@ -278,8 +290,12 @@ function love.load()
     local dash_spritesheet_path = "sprites/dash.png"
     local death_spritesheet_path = "sprites/soulsplode.png"
     Projectile.loadAssets()
-    Player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
-    -- Player:load(world, death_spritesheet_path)
+    player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
+
+    -- In love.load(), after first load:
+    player.mage_spritesheet_path = mage_spritesheet_path
+    player.dash_spritesheet_path = dash_spritesheet_path
+    player.death_spritesheet_path = death_spritesheet_path
 
     function beginContact(a, b, coll)
         local dataA = a:getUserData() -- both Should be the projectile/enemy data
@@ -492,15 +508,24 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     runData.cleared = false
 
     -- destroy collider to make sure its in the right position
-    -- if player.collider then
-    --     player.collider:destroy()
-    --     player.collider = nil
-    -- end
-    -- player:load(world) -- creates a new player collider at the correct position in the current world
+    if player.collider then
+        player.collider:destroy()
+        player.collider = nil
+    end
+    player:load(world, player.mage_spritesheet_path, player.dash_spritesheet_path, player.death_spritesheet_path) -- creates a new player collider at the correct position in the current world
 
     -- Reset player position and state
-    player.x = 140
-    player.y = love.graphics.getHeight() / 3
+    -- window coords
+    -- player.x = 140
+    -- player.y = love.graphics.getHeight() / 3
+    -- print("[Player collider] recreated at:", player.x, player.y)
+
+    local mapW = currentMap.width * currentMap.tilewidth
+    local mapH = currentMap.height * currentMap.tileheight
+    -- map coords
+    player.x = mapW / 4
+    player.y = mapH / 3
+    --print("[Player collider] recreated at map coords:", mapW, mapY)
 
     if player.collider then
         player.collider:setPosition(player.x, player.y)
@@ -508,9 +533,9 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     end
 
     -- Recreate collider if missing
-    if not player.collider then
-        player:load(world)  
-    end
+    -- if not player.collider then
+    --     player:load(world)  
+    -- end
     
     -- Spawn initial enemies if needed
     -- if #enemies == 0 then
@@ -1080,15 +1105,22 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     end
 
     -- destroy collider to make sure its in the right position
-    --if player.collider then
-    --    player.collider:destroy()
-    --    player.collider = nil
-    --end
-    --player:load(world) -- creates a new player collider at the correct position in the current world
+    if player.collider then
+        player.collider:destroy()
+        player.collider = nil
+    end
+    player:load(world, player.mage_spritesheet_path, player.dash_spritesheet_path, player.death_spritesheet_path) -- creates a new player collider at the correct position in the current world
     
     -- Reset player position and state
-    player.x = 140
-    player.y = love.graphics.getHeight() / 2
+    -- player.x = 140
+    -- player.y = love.graphics.getHeight() / 3
+    -- print("[Player collider] recreated at:", player.x, player.y)
+
+    local mapW = currentMap.width * currentMap.tilewidth
+    local mapH = currentMap.height * currentMap.tileheight
+    -- map coords
+    player.x = mapW / 4
+    player.y = mapH / 3
 
     if player.collider then
         player.collider:setPosition(player.x, player.y)
@@ -1096,9 +1128,9 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     end
 
     -- Recreate collider if missing
-    if not player.collider then
-        player:load(world)  
-    end
+    -- if not player.collider then
+    --     player:load(world)  
+    -- end
 
     -- create store/shop logic
 
@@ -1125,8 +1157,9 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- portal to next room/level
     if not portal then
-        portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
-        print("Safe room portal created")
+        --portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
+        portal = Portal:new(world, mapW / 2, mapH / 2)
+        print("[SAFEROOM portal] created at", portal.x, portal.y)
     end
 
     -- prepare to load next level
