@@ -1201,20 +1201,23 @@ end
 
 function safeRoom:update(dt)
     if saferoomMap then saferoomMap:update(dt) end
-    if world then world:update(dt) end
-
+    
     -- cam update
     local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
     local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
     local w, h = love.graphics.getWidth(), love.graphics.getHeight()
-    local px, py = player.x, player.y
 
+    -- update player and other entities
     player:update(dt, mapW, mapH)
+    local px, py = player.x, player.y
 
     -- Clamp the camera so it doesn't scroll past the map edges
     local camX = math.max(w/2 / cam.scale, math.min(px, mapW - w/2 / cam.scale))
     local camY = math.max(h/2 / cam.scale, math.min(py, mapH - h/2 / cam.scale))
     cam:lookAt(camX, camY)
+
+    -- update physics world AFTER all positions are set
+    if world then world:update(dt) end
 
     if fading then
         -- SUPPOSED to clear particles when starting fade out
@@ -1262,9 +1265,15 @@ function safeRoom:update(dt)
         return
     end
 
+    -- if not player.isDead then
+    --     player:update(dt)
+    -- end
     if not player.isDead then
-        player:update(dt)
+        local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
+        local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
+        player:update(dt, mapW, mapH)
     end
+
     -- add other safe room specific logic
 
     -- safe room music
@@ -1300,11 +1309,11 @@ function safeRoom:draw()
         currentMap:draw(-tx, -ty, scale, scale)
     end
 
-    cam:attach()
-        
-        -- Set the background color for the safe room
+    -- Set the background color for the safe room
         love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
 
+    cam:attach()
+        
         -- Draw player
         player:draw()
 
@@ -1328,6 +1337,8 @@ function safeRoom:draw()
 
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
 
+    Debug.drawCollisions(world)
+
     cam:detach()
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
@@ -1337,7 +1348,6 @@ function safeRoom:draw()
     love.graphics.print("Score: " .. playerScore, 20, 110)
     love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
-    Debug.drawCollisions(world)
 end
 
 -- refactor some of this code eventually TODO: add level manager
