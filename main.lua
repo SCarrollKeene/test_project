@@ -448,7 +448,7 @@ end
 
 -- Entering playing gamestate
 function playing:enter(previous_state, world, enemyImageCache, mapCache)
-    print("Entered playing gamestate")
+    print("[PLAYING:ENTER] Entered playing gamestate")
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
@@ -490,6 +490,14 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- reset for each new Room
     runData.cleared = false
+
+    -- destroy collider to make sure its in the right position
+    -- if player.collider then
+    --     player.collider:destroy()
+    --     player.collider = nil
+    -- end
+    -- player:load(world) -- creates a new player collider at the correct position in the current world
+
     -- Reset player position and state
     player.x = 140
     player.y = love.graphics.getHeight() / 3
@@ -560,8 +568,6 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     end
     
     -- Draw individual enemies (flashing or fallback)
-    -- Draw individual enemies (flashing or fallback)
--- Draw individual enemies (flashing or fallback)
     for _, enemy in ipairs(toDrawIndividually) do
         if enemy.currentAnimation and enemy.spriteSheet then
             if enemy.isFlashing then
@@ -581,7 +587,9 @@ end
 
 function playing:leave()
     -- stop music, clear temp tables/objects, destroy portals, etc
-     print("Walls before cleanup:", #wallColliders)
+    print("[PLAYING:LEAVE] playing leave called")
+
+    print("Walls before cleanup:", #wallColliders)
     for _, collider in ipairs(wallColliders) do
         if not collider:isDestroyed() then
         collider:destroy()
@@ -690,8 +698,6 @@ function playing:update(dt)
         local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
         player:update(dt, mapW, mapH)
     end
-    -- enemy1:update(dt)
-    -- blob1:update(dt)
 
     -- NOTE: I need collision detection before I can continue and the logic for player attacks, enemy attacking player, getting damage values from projectile.damage
     -- and calling the appropriate dealDamage function
@@ -1057,6 +1063,7 @@ function playing:draw()
 end
 
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
+    print("[SAFEROOM:ENTER] entered saferoom gamestate")
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
@@ -1071,14 +1078,17 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     for _, wall in ipairs(currentWalls) do
         table.insert(wallColliders, wall)
     end
+
+    -- destroy collider to make sure its in the right position
+    --if player.collider then
+    --    player.collider:destroy()
+    --    player.collider = nil
+    --end
+    --player:load(world) -- creates a new player collider at the correct position in the current world
     
+    -- Reset player position and state
     player.x = 140
     player.y = love.graphics.getHeight() / 2
-
-    -- destory collider to make sure its in the right position
-    -- if player.collider then
-    --     player.collider:destroy()
-    -- end
 
     if player.collider then
         player.collider:setPosition(player.x, player.y)
@@ -1089,8 +1099,6 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     if not player.collider then
         player:load(world)  
     end
-
-    -- need to check for, update and draw projectiles again
 
     -- create store/shop logic
 
@@ -1127,6 +1135,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 end
 
 function safeRoom:leave()
+    print("[SAFEROOM:LEAVE] saferoom leave called")
     -- stop music, clear temp tables/objects, destroy portals, etc
      -- Add wall cleanup:
     for _, collider in ipairs(wallColliders) do
@@ -1146,7 +1155,7 @@ function safeRoom:leave()
 
     -- destroy current remaining portal
     if portal then
-        portal:destroy();
+        portal:destroy()
         portal = nil
     end
 
@@ -1294,6 +1303,7 @@ function safeRoom:draw()
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
     love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
+    love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
     Debug.drawCollisions(world)
 end
 
