@@ -469,9 +469,16 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
 
+    -- always load map for current combat level
+    -- local level = LevelManager.levels[LevelManager.currentLevel]
+    -- currentMap, currentWalls = MapLoader.load(level.map, world)
+    
+    -- local mapW = currentMap.width * currentMap.tilewidth
+    -- local mapH = currentMap.height * currentMap.tileheight
+
     -- >> SPATIAL PARTIONING GRID START 7/1/25 <<
 
-    self.gridCellSize = 200 -- Each cell is 200x200 pixels, tweak for performance.
+    self.gridCellSize = 400 -- Each cell is 200x200 pixels, tweak for performance.
     self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
     self.gridHeight = math.ceil(768 / self.gridCellSize)
     self.spatialGrid = {} -- This will hold all the enemies, sorted into cells.
@@ -1058,6 +1065,8 @@ function playing:draw()
         Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize)
         Debug.drawEnemyTracking(enemies, player)
         Debug.drawCollisions(world)
+        Debug.drawColliders(wallColliders, player, portal)
+        Debug.drawSpatialGrid(self.spatialGrid, self.gridCellSize, self.gridWidth, self.gridHeight, cam)
 
         love.graphics.setBlendMode("add") -- for visibility
         -- draw particles systems last after other entities
@@ -1092,6 +1101,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
+    self.currentMap = currentMap
 
     print("Entering safe room")
 
@@ -1336,8 +1346,8 @@ function safeRoom:draw()
     end
 
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
-
     Debug.drawCollisions(world)
+    Debug.drawColliders(wallColliders, player, portal)
 
     cam:detach()
     -- Safe room UI

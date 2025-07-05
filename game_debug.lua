@@ -56,6 +56,36 @@ function Debug.drawCollisions(world)
     world:draw()
 end
 
+-- color code colliders
+function Debug.drawColliders(wallColliders, player, portal)
+    if not Debug.mode then return end
+
+    -- Draw wall colliders as red rectangles
+    love.graphics.setColor(1, 0, 0, 0.5)
+    for _, wall in ipairs(wallColliders) do
+        if wall and wall.getBoundingBox then
+            local x, y, w, h = wall:getBoundingBox()
+            love.graphics.rectangle("line", x, y, w, h)
+        end
+    end
+
+    -- Draw player collider as green rectangle
+    if player and player.collider and player.collider.getBoundingBox then
+        local x, y, w, h = player.collider:getBoundingBox()
+        love.graphics.setColor(0, 1, 0, 0.5)
+        love.graphics.rectangle("line", x, y, w, h)
+    end
+
+    -- Draw portal collider as blue rectangle
+    if portal and portal.collider and portal.collider.getBoundingBox then
+        local x, y, w, h = portal.collider:getBoundingBox()
+        love.graphics.setColor(0, 0, 1, 0.5)
+        love.graphics.rectangle("line", x, y, w, h)
+    end
+
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
+end
+
 -- Draw enemy tracking lines (if enabled)
 function Debug.drawEnemyTracking(enemies, player)
     if not Debug.mode then return end
@@ -67,6 +97,31 @@ function Debug.drawEnemyTracking(enemies, player)
             love.graphics.setColor(1, 1, 1)
         end
     end
+end
+
+-- to visualize the spatial grid in main.lua
+function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
+    if not Debug.mode then return end
+
+    cam:attach()
+    love.graphics.setColor(1, 1, 0, 0.3) -- Yellow, semi-transparent
+
+    for x = 1, gridWidth do
+        for y = 1, gridHeight do
+            local cellX = (x - 1) * cellSize
+            local cellY = (y - 1) * cellSize
+            love.graphics.rectangle("line", cellX, cellY, cellSize, cellSize)
+            -- Optionally, show entity count in each cell:
+            if grid[x][y] and #grid[x][y] > 0 then
+                love.graphics.setColor(1, 0, 0, 0.7)
+                love.graphics.print(tostring(#grid[x][y]), cellX + 4, cellY + 4)
+                love.graphics.setColor(1, 1, 0, 0.3)
+            end
+        end
+    end
+
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
+    cam:detach()
 end
 
 return Debug

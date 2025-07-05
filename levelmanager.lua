@@ -43,7 +43,7 @@ local LevelManager = {
         { 
             map = "room2",
             waves = {}, 
-            enemies = 5, 
+            enemies = 3, 
             boss = false,
             spawns = {
                 { x = 800, y = 200 },
@@ -56,26 +56,26 @@ local LevelManager = {
         { 
             map = "room3",
             waves = {}, 
-            enemies = 7, 
+            enemies = 3, 
             boss = false,
             spawns = {} 
         },
         { 
             map = "room4",
             waves = {}, 
-            enemies = 10, 
+            enemies = 3, 
             boss = false,
             spawns = {
                 { x = 800, y = 200 },
                 { x = 750, y = 250 },
-                { x = 700, y = 300 },
-                { x = 600, y = 350 },
-                { x = 650, y = 400 },
-                { x = 650, y = 450 },
-                { x = 650, y = 200 },
-                { x = 600, y = 250 },
-                { x = 600, y = 300 },
-                { x = 600, y = 350 }
+                { x = 700, y = 300 }
+                -- { x = 600, y = 350 },
+                -- { x = 650, y = 400 },
+                -- { x = 650, y = 450 },
+                -- { x = 650, y = 200 },
+                -- { x = 600, y = 250 },
+                -- { x = 600, y = 300 },
+                -- { x = 600, y = 350 }
             } 
         }
     }
