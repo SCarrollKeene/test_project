@@ -469,6 +469,13 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
 
+    -- may need this when I revisit refactoring the spatial grid to
+    -- scale based off of map dimensions, leave commented out for now 7/4/25
+    -- wallColliders = {}
+    -- for _, wall in ipairs(currentWalls) do
+    --     table.insert(wallColliders, wall)
+    -- end
+
     -- always load map for current combat level
     -- local level = LevelManager.levels[LevelManager.currentLevel]
     -- currentMap, currentWalls = MapLoader.load(level.map, world)
@@ -478,6 +485,9 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- >> SPATIAL PARTIONING GRID START 7/1/25 <<
 
+    -- TODO: revisit making spatial grid scale based on the map width and height
+    -- right now its not clearing colliders correctly between :enter and :leave states
+    -- reverted back to using hard coded dimensions for the time being 7/4/25
     self.gridCellSize = 400 -- Each cell is 200x200 pixels, tweak for performance.
     self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
     self.gridHeight = math.ceil(768 / self.gridCellSize)
