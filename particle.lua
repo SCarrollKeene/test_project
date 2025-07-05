@@ -131,6 +131,33 @@ function Particle.portalGlow(isBurst)
     return ps
 end
 
+function Particle.firefly()
+    local particleImage = getImage("sprites/circle-particle.png")
+    if not particleImage then 
+        print("ERROR: circle-particle.png NOT FOUND!")
+        return nil 
+    end -- nomore updates from here if not img
+
+    local ps = love.graphics.newParticleSystem(particleImage, 50)
+    ps:setParticleLifetime(2, 4) -- Wisps live longer
+    ps:setEmissionRate(50)            -- Gentle, sparse emission
+    ps:setSizes(3, 12)            -- Start small, grow a bit
+    ps:setSizeVariation(1)
+    ps:setSpread(math.pi * 2)        -- 360° emission
+    ps:setSpeed(10, 30)              -- Slow, drifting movement
+    ps:setLinearAcceleration(-10, -10, 10, 10) -- Gentle random drift
+    ps:setSpin(-0.5, 0.5)            -- Subtle rotation
+
+    -- Color: yellow-green glow, fading to transparent
+    -- ps:setColors(
+    --     0.8, 1.0, 0.5, 1.0,   -- Start: bright yellow-green, opaque
+    --     0.2, 0.8, 1.0, 0.0    -- End: blueish, fully transparent
+    -- )
+    ps:setColors(1, 1, 1, 1, 1, 1, 1, 0)
+
+    return ps
+end
+
 function Particle:load()
 end
 

@@ -1083,7 +1083,7 @@ function playing:draw()
         for _, ps in ipairs(globalParticleSystems) do
             love.graphics.draw(ps)
         end
-        love.graphics.setBlendMode("alpha")
+        love.graphics.setBlendMode("alpha") -- reset to normal
 
         if fading and fadeAlpha > 0 then
             love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
@@ -1146,6 +1146,34 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         player.collider:setPosition(player.x, player.y)
         player.collider:setLinearVelocity(0, 0)
     end
+
+    -- firefly test
+    local img = love.graphics.newImage("sprites/particle.png")
+    local ps = love.graphics.newParticleSystem(img, 200)
+    ps:setParticleLifetime(3, 6)
+    ps:setEmissionRate(100)
+    ps:setSizes(16, 32)
+    ps:setColors(1, 1, 1, 1, 1, 1, 1, 0)
+    ps:setPosition(200, 200)
+    ps:start()
+    table.insert(globalParticleSystems, ps)
+
+    -- firefly funhouse lol, just particles
+    for i = 1, 20 do -- adjust number of fireflies
+    local ps = Particle.firefly()
+    if ps then
+        -- Randomize position for each firefly
+        local mapW = currentMap.width * currentMap.tilewidth
+        local mapH = currentMap.height * currentMap.tileheight
+        local x = love.math.random(mapW * 0.2, mapW * 0.8)
+        local y = love.math.random(mapH * 0.2, mapH * 0.8)
+        ps:setPosition(x, y) -- calls fireflies at random positions in the room
+        ps:start()
+        table.insert(globalParticleSystems, ps) -- global particle systm to update all active particles
+        print("Total firefly systems:", #globalParticleSystems)
+    end
+  end
+  print("Created firefly particle system:", ps)
 
     -- Recreate collider if missing
     -- if not player.collider then
@@ -1347,7 +1375,7 @@ function safeRoom:draw()
     for _, ps in ipairs(globalParticleSystems) do
         love.graphics.draw(ps)
     end
-    love.graphics.setBlendMode("alpha")
+    love.graphics.setBlendMode("alpha") -- reset to normal
 
     if fading and fadeAlpha > 0 then
         love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
@@ -1367,6 +1395,7 @@ function safeRoom:draw()
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
     love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
+    -- love.graphics.print("Particles alive:", ps:getCount(), 20, 170)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
 end
 
