@@ -141,9 +141,9 @@ function Particle.firefly()
     end -- nomore updates from here if not img
 
     local ps = love.graphics.newParticleSystem(particleImage, 50)
-    ps:setParticleLifetime(2, 4) -- Wisps live longer
+    ps:setParticleLifetime(4, 8) -- Wisps live longer
     ps:setEmissionRate(20)            -- low: Gentle, sparse emission, high: swarms
-    ps:setSizes(0.2, 0.4)            -- Start small, grow a bit
+    ps:setSizes(0.1, 0.2)            -- Start small, grow a bit
     ps:setSizeVariation(1)           -- variation if you want different firefly sizes
     ps:setSpread(math.pi * 2)        -- 360° emission
     ps:setSpeed(8, 18)              -- Slow, gentle drifting movement

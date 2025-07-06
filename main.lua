@@ -350,7 +350,7 @@ function love.load()
         
         if player_obj and portal_obj then
             if portal and portal.cooldownActive then
-                sounds.ghost:play() -- portal sound
+                sounds.ghost:play() -- portal
                 if Gamestate.current() == playing then
                     nextState = safeRoom
                     nextStateParams = {world, enemyImageCache, mapCache} -- pass saferooms cache, may rename this enemyImageCache variable later on
@@ -1380,7 +1380,6 @@ function safeRoom:draw()
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
     Debug.drawCollisions(world)
     Debug.drawColliders(wallColliders, player, portal)
-    Debug.drawParticleTraces(globalParticleSystems)
     Particle.drawFireflies()
 
     cam:detach()
