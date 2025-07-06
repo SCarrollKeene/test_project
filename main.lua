@@ -850,7 +850,7 @@ function playing:update(dt)
     -- Handle shooting
     -- feels like a global action, maybe move this into main? or a sound file, hmm 5/29/25
     function love.mousepressed(x, y, button, istouch, presses)
-        if not player.isDead and button == 1 then
+        if Gamestate.current() ~= safeRoom and not player.isDead and button == 1 then
             sounds.blip:play() -- play projectile blip on mouse click
         end
 
@@ -1121,6 +1121,11 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     self.currentMap = currentMap
 
     print("Entering safe room")
+
+    -- stop projectile sound while in the saferoom
+    if sounds and sounds.blip then
+        sounds.blip:stop()
+    end
 
     -- passing in its map and walls, which is world, because of colliders
     -- its not a combat level so this is how safe rooms and other rooms will handle
