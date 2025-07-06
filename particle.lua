@@ -161,7 +161,7 @@ function Particle.firefly()
     return ps
 end
 
-local fireflySystems = {}
+-- local fireflySystems = {}
 
 function Particle.spawnFirefly(x, y)
     local ps = Particle.firefly()

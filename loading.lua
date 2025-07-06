@@ -2,6 +2,8 @@ local Gamestate = require("libraries/hump/gamestate")
 
 local Loading = {}
 
+sounds = sounds or {}
+
 local assets = {
     images = {
         "sprites/mage-NESW.png",
@@ -104,7 +106,8 @@ function Loading:loadNextAsset()
     -- load sounds
     elseif not self.soundsLoaded then
         for _, sound in ipairs(assets.sounds) do
-            love.audio.newSource(sound, "static")
+            local name = sound:match("([^/]+)%.%w+$")
+            sounds[name] = love.audio.newSource(sound, "static")
         end
         self.loaded = self.loaded + #assets.sounds
         self.soundsLoaded = true

@@ -7,10 +7,11 @@ local Particle = require("particle")
 local Projectile = {}
 Projectile.__index = Projectile -- points back at the table itself, is used when you set the metatable of an obj
 
-sounds = {}
-sounds.blip = love.audio.newSource("sounds/blip.wav", "static")
-
 Projectile.image = nil
+
+if sounds and sounds.blip then
+    sounds.blip:play()
+end
 
 -- time to attempt adding pooling, because optimization that's why
 local pool = {}

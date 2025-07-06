@@ -1156,28 +1156,10 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- firefly funhouse lol, just particles
     for i = 1, 20 do
-        local x = love.math.random(mapW * 0.2, mapW * 0.8) -- choose position logic
-        local y = love.math.random(mapH * 0.2, mapH * 0.8)
+        local x = love.math.random(mapW * 0.2, mapW * 0.8) -- position x
+        local y = love.math.random(mapH * 0.2, mapH * 0.8) -- position y
         Particle.spawnFirefly(x, y)
     end
-
---     for i = 1, 20 do -- adjust number of fireflies
---     local ps = Particle.firefly()
---     if ps then
---         -- Randomize position for each firefly
---         local mapW = currentMap.width * currentMap.tilewidth
---         local mapH = currentMap.height * currentMap.tileheight
---         -- local x = love.math.random(mapW * 0.2, mapW * 0.8)
---         -- local y = love.math.random(mapH * 0.2, mapH * 0.8)
---         local x = love.graphics.getWidth() / 3
---         local y = love.graphics.getHeight() / 3
---         ps:setPosition(x, y) -- calls fireflies at random positions in the room
---         ps:start()
---         table.insert(globalParticleSystems, ps) -- global particle systm to update all active particles
---         print("Total firefly systems:", #globalParticleSystems)
---     end
---   end
---   print("Created firefly particle system:", ps)
 
     -- Recreate collider if missing
     -- if not player.collider then
@@ -1363,10 +1345,17 @@ function safeRoom:draw()
         currentMap:draw(-tx, -ty, scale, scale)
     end
 
-    -- Set the background color for the safe room
-        love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
-
     cam:attach()
+
+        -- Set the background color for the safe room
+        -- love.graphics.setColor(0.7, 0.8, 1) -- Cool blue tint
+        -- love.graphics.rectangle("fill", 
+        --     cam.x - love.graphics.getWidth() / 2 / cam.scale, 
+        --     cam.y - love.graphics.getHeight() / 2 / cam.scale, 
+        --     love.graphics.getWidth() / cam.scale, 
+        --     love.graphics.getHeight() / cam.scale
+        -- )
+        -- love.graphics.setColor(1, 1, 1, 1)
         
         -- Draw player
         player:draw()
