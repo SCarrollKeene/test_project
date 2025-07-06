@@ -333,6 +333,10 @@ function Enemy:draw()
         -- Draw normally (batched or individual)
         self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
 
+        if self.isFlashing then
+            love.graphics.setShader()
+        end
+
     elseif self.spriteSheet then
         love.graphics.setColor(1,1,1,1)
         love.graphics.draw(self.spriteSheet, self.x - self.spriteSheet:getWidth()/2, self.y - self.spriteSheet:getHeight()/2)
