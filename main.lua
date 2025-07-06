@@ -114,7 +114,14 @@ function love.keypressed(key)
         spawnRandomEnemy()
     end
 
-    -- debug
+    -- debugs
+
+    -- Particle debug toggle
+    if key == "p" then
+        Debug.traceParticles = not Debug.traceParticles
+        print("[PARTICLE TRACE]: ", Debug.traceParticles and "ON" or "OFF")
+    end
+
     if key == "f1" then  -- Stress test
         for i=1, 100 do
             spawnRandomEnemy(love.math.random(100, 700), love.math.random(100, 500))
@@ -1147,33 +1154,30 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         player.collider:setLinearVelocity(0, 0)
     end
 
-    -- firefly test
-    local img = love.graphics.newImage("sprites/particle.png")
-    local ps = love.graphics.newParticleSystem(img, 200)
-    ps:setParticleLifetime(3, 6)
-    ps:setEmissionRate(100)
-    ps:setSizes(16, 32)
-    ps:setColors(1, 1, 1, 1, 1, 1, 1, 0)
-    ps:setPosition(200, 200)
-    ps:start()
-    table.insert(globalParticleSystems, ps)
-
     -- firefly funhouse lol, just particles
-    for i = 1, 20 do -- adjust number of fireflies
-    local ps = Particle.firefly()
-    if ps then
-        -- Randomize position for each firefly
-        local mapW = currentMap.width * currentMap.tilewidth
-        local mapH = currentMap.height * currentMap.tileheight
-        local x = love.math.random(mapW * 0.2, mapW * 0.8)
+    for i = 1, 20 do
+        local x = love.math.random(mapW * 0.2, mapW * 0.8) -- choose position logic
         local y = love.math.random(mapH * 0.2, mapH * 0.8)
-        ps:setPosition(x, y) -- calls fireflies at random positions in the room
-        ps:start()
-        table.insert(globalParticleSystems, ps) -- global particle systm to update all active particles
-        print("Total firefly systems:", #globalParticleSystems)
+        Particle.spawnFirefly(x, y)
     end
-  end
-  print("Created firefly particle system:", ps)
+
+--     for i = 1, 20 do -- adjust number of fireflies
+--     local ps = Particle.firefly()
+--     if ps then
+--         -- Randomize position for each firefly
+--         local mapW = currentMap.width * currentMap.tilewidth
+--         local mapH = currentMap.height * currentMap.tileheight
+--         -- local x = love.math.random(mapW * 0.2, mapW * 0.8)
+--         -- local y = love.math.random(mapH * 0.2, mapH * 0.8)
+--         local x = love.graphics.getWidth() / 3
+--         local y = love.graphics.getHeight() / 3
+--         ps:setPosition(x, y) -- calls fireflies at random positions in the room
+--         ps:start()
+--         table.insert(globalParticleSystems, ps) -- global particle systm to update all active particles
+--         print("Total firefly systems:", #globalParticleSystems)
+--     end
+--   end
+--   print("Created firefly particle system:", ps)
 
     -- Recreate collider if missing
     -- if not player.collider then
@@ -1266,6 +1270,8 @@ function safeRoom:update(dt)
 
     -- update physics world AFTER all positions are set
     if world then world:update(dt) end
+
+    Particle.updateFireflies(dt)
 
     if fading then
         -- SUPPOSED to clear particles when starting fade out
@@ -1386,6 +1392,8 @@ function safeRoom:draw()
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
     Debug.drawCollisions(world)
     Debug.drawColliders(wallColliders, player, portal)
+    Debug.drawParticleTraces(globalParticleSystems)
+    Particle.drawFireflies()
 
     cam:detach()
     -- Safe room UI

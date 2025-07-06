@@ -6,6 +6,8 @@ local _imgCache = {}
 -- pool sparks for projecticles, better performance
 local pools = { baseSpark = {} }
 
+local fireflySystems = {}
+
 local MAX_POOL_SIZE = 40 -- limit particle pool
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
@@ -140,22 +142,60 @@ function Particle.firefly()
 
     local ps = love.graphics.newParticleSystem(particleImage, 50)
     ps:setParticleLifetime(2, 4) -- Wisps live longer
-    ps:setEmissionRate(50)            -- Gentle, sparse emission
-    ps:setSizes(3, 12)            -- Start small, grow a bit
-    ps:setSizeVariation(1)
+    ps:setEmissionRate(20)            -- low: Gentle, sparse emission, high: swarms
+    ps:setSizes(0.2, 0.4)            -- Start small, grow a bit
+    ps:setSizeVariation(1)           -- variation if you want different firefly sizes
     ps:setSpread(math.pi * 2)        -- 360° emission
-    ps:setSpeed(10, 30)              -- Slow, drifting movement
-    ps:setLinearAcceleration(-10, -10, 10, 10) -- Gentle random drift
-    ps:setSpin(-0.5, 0.5)            -- Subtle rotation
+    ps:setSpeed(8, 18)              -- Slow, gentle drifting movement
+    ps:setLinearAcceleration(-6, -6, 6, 6) -- Gentle random drift
+    ps:setSpin(-0.2, 0.2)            -- Subtle rotation
 
     -- Color: yellow-green glow, fading to transparent
-    -- ps:setColors(
-    --     0.8, 1.0, 0.5, 1.0,   -- Start: bright yellow-green, opaque
-    --     0.2, 0.8, 1.0, 0.0    -- End: blueish, fully transparent
-    -- )
-    ps:setColors(1, 1, 1, 1, 1, 1, 1, 0)
+    ps:setColors(
+        0.8, 1.0, 0.5, 1.0,   -- Start: bright yellow-green, opaque
+        0.7, 1.0, 0.3, 0.4,   -- Middle: greener, semi-transparent
+        0.2, 0.8, 1.0, 0.0    -- End: blueish, fully transparent
+    )
+    -- ps:setColors(1, 1, 1, 1, 1, 1, 1, 0)
 
     return ps
+end
+
+local fireflySystems = {}
+
+function Particle.spawnFirefly(x, y)
+    local ps = Particle.firefly()
+    if ps then
+        ps:setPosition(x, y)
+        ps:start()
+        table.insert(fireflySystems, ps)
+    end
+end
+
+function Particle.updateFireflies(dt)
+    for i = #fireflySystems, 1, -1 do
+        local ps = fireflySystems[i]
+        ps:update(dt)
+        if ps:getCount() == 0 or not ps:isActive() then
+            table.remove(fireflySystems, i)
+        end
+    end
+end
+
+function Particle.drawFireflies()
+    love.graphics.setBlendMode("add")
+    for _, ps in ipairs(fireflySystems) do
+        love.graphics.draw(ps)
+    end
+    love.graphics.setBlendMode("alpha")
+end
+
+function Particle.clearFireflies()
+    fireflySystems = {}
+end
+
+function Particle.getFireflyCount()
+    return #fireflySystems
 end
 
 function Particle:load()

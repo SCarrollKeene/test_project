@@ -5,6 +5,7 @@ local Projectile = require("projectile")  -- Assuming you have a Projectile modu
 local Debug = {}
 
 Debug.mode = false  -- Global debug mode flag
+Debug.traceParticles = false
 
 function Debug.keypressed(key)
     if key == "t" then
@@ -122,6 +123,17 @@ function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
 
     love.graphics.setColor(1, 1, 1, 1) -- Reset color
     cam:detach()
+end
+
+function Debug.drawParticleTraces(globalParticleSystems)
+    if not Debug.traceParticles then return end
+    love.graphics.setColor(1, 0, 0, 0.7)
+    for i, ps in ipairs(globalParticleSystems) do
+        local x, y = ps:getPosition()
+        love.graphics.circle("line", x, y, 16)
+        love.graphics.print("PS["..i.."]: "..ps:getCount(), x + 18, y - 8)
+    end
+    love.graphics.setColor(1, 1, 1, 1)
 end
 
 return Debug
