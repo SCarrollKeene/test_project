@@ -350,7 +350,7 @@ function love.load()
         
         if player_obj and portal_obj then
             if portal and portal.cooldownActive then
-                portal_obj.sounds.portal:play()
+                sounds.ghost:play() -- portal sound
                 if Gamestate.current() == playing then
                     nextState = safeRoom
                     nextStateParams = {world, enemyImageCache, mapCache} -- pass saferooms cache, may rename this enemyImageCache variable later on
@@ -455,8 +455,8 @@ function love.load()
     -- sounds = {}
     -- sounds.music = love.audio.newSource("sounds/trance_battle_bpm140.mp3", "stream")
     -- sounds.music:setLooping(true)
-
     -- sounds.music:play()
+
     scoreFont = love.graphics.newFont(30)
 
     -- register gamestate events and start game in playing state
@@ -1072,12 +1072,6 @@ function playing:draw()
         if portal then
             portal:draw()
         end
-
-        -- function love.keypressed(key)
-        --     if key == "z" then
-        --         sounds.music:stop()
-        --     end
-        -- end
 
         Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize)
         Debug.drawEnemyTracking(enemies, player)

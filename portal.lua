@@ -3,6 +3,10 @@ local Particle = require("particle")
 local Portal = {}
 Portal.__index = Portal -- reference for methods from other portal instances
 
+if sounds and sounds.ghost then
+    sounds.ghost:play()
+end
+
 -- main portal safe rooms
 -- portal upside down rooms
 -- portal evil rooms
@@ -20,10 +24,6 @@ function Portal:new(world, x, y)
         height = 64,
         type = "portal",
         world = world,
-
-        sounds = {
-            portal = love.audio.newSource("sounds/ghost.wav", "static")
-        },
 
         isActive = true,
         animationTimer = 0,

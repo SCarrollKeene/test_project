@@ -223,6 +223,7 @@ function Enemy:update(dt)
             self.currentAnimation = self.animations.death
             if self.currentAnimation then self.currentAnimation:resume() end
         end
+        
         if self.currentAnimation then
             self.currentAnimation:update(dt)
             -- If death animation finished, you might set toBeRemoved = true here or another flag
@@ -334,7 +335,7 @@ function Enemy:draw()
         self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
 
         if self.isFlashing then
-            love.graphics.setShader()
+            love.graphics.setShader() -- ensures that only the enemy flashes
         end
 
     elseif self.spriteSheet then
