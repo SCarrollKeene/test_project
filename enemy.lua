@@ -145,7 +145,8 @@ function Enemy:reset(x, y, blob, img)
         local grid = anim8.newGrid(frameWidth, frameHeight, 
                                   self.spriteSheet:getWidth(), 
                                   self.spriteSheet:getHeight())
-        
+        self.width = frameWidth
+        self.height = frameHeight
         self.animations = {
             idle = anim8.newAnimation(grid('1-3', 1), 0.30),
             walk = anim8.newAnimation(grid('1-3', 2), 0.30),
@@ -165,15 +166,24 @@ function Enemy:reset(x, y, blob, img)
     end
 
     -- Reinitialize collider
+    local colliderWidth = self.width
+    local colliderHeight = self.height
     if not self.collider then
         self:load()
+        -- -- Create collider centered at (self.x, self.y)
+        -- self.collider = self.world:newBSGRectangleCollider(
+        --     self.x - colliderWidth / 2,
+        --     self.y - colliderHeight / 2,
+        --     colliderWidth,
+        --     colliderHeight,
+        --     10
+        -- )
+        -- self.collider:setFixedRotation(true)
+        -- self.collider:setUserData(self)
+        -- self.collider:setCollisionClass('enemy')
+        -- self.collider:setObject(self)
     else
-        -- Calculate centered position like in Enemy:load()
-        -- local colliderHeight = self.height * 0.8
-        -- local colliderWidth = self.width * 0.7
-        -- local centerX = x + (self.width - colliderWidth)/2
-        -- local centerY = y + (self.height - colliderHeight)/2
-        -- self.collider:setPosition(centerX, centerY)
+        -- Move collider's center to (x, y)
         self.collider:setPosition(x, y)
         self.collider:setActive(true)
     end
@@ -184,14 +194,12 @@ end
 -- end
 
 function Enemy:load()
-    local colliderHeight = self.height * 0.8 -- used to reduce blob collider height
-    local colliderWidth = self.width * 0.7
-    local yOffset = 4
-    local xOffset = 4
+    local colliderHeight = self.height
+    local colliderWidth = self.width
     -- set it up with self so each enemy instance has their own collider
     self.collider = self.world:newBSGRectangleCollider(
-        self.x + (self.width - colliderWidth)/2, 
-        self.y + (self.height - colliderHeight)/2, 
+        self.x - colliderWidth/2, 
+        self.y - colliderHeight/2, 
         colliderWidth, 
         colliderHeight, 
         10
@@ -294,10 +302,10 @@ function Enemy:update(dt)
     -- self.x = self.collider:getX()
     -- self.y = self.collider:getY()
 
-    -- self.x, self.y = self.collider:getPosition()
-    local cur_x, cur_y = self.collider:getPosition()
-    self.x = cur_x
-    self.y = cur_y
+    self.x, self.y = self.collider:getPosition()
+    -- local cur_x, cur_y = self.collider:getPosition()
+    -- self.x = cur_x
+    -- self.y = cur_y
 
     if self.currentAnimation and self.currentAnimation.update then
         self.currentAnimation:update(dt)
@@ -318,15 +326,12 @@ function Enemy:draw()
             flashShader:send("WhiteFactor", 1.0)
         end
         
-        -- Draw normally (batched or individual)
-        self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
-
         -- Draw centered: self.x, self.y are center; anim8 draws from top-left by default
         -- So, we need to offset by half the frame width/height.
         -- self.width and self.height should be the frame dimensions.
 
-
-        love.graphics.setShader() -- Always reset after drawing
+        -- Draw normally (batched or individual)
+        self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
 
     elseif self.spriteSheet then
         love.graphics.setColor(1,1,1,1)
