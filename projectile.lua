@@ -87,8 +87,9 @@ function Projectile.updatePool(dt)
 end
 
 -- constructor function, if you wanted to create multiple projectiles with different methods/data
-function Projectile:new(world, x, y, angle, speed, radius, damage, owner)
+function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level)
     local self = {
+        level = level or 1,
         newCreateCount = newCreateCount + 1,
         x = x,
         y = y,

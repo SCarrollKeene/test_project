@@ -151,7 +151,9 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.speed = 300
     self.xVel = 0
     self.yVel = 0
-    self.weapon = Weapon:new(2, Projectile, 15) -- fireRate, projectileClass, baseDamage class params/args from Weapon class
+    -- self.weapon = Weapon:new(2, Projectile, 15) -- fireRate, projectileClass, baseDamage class params/args from Weapon class
+    self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 2, Projectile, 10, 1)
+
 end
 
 function Player:update(dt, mapW, mapH)
@@ -232,7 +234,10 @@ function Player:update(dt, mapW, mapH)
     end
 
     self:checkBoundaries(mapW, mapH) --change to reflect collider now: checkBoundaries(self.x, self,y) 6/1/25
-    self.weapon:update(dt)
+
+    if self.weapon then
+        self.weapon:update(dt)
+    end
 end
 
 function Player:move(dt)
@@ -506,6 +511,10 @@ function Player:die(metaData, playerScore)
         self.currentAnimation:gotoFrame(1)
         self.currentAnimation:resume() -- Make sure it plays
     end
+
+    -- drop loot on death
+    local drop = Loot.createWeaponDropFromInstance(player.weapon, dropX, dropY)
+    table.insert(droppedItems, drop)
 
      -- Set death timer for game over transition
     self.deathTimer = 2.0  -- x seconds to show death animation, change based on sprite/animation

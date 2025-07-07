@@ -156,7 +156,6 @@ function Particle.firefly()
         0.7, 1.0, 0.3, 0.4,   -- Middle: greener, semi-transparent
         0.2, 0.8, 1.0, 0.0    -- End: blueish, fully transparent
     )
-    -- ps:setColors(1, 1, 1, 1, 1, 1, 1, 0)
 
     return ps
 end

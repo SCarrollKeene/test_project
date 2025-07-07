@@ -2,21 +2,56 @@ local Cooldown = require("cooldown")
 
 local Weapon = {}
 
-function Weapon:new(fireRate, projectileClass, baseDamage)
+Weapon.image = nil
+
+-- implement leveling system
+-- a base max level to start with
+-- stat boosts on level up
+-- debate how projectiles and leveling play a role in level ups
+-- elemental / status effects
+-- saving/loaidng for persisten weapon levels
+-- need to build an inventory screen or at least a UI for weapons held
+
+function Weapon:new(name, image, weaponType, fireRate, projectileClass, baseDamage, level)
+    level = level or 1
 
     print("Cooldown duration:", 1 / fireRate)
     local self = {
-        damage = baseDamage or 10, --store base damage OR default to 10
-        cooldown = Cooldown:new(1 / fireRate), -- convert fireRate to cooldown duration. duration and time are params/args from the cooldown object/table
+        name = name or "Fire crystal",
+        image = image or Weapon.image,
+        weaponType = weaponType or "Crystal",
+        level = level, -- scale stats based on level
+        baseDamage = baseDamage or 10, --store base damage OR default to 10
+        fireRate = fireRate,
+        baseFireRate = fireRate + (level - 1) * 0.05,
+        cooldown = Cooldown:new(1 / (fireRate - (level - 1) * 0.05)), -- convert fireRate to cooldown duration. duration and time are params/args from the cooldown object/table
         projectileClass = projectileClass -- projectileClass to spawn, return to this
     }
 
     setmetatable(self, {__index = Weapon}) -- point back at weapon table, Weapon methods and fields/data will get looked up
+    self:recalculateStats() -- recalculate weapon level and stats on each pickup IF its the same weapon
     return self
 end
 
 function Weapon:update(dt)
     self.cooldown:update(dt)
+end
+
+function Weapon:recalculateStats()
+    self.damage = (self.baseDamage or 10) + (self.level - 1) * 2
+    self.fireRate = self.baseFireRate + (self.level - 1) * 0.05
+    self.cooldown = Cooldown:new(1 / self.fireRate)
+end
+
+function Weapon.loadAssets()
+    local success, img = pcall(love.graphics.newImage, "sprites/crystal.png")
+    if success then
+        Weapon.image = img
+        print("[WEAPON] image loaded successfully from:", img)
+    else
+        print("[WEAPON] image error:", img)
+        Weapon.image = love.graphics.newImage(1, 1) -- 1x1 white pixel
+    end
 end
 
 function Weapon:shoot(world, x, y, angle, speed, owner)

@@ -1,6 +1,7 @@
 local Player = require("player")
 local PlayerRespawn = require("playerrespawn")
 local Enemy = require("enemy")
+local Loot = require("loot")
 local Portal = require("portal")
 local Particle = require("particle")
 local Blob = require("blob")
@@ -10,6 +11,8 @@ local LevelManager = require("levelmanager")
 local WaveManager = require("wavemanager")
 local Loading = require("loading")
 local sti = require("libraries/sti")
+local Weapon = require("weapon")
+local Cooldown = require("cooldown")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
@@ -52,7 +55,7 @@ local gameOver = {}
 local projectiles = {}
 local player = Player -- create new player instance, change player.lua to a constructor pattern if you want multiple players
 
--- local enemyPool = {} -- time to attempt enemy pooling
+droppedItems = {} -- global table to manage dropped items, such as weapons
 
 local enemies = {} -- enemies table to house all active enemies
 
@@ -99,6 +102,56 @@ function love.keypressed(key)
         return -- prevent other keys from utilizing r
     end
 
+    if key == "e" and player.canPickUpItem then
+        equipWeapon(player.canPickUpItem)
+        Loot.removeDroppedItem(weaponToEquip)
+        player.canPickUpItem = nil
+    end
+
+    -- fire crystal level up test
+    if key == "q" then
+    -- Define Fire Crystal properties
+    local fireCrystalName = "Fire Crystal"
+    local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
+    local fireCrystalType = "Crystal"
+    local fireCrystalFireRate = 2
+    local fireCrystalProjectileClass = Projectile
+    local fireCrystalBaseDamage = 10
+    local fireCrystalLevel = 1
+
+    local offset = 20
+    local angle = player.facingAngle or 0
+    local dropX = player.x + math.cos(angle) * offset
+    local dropY = player.y + math.sin(angle) * offset
+
+    -- Create a new Fire Crystal drop
+    local fireCrystal = Loot.createWeaponDropFromInstance({
+        name = fireCrystalName,
+        image = fireCrystalImage,
+        weaponType = fireCrystalType,
+        fireRate = fireCrystalFireRate,
+        projectileClass = fireCrystalProjectileClass,
+        baseDamage = fireCrystalBaseDamage,
+        level = fireCrystalLevel
+    }, dropX, dropY)
+
+    table.insert(droppedItems, fireCrystal)
+end
+
+    -- drop held weapon 20 pixels in front of player
+    -- if key == "q" and player.weapon then
+    --     local offset = 20 -- pixels in front of player
+    --     local angle = player.facingAngle or 0 -- if you track facing direction
+    --     local dropX = player.x + math.cos(angle) * offset
+    --     local dropY = player.y + math.sin(angle) * offset
+    --     local drop = Loot.createWeaponDropFromInstance(player.weapon, dropX, dropY)
+    --     print("Dropped items count:", #droppedItems)
+    --     -- local drop = Loot.createWeaponDropFromInstance(player.weapon, player.x, player.y)
+    --     table.insert(droppedItems, drop)
+    --     player.weapon = nil -- Remove weapon from player
+    --     -- print("Dropping weapon at:", dropX, dropY, "Image:", tostring(player.weapon.image))
+    -- end
+
     if key == "space" and not player.isDead then
         player:dash()
     end
@@ -110,7 +163,7 @@ function love.keypressed(key)
     -- enable debug mode
     Debug.keypressed(key)
 
-    if key == "e" then
+    if key == "f" then
         spawnRandomEnemy()
     end
 
@@ -136,6 +189,66 @@ function love.keypressed(key)
     if Gamestate.current() == safeRoom then
         return -- Prevent any attack actions in safe room
     end
+end
+
+-- Spawn a weapon drop
+function spawnWeaponDrop(name, image, weaponType, fireRate, projectileClass, baseDamage, x, y, level)
+  local weaponDrop = {
+    name = name,
+    image = image,
+    weaponType = weaponType,
+    fireRate = fireRate,
+    projectileClass = projectileClass,
+    baseDamage = baseDamage,
+    x = x,
+    y = y,
+    level = level or 1,
+    baseY = y,
+    hoverTime = 0
+  }
+  table.insert(droppedItems, weaponDrop)
+end
+
+-- Pick up weapon
+function equipWeapon(weaponToEquip)
+    if player.weapon and player.weapon.weaponType == weaponToEquip.weaponType then
+    -- Auto-level up
+    player.weapon.level = player.weapon.level + 1
+    -- Recalculate stats based on new level reached
+    player.weapon:recalculateStats()
+    -- Remove the item from droppedItems
+    Loot.removeDroppedItem(weaponToEquip)
+    else
+        -- Drop current weapon if it exists
+        if player.weapon then
+            local drop = createWeaponDropFromInstance(player.weapon, player.x, player.y)
+            table.insert(droppedItems, drop)
+        end
+
+        -- pick up new weapon
+        player.weapon = Weapon:new(
+            weaponToEquip.name,
+            weaponToEquip.image,
+            weaponToEquip.weaponType,
+            weaponToEquip.fireRate,
+            weaponToEquip.projectileClass,
+            weaponToEquip.baseDamage,
+            weaponToEquip.level
+        )
+        -- Remove item from droppedItems...
+        Loot.removeDroppedItem(weaponToEquip)
+    end
+end
+
+function updateDroppedItems(dt)
+  for _, item in ipairs(droppedItems) do
+    if item.baseY then
+      item.hoverTime = (item.hoverTime or 0) + dt
+      local amplitude = 5
+      local speed = 2 * math.pi
+      item.y = item.baseY + amplitude * math.sin(speed * item.hoverTime)
+    end
+  end
 end
 
 function spawnRandomEnemy(x, y, cache, enemyTypes)
@@ -297,6 +410,7 @@ function love.load()
     local dash_spritesheet_path = "sprites/dash.png"
     local death_spritesheet_path = "sprites/soulsplode.png"
     Projectile.loadAssets()
+    Weapon.loadAssets()
     player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
 
     -- In love.load(), after first load:
@@ -748,6 +862,21 @@ function playing:update(dt)
         player:update(dt, mapW, mapH)
     end
 
+    -- update droppable loot/items
+    updateDroppedItems(dt)
+
+    local pickupRange = 40  -- Adjust as needed
+    player.canPickUpItem = nil  -- Reset each frame
+
+    for i, item in ipairs(droppedItems) do
+        local dx = player.x - item.x
+        local dy = player.y - item.y
+        if math.sqrt(dx * dx + dy * dy) <= pickupRange then
+            player.canPickUpItem = item  -- Store the reference for prompt and pickup
+            break  -- Only prompt for the first item in range
+        end
+    end
+
     -- NOTE: I need collision detection before I can continue and the logic for player attacks, enemy attacking player, getting damage values from projectile.damage
     -- and calling the appropriate dealDamage function
     -- AND updating projectile direction control by player : UPDATE: works now for player attacking enemy
@@ -968,7 +1097,9 @@ function playing:update(dt)
         end
     end
 
-    player.weapon:update(dt)
+    if player.weapon then
+        player.weapon:update(dt)
+    end
 end
 
 function love.draw()
@@ -998,6 +1129,19 @@ function playing:draw()
             
         if not player.isDead then
             player:draw()
+        end
+
+        -- draw droppable loot/items
+        for _, item in ipairs(droppedItems) do
+            if item.image then
+                love.graphics.draw(item.image, item.x, item.y)
+            end
+        end
+
+        if player.canPickUpItem then
+            local prompt = "Press E to pick up " .. (player.canPickUpItem.name or "Weapon")
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.print(prompt, player.x - 40, player.y - 50)
         end
 
         -- draw enemies
@@ -1104,7 +1248,19 @@ function playing:draw()
     love.graphics.print("Health: " .. player.health, 20,80)
     love.graphics.print("Score: " .. playerScore, 20, 110)
     love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
-    love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
+    if player.weapon then
+    if player.canPickUpItem then
+        love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
+    end
+        love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 520)
+        love.graphics.print("Weapon: " .. player.weapon.name, 20, 550)
+        love.graphics.print("Fire rate: " .. player.weapon.fireRate, 20, 580)
+        love.graphics.print("Damage: " .. player.weapon.damage, 20, 610)
+        love.graphics.print("Cooldown: " .. string.format("%.2f", player.weapon.cooldown.time), 20, 640)
+        love.graphics.print("Level: " .. tostring(player.weapon.level or 1), 20, 670)
+    end
+
+    love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)
 end
 
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
