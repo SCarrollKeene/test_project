@@ -8,6 +8,8 @@ local pools = { baseSpark = {} }
 
 local fireflySystems = {}
 
+local itemDropSystems = {}
+
 local MAX_POOL_SIZE = 40 -- limit particle pool
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
@@ -160,8 +162,7 @@ function Particle.firefly()
     return ps
 end
 
--- local fireflySystems = {}
-
+-- refactor into globalParticleSystems later
 function Particle.spawnFirefly(x, y)
     local ps = Particle.firefly()
     if ps then
@@ -195,6 +196,66 @@ end
 
 function Particle.getFireflyCount()
     return #fireflySystems
+end
+
+function Particle.itemIndicator()
+    local particleImage = getImage("sprites/circle-particle.png")
+    if not particleImage then 
+        print("ERROR: circle-particle.png NOT FOUND!")
+        return nil 
+    end -- nomore updates from here if not img)
+
+    local ps = love.graphics.newParticleSystem(particleImage, 50)
+    ps:setParticleLifetime(4, 8)
+    ps:setEmissionRate(40)
+    ps:setSizes(4, 8)
+    ps:setSizeVariation(1)
+    ps:setSpread(math.pi * 2)
+    ps:setSpeed(6, 18)
+    ps:setLinearAcceleration(-4, -4, 4, 4)
+
+    ps:setColors(1,1,1,1,1,1,1,1)
+    -- ps:setColors(1, 1, 0.5, 0.7,
+    --              1, 1, 0.2, 0
+    -- )
+
+    return ps
+end
+
+-- item drop particle system functions, refactor into globalParticleSystems later!!!
+function Particle.spawnItemDropParticle(x, y)
+    local ps = Particle.itemIndicator()
+    if ps then
+        ps:setPosition(x, y)
+        ps:start()
+        table.insert(itemDropSystems, ps)
+    end
+end
+
+function Particle.updateItemDropParticles(dt)
+    for i = #itemDropSystems, 1, -1 do
+        local ps = itemDropSystems[i]
+        ps:update(dt)
+        if ps:getCount() == 0 or not ps:isActive() then
+            table.remove(itemDropSystems, i)
+        end
+    end
+end
+
+function Particle.drawItemDropParticles()
+    love.graphics.setBlendMode("add")
+    for _, ps in ipairs(itemDropSystems) do
+        love.graphics.draw(ps)
+    end
+    love.graphics.setBlendMode("alpha")
+end
+
+function Particle.clearItemDropParticles()
+    itemDropSystems = {}
+end
+
+function Particle.getItemDropParticleCount()
+    return #itemDropSystems
 end
 
 function Particle:load()

@@ -55,7 +55,7 @@ local gameOver = {}
 local projectiles = {}
 local player = Player -- create new player instance, change player.lua to a constructor pattern if you want multiple players
 
-droppedItems = {} -- global table to manage dropped items, such as weapons
+droppedItems = droppedItem or {} -- global table to manage dropped items, such as weapons
 
 local enemies = {} -- enemies table to house all active enemies
 
@@ -70,7 +70,8 @@ local portal = nil -- set portal to nil initially, won't exist until round is wo
 local playerScore = 0
 local scoreFont = 0
 
-globalParticleSystems = {}
+globalParticleSystems = globalParticleSystems or {}
+itemDropSystems = itemDropSystems or {} -- this makes the spawned weapons in the debug actually hover
 
 local pendingRoomTransition = false
 
@@ -104,7 +105,7 @@ function love.keypressed(key)
 
     if key == "e" and player.canPickUpItem then
         equipWeapon(player.canPickUpItem)
-        Loot.removeDroppedItem(weaponToEquip)
+        Loot.removeDroppedItem(player.canPickUpItem)
         player.canPickUpItem = nil
     end
 
@@ -125,17 +126,29 @@ function love.keypressed(key)
     local dropY = player.y + math.sin(angle) * offset
 
     -- Create a new Fire Crystal drop
-    local fireCrystal = Loot.createWeaponDropFromInstance({
-        name = fireCrystalName,
-        image = fireCrystalImage,
-        weaponType = fireCrystalType,
-        fireRate = fireCrystalFireRate,
-        projectileClass = fireCrystalProjectileClass,
-        baseDamage = fireCrystalBaseDamage,
-        level = fireCrystalLevel
-    }, dropX, dropY)
+    -- local fireCrystal = Loot.createWeaponDropFromInstance({
+    --     name = fireCrystalName,
+    --     image = fireCrystalImage,
+    --     weaponType = fireCrystalType,
+    --     fireRate = fireCrystalFireRate,
+    --     projectileClass = fireCrystalProjectileClass,
+    --     baseDamage = fireCrystalBaseDamage,
+    --     level = fireCrystalLevel
+    -- }, dropX, dropY)
+    -- table.insert(droppedItems, weaponDrop)
 
-    table.insert(droppedItems, fireCrystal)
+    -- call spawnWeaponDrop to drop a Fire Crystal with particles
+    local fireCrystal = spawnWeaponDrop(
+        fireCrystalName,
+        fireCrystalImage,
+        fireCrystalType,
+        fireCrystalFireRate,
+        fireCrystalProjectileClass,
+        fireCrystalBaseDamage,
+        dropX,
+        dropY,
+        fireCrystalLevel
+    )
 end
 
     -- drop held weapon 20 pixels in front of player
@@ -206,7 +219,17 @@ function spawnWeaponDrop(name, image, weaponType, fireRate, projectileClass, bas
     baseY = y,
     hoverTime = 0
   }
+  weaponDrop.particle = Particle.itemIndicator()
+    if weaponDrop.particle then
+        weaponDrop.particle:setPosition(weaponDrop.x, weaponDrop.y)
+        weaponDrop.particle:start()
+        -- table.insert(globalParticleSystems, weaponDrop.particle)
+        table.insert(itemDropSystems, weaponDrop.particle)
+        print("[WEAPONDROP PARTICLE] Created item particle:", weaponDrop.particle)
+
+    end
   table.insert(droppedItems, weaponDrop)
+  return weaponDrop -- reference to new weapondrop
 end
 
 -- Pick up weapon
@@ -247,6 +270,9 @@ function updateDroppedItems(dt)
       local amplitude = 5
       local speed = 2 * math.pi
       item.y = item.baseY + amplitude * math.sin(speed * item.hoverTime)
+        if item.particle then
+            item.particle:setPosition(item.x, item.y)
+        end
     end
   end
 end
@@ -877,6 +903,13 @@ function playing:update(dt)
         end
     end
 
+    -- update the moving/hovering items particle’s position each frame:
+    for _, item in ipairs(droppedItems) do
+        if item.particle then
+            item.particle:setPosition(item.x, item.y)
+        end
+    end
+
     -- NOTE: I need collision detection before I can continue and the logic for player attacks, enemy attacking player, getting damage values from projectile.damage
     -- and calling the appropriate dealDamage function
     -- AND updating projectile direction control by player : UPDATE: works now for player attacking enemy
@@ -1137,6 +1170,9 @@ function playing:draw()
                 love.graphics.draw(item.image, item.x, item.y)
             end
         end
+
+        -- draw drop weapon/item particles
+        Particle.drawItemDropParticles()
 
         if player.canPickUpItem then
             local prompt = "Press E to pick up " .. (player.canPickUpItem.name or "Weapon")

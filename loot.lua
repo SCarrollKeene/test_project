@@ -1,5 +1,28 @@
 -- Remove dropped item
 function removeDroppedItem(item)
+    if not item then return end -- defensive nil check
+
+    -- use once attached to global particle system
+    -- if item.particle then
+    --     for i = #globalParticleSystems, 1, -1 do
+    --         if globalParticleSystems[i] == item.particle then
+    --             table.remove(globalParticleSystems, i)
+    --             break
+    --         end
+    --     end
+    --     item.particle = nil
+    -- end
+
+    if item.particle then
+        for i = #itemDropSystems, 1, -1 do
+            if itemDropSystems[i] == item.particle then
+                table.remove(itemDropSystems, i)
+                break
+            end
+        end
+        item.particle = nil
+    end
+
     for i = #droppedItems, 1, -1 do
         if droppedItems[i] == item then
             table.remove(droppedItems, i)
