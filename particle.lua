@@ -4,13 +4,11 @@ local Particle = {}
 local _imgCache = {}
 
 -- pool sparks for projecticles, better performance
-local pools = { baseSpark = {} }
+local pools = { baseSpark = {}, itemIndicator = {} }
 
 local fireflySystems = {}
 
-local itemDropSystems = {}
-
-local MAX_POOL_SIZE = 40 -- limit particle pool
+local MAX_POOL_SIZE = 50 -- limit particle pool
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)
@@ -215,47 +213,70 @@ function Particle.itemIndicator()
     ps:setLinearAcceleration(-4, -4, 4, 4)
 
     ps:setColors(1,1,1,1,1,1,1,1)
-    -- ps:setColors(1, 1, 0.5, 0.7,
-    --              1, 1, 0.2, 0
+    
     -- )
 
     return ps
 end
 
--- item drop particle system functions, refactor into globalParticleSystems later!!!
-function Particle.spawnItemDropParticle(x, y)
-    local ps = Particle.itemIndicator()
-    if ps then
-        ps:setPosition(x, y)
+function Particle.itemIndicator()
+    if #pools.itemIndicator > 0 then
+        local ps = table.remove(pools.itemIndicator)
+        ps:reset()
         ps:start()
-        table.insert(itemDropSystems, ps)
+        return ps
+    end
+
+    local particleImage = getImage("sprites/circle-particle.png")
+    if not particleImage then
+        print("ERROR: circle-particle.png NOT FOUND!")
+        return nil
+    end
+
+    local ps = love.graphics.newParticleSystem(particleImage, 50)
+    ps:setParticleLifetime(2, 4)
+    ps:setEmissionRate(20)
+    ps:setSizes(0.2, 0.5)
+    ps:setSizeVariation(1)
+    ps:setSpread(math.pi * 2)
+    ps:setSpeed(6, 18)
+    ps:setLinearAcceleration(-4, -4, 4, 4)
+
+    ps:setColors(1, 1, 0.5, 0.7,
+                 1, 1, 0.2, 0
+    )
+    return ps
+end
+
+function Particle.getItemIndicator()
+    if #pools.itemIndicator > 0 then
+        local ps = table.remove(pools.itemIndicator)
+        ps:reset() -- clear particles
+        ps:start() -- enable emits
+        return ps
+    elseif #pools.itemIndicator < MAX_POOL_SIZE then
+        return Particle.itemIndicator() -- use itemIndicator to create ps
+    else
+        return nil -- skip particle creation if pool is full
     end
 end
 
-function Particle.updateItemDropParticles(dt)
-    for i = #itemDropSystems, 1, -1 do
-        local ps = itemDropSystems[i]
-        ps:update(dt)
-        if ps:getCount() == 0 or not ps:isActive() then
-            table.remove(itemDropSystems, i)
-        end
+function Particle.returnItemIndicator(ps)
+    if #pools.itemIndicator < MAX_POOL_SIZE then
+        ps:stop()
+        ps:reset()
+        table.insert(pools.itemIndicator, ps)
     end
 end
 
-function Particle.drawItemDropParticles()
-    love.graphics.setBlendMode("add")
-    for _, ps in ipairs(itemDropSystems) do
-        love.graphics.draw(ps)
-    end
-    love.graphics.setBlendMode("alpha")
+-- used to clear on gamestate transitions
+function Particle.clearItemIndicatorPool()
+    pools.itemIndicator = {}
 end
 
-function Particle.clearItemDropParticles()
-    itemDropSystems = {}
-end
-
-function Particle.getItemDropParticleCount()
-    return #itemDropSystems
+-- for debugging and measuring pool size
+function Particle.getItemIndicatorPoolSize()
+    return #pools.itemIndicator
 end
 
 function Particle:load()

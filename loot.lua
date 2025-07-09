@@ -1,3 +1,5 @@
+local Particle = require("particle")
+
 -- Remove dropped item
 function removeDroppedItem(item)
     if not item then return end -- defensive nil check
@@ -13,16 +15,23 @@ function removeDroppedItem(item)
     --     item.particle = nil
     -- end
 
+    -- if item.particle then
+    --     for i = #itemDropSystems, 1, -1 do
+    --         if itemDropSystems[i] == item.particle then
+    --             table.remove(itemDropSystems, i)
+    --             break
+    --         end
+    --     end
+    --     item.particle = nil
+    -- end
+
+    -- Return the ps to the pool if it exists
     if item.particle then
-        for i = #itemDropSystems, 1, -1 do
-            if itemDropSystems[i] == item.particle then
-                table.remove(itemDropSystems, i)
-                break
-            end
-        end
+        Particle.returnItemIndicator(item.particle)
         item.particle = nil
     end
 
+    -- remove item/weapon from the droppedItems table
     for i = #droppedItems, 1, -1 do
         if droppedItems[i] == item then
             table.remove(droppedItems, i)

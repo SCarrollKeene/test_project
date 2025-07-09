@@ -210,6 +210,12 @@
    <image source="craftpix-free-fields-tileset/2 Objects/7 Decor/Tree2.png" width="29" height="26"/>
   </tile>
  </tileset>
+ <objectgroup id="14" name="Walls">
+  <object id="2" x="0" y="0" width="1280" height="64"/>
+  <object id="3" x="0" y="704" width="1280" height="64"/>
+  <object id="4" x="1216" y="64" width="64" height="640"/>
+  <object id="5" x="0" y="64" width="64" height="640"/>
+ </objectgroup>
  <layer id="1" name="Ground" width="20" height="12" locked="1">
   <data encoding="csv">
 6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
@@ -322,10 +328,4 @@
 77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77,77
 </data>
  </layer>
- <objectgroup id="14" name="Walls">
-  <object id="2" x="0" y="0" width="1280" height="64"/>
-  <object id="3" x="0" y="704" width="1280" height="64"/>
-  <object id="4" x="1216" y="64" width="64" height="640"/>
-  <object id="5" x="0" y="64" width="64" height="640"/>
- </objectgroup>
 </map>

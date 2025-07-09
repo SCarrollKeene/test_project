@@ -70,8 +70,7 @@ local portal = nil -- set portal to nil initially, won't exist until round is wo
 local playerScore = 0
 local scoreFont = 0
 
-globalParticleSystems = globalParticleSystems or {}
-itemDropSystems = itemDropSystems or {} -- this makes the spawned weapons in the debug actually hover
+globalParticleSystems = {}
 
 local pendingRoomTransition = false
 
@@ -218,17 +217,27 @@ function spawnWeaponDrop(name, image, weaponType, fireRate, projectileClass, bas
     level = level or 1,
     baseY = y,
     hoverTime = 0
-  }
-  weaponDrop.particle = Particle.itemIndicator()
+  } 
+  print("[SPAWN WEAPON DROP] Name: ".. weaponDrop.name .. " weaponType: " .. weaponDrop.weaponType .. " fire rate: " .. weaponDrop.fireRate .. " base damage: " .. weaponDrop.baseDamage)
+    print("Created item particle:", weaponDrop.particle)
+   --print("itemDropSystems count after insert:", #itemDropSystems)
+
+  --weaponDrop.particle = Particle.itemIndicator()
+  weaponDrop.particle = Particle.getItemIndicator()
+    -- print("Created item particle:", weaponDrop.particle)
+    -- print("itemDropSystems count after insert:", #itemDropSystems)
+    assert(weaponDrop.particle, "[FAILED] to create item indicator particle")
     if weaponDrop.particle then
         weaponDrop.particle:setPosition(weaponDrop.x, weaponDrop.y)
         weaponDrop.particle:start()
+        print("[WEAPONDROP PARTICLE] Started particle at position:", weaponDrop.x, weaponDrop.y)
         -- table.insert(globalParticleSystems, weaponDrop.particle)
-        table.insert(itemDropSystems, weaponDrop.particle)
+        -- table.insert(itemDropSystems, weaponDrop.particle)
         print("[WEAPONDROP PARTICLE] Created item particle:", weaponDrop.particle)
 
     end
   table.insert(droppedItems, weaponDrop)
+  print("[Dropped items table] contains: ", #droppedItems .. "items.")
   return weaponDrop -- reference to new weapondrop
 end
 
@@ -438,6 +447,8 @@ function love.load()
     Projectile.loadAssets()
     Weapon.loadAssets()
     player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
+    local testImage = love.graphics.newImage("sprites/circle-particle.png")
+    print("Test image loaded:", testImage)
 
     -- In love.load(), after first load:
     player.mage_spritesheet_path = mage_spritesheet_path
@@ -789,6 +800,8 @@ function playing:leave()
 
     -- clear particles
     globalParticleSystems = {}
+    -- Particle.clearItemDropParticles()
+    Particle.clearItemIndicatorPool()
 
     -- destroy any remaining player/enemy colliders
     for _, enemy in ipairs(enemies) do
@@ -904,9 +917,21 @@ function playing:update(dt)
     end
 
     -- update the moving/hovering items particle’s position each frame:
+    -- for _, item in ipairs(droppedItems) do
+    --     if item.particle then
+    --         item.particle:setPosition(item.x, item.y)
+    --     end
+    -- end
+
+    -- Update the item drop particle systems
+    -- Particle.updateItemDropParticles(dt)
+    -- print("Calling Particle.updateItemDropParticles, count:", #itemDropSystems)
+
+    --  update each item's particle:
     for _, item in ipairs(droppedItems) do
         if item.particle then
             item.particle:setPosition(item.x, item.y)
+            item.particle:update(dt)
         end
     end
 
@@ -1171,8 +1196,16 @@ function playing:draw()
             end
         end
 
-        -- draw drop weapon/item particles
-        Particle.drawItemDropParticles()
+        -- draw drop weapon/item particles, not necessary for pool
+        -- Particle.drawItemDropParticles()
+        -- print("Drawing item drop particles, count:", #itemDropSystems)
+
+        -- draw droppable loot/items particles
+        for _, item in ipairs(droppedItems) do
+            if item.particle then
+                love.graphics.draw(item.particle)
+            end
+        end
 
         if player.canPickUpItem then
             local prompt = "Press E to pick up " .. (player.canPickUpItem.name or "Weapon")
