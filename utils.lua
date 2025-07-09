@@ -4,8 +4,9 @@ local Utils = {}
 -- create and require Utils in ..blob1.health..
 -- maintainability and reduce redundancy
 
-function deepCopy(orig)
-  local orig_type = type(orig)
+-- used to copy rundata, make sure player inventory persists through room transitions
+function Utils.deepCopy(orig)
+    local orig_type = type(orig)
 
   if orig_type ~= 'table' then return orig end
   local copy = {}
@@ -13,8 +14,7 @@ function deepCopy(orig)
     copy[deepCopy(k)] = deepCopy(v)
   end
 
-  setmetatable(copy, deepCopy(getmetatable(orig)))
-
+  setmetatable(copy, Utils.deepCopy(getmetatable(orig)))
   return copy
 end
 

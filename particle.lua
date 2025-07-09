@@ -51,7 +51,6 @@ function Particle.baseSpark()
     ps:setLinearAcceleration(-30, 30)
 
     -- color transition from white to transparent
-    -- ps:setColors(1, 1, 1, 1, 1, 1, 1, 0) -- fade to be transparent
     ps:setColors(1, 0.1, 0, 1, 1, 0.4, 0, 0) -- Start: red with a hint of orange, End: orange transparent
     return ps
 end
@@ -197,29 +196,6 @@ function Particle.getFireflyCount()
 end
 
 function Particle.itemIndicator()
-    local particleImage = getImage("sprites/circle-particle.png")
-    if not particleImage then 
-        print("ERROR: circle-particle.png NOT FOUND!")
-        return nil 
-    end -- nomore updates from here if not img)
-
-    local ps = love.graphics.newParticleSystem(particleImage, 50)
-    ps:setParticleLifetime(4, 8)
-    ps:setEmissionRate(40)
-    ps:setSizes(4, 8)
-    ps:setSizeVariation(1)
-    ps:setSpread(math.pi * 2)
-    ps:setSpeed(6, 18)
-    ps:setLinearAcceleration(-4, -4, 4, 4)
-
-    ps:setColors(1,1,1,1,1,1,1,1)
-    
-    -- )
-
-    return ps
-end
-
-function Particle.itemIndicator()
     if #pools.itemIndicator > 0 then
         local ps = table.remove(pools.itemIndicator)
         ps:reset()
@@ -231,7 +207,7 @@ function Particle.itemIndicator()
     if not particleImage then
         print("ERROR: circle-particle.png NOT FOUND!")
         return nil
-    end
+    end -- nomore updates from here if not img)
 
     local ps = love.graphics.newParticleSystem(particleImage, 50)
     ps:setParticleLifetime(2, 4)

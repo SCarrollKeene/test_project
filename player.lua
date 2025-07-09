@@ -53,6 +53,9 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.invincibleDuration = 1.0
     self.invincibleTimer = 0
 
+    -- for player inventory between runs
+    self.inventory = {}
+
     -- Load player sprite sheet if path provided (following enemy.lua pattern)
     if sprite_path then
         local success, image_or_error = pcall(function() return love.graphics.newImage(sprite_path) end)
@@ -151,9 +154,23 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.speed = 300
     self.xVel = 0
     self.yVel = 0
-    -- self.weapon = Weapon:new(2, Projectile, 15) -- fireRate, projectileClass, baseDamage class params/args from Weapon class
-    self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 2, Projectile, 10, 1)
 
+    -- data only snapshot of weapon in player inventory
+    if self.weapon then
+    table.insert(self.inventory, {
+        name = self.weapon.name,
+        image = self.weapon.image,
+        weaponType = self.weapon.weaponType,
+        fireRate = self.weapon.fireRate,
+        projectileClass = self.weapon.projectileClass,
+        baseDamage = self.weapon.baseDamage,
+        level = self.weapon.level
+    })
+    end
+
+    -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
+    self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 2, Projectile, 10, 1)
+    table.insert(self.inventory, self.weapon)
 end
 
 function Player:update(dt, mapW, mapH)
@@ -518,6 +535,10 @@ function Player:die(metaData, playerScore)
 
      -- Set death timer for game over transition
     self.deathTimer = 2.0  -- x seconds to show death animation, change based on sprite/animation
+end
+
+function Player:addItem(item)
+    table.insert(self.inventory, item)
 end
 
 function Player:triggerGameOver()

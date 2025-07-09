@@ -18,14 +18,15 @@ local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
 local Camera = require("libraries/hump/camera")
 -- local camera = require("camera")
+local Utils = require("utils")
 local SaveSystem = require("save_game_data")
 local Debug = require("game_debug")
-
 
 local cam = Camera()
 cam:zoomTo(1.5)
 
 -- current run data and persistent game data
+-- upgrades, modifiers, enemy stats, dropped items in rooms
 local runData = {
     currentRoom = 1,
     cleared = false,
@@ -34,6 +35,7 @@ local runData = {
     inventory = {}
 }
 
+-- high scores, best runs, achievements and milestons
 local metaData = {
     unlockedCharacters = {},
     permanentUpgrades = {},
@@ -103,9 +105,10 @@ function love.keypressed(key)
     end
 
     if key == "e" and player.canPickUpItem then
-        equipWeapon(player.canPickUpItem)
-        Loot.removeDroppedItem(player.canPickUpItem)
-        player.canPickUpItem = nil
+        player:addItem(player.canPickUpItem) -- add item to player inventory
+        equipWeapon(player.canPickUpItem) -- equip item/weapon
+        Loot.removeDroppedItem(player.canPickUpItem) -- remove picked up item from world
+        player.canPickUpItem = nil -- safety check / error prevetion
     end
 
     -- fire crystal level up test
@@ -679,8 +682,11 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
         end
     end
 
-    -- reset for each new Room
+    -- reset cleared flag for each new room
     runData.cleared = false
+    player.health = runData.playerHealth or 100
+    -- restore player inventory
+    -- player.inventory = Utils.deepCopy(runData.inventory)
 
     -- destroy collider to make sure its in the right position
     if player.collider then
@@ -823,6 +829,10 @@ function playing:leave()
     print("Leaving playing state, cleaning up resources.")
     -- save game after clearing initial room
     SaveSystem.saveGame(runData, metaData)
+
+    -- synch to runData
+    -- runData.inventory = Utils.deepCopy(player.inventory)
+    runData.playerHealth = player.health
 end
 
 function love.update(dt)
