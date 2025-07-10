@@ -109,6 +109,19 @@ function love.keypressed(key)
         equipWeapon(player.canPickUpItem) -- equip item/weapon
         Loot.removeDroppedItem(player.canPickUpItem) -- remove picked up item from world
         player.canPickUpItem = nil -- safety check / error prevetion
+
+        -- After level up
+        -- player.weapon.level = player.weapon.level + 1
+        -- player.weapon:recalculateStats()
+        -- if mult weapons in inventory, update the matching entry for equipped weapon
+        -- for i, item in ipairs(player.inventory) do
+        --     if item.name == player.weapon.name and item.weaponType == player.weapon.weaponType then
+        --         item.level = player.weapon.level
+        --         item.baseDamage = player.weapon.baseDamage
+        --         item.fireRate = player.weapon.fireRate
+        --         break
+        --     end
+        -- end
     end
 
     -- fire crystal level up test
@@ -152,7 +165,7 @@ function love.keypressed(key)
         fireCrystalLevel
     )
 end
-
+    -- KEEP THIS, ILL NEED IT LATER
     -- drop held weapon 20 pixels in front of player
     -- if key == "q" and player.weapon then
     --     local offset = 20 -- pixels in front of player
@@ -686,7 +699,21 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     runData.cleared = false
     player.health = runData.playerHealth or 100
     -- restore player inventory
-    -- player.inventory = Utils.deepCopy(runData.inventory)
+    player.inventory = Utils.deepCopy(runData.inventory)
+
+    -- reconstruct equipped weapon from player inventory table data
+    if player.inventory[1] then
+        local w = player.inventory[1]
+        player.weapon = Weapon:new(
+            w.name,
+            w.image,
+            w.weaponType,
+            w.fireRate,
+            w.projectileClass,
+            w.baseDamage,
+            w.level
+        )
+    end
 
     -- destroy collider to make sure its in the right position
     if player.collider then
@@ -831,8 +858,23 @@ function playing:leave()
     SaveSystem.saveGame(runData, metaData)
 
     -- synch to runData
-    -- runData.inventory = Utils.deepCopy(player.inventory)
+    runData.inventory = Utils.deepCopy(player.inventory)
     runData.playerHealth = player.health
+
+    -- update player inventory slot with current weapons stats
+    if player.weapon then
+        player.inventory[1] = {
+            name = player.weapon.name,
+            image = player.weapon.image,
+            weaponType = player.weapon.weaponType,
+            fireRate = player.weapon.fireRate,
+            projectileClass = player.weapon.projectileClass,
+            baseDamage = player.weapon.baseDamage,
+            level = player.weapon.level
+        }
+    end
+    runData.inventory = Utils.deepCopy(player.inventory)
+
 end
 
 function love.update(dt)
@@ -1365,6 +1407,23 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         table.insert(wallColliders, wall)
     end
 
+    -- restore player inventory
+    player.inventory = Utils.deepCopy(runData.inventory)
+
+    -- reconstruct equipped weapon from player inventory table data
+    if player.inventory[1] then
+        local w = player.inventory[1]
+        player.weapon = Weapon:new(
+            w.name,
+            w.image,
+            w.weaponType,
+            w.fireRate,
+            w.projectileClass,
+            w.baseDamage,
+            w.level
+        )
+    end
+
     -- destroy collider to make sure its in the right position
     if player.collider then
         player.collider:destroy()
@@ -1463,6 +1522,25 @@ function safeRoom:leave()
     -- reset flags
     pendingRoomTransition = false
     print("Leaving safeRoom state, cleaning up resources.")
+
+    -- synch to runData
+    runData.inventory = Utils.deepCopy(player.inventory)
+    runData.playerHealth = player.health
+
+    -- update player inventory slot with current weapons stats
+    if player.weapon then
+        player.inventory[1] = {
+            name = player.weapon.name,
+            image = player.weapon.image,
+            weaponType = player.weapon.weaponType,
+            fireRate = player.weapon.fireRate,
+            projectileClass = player.weapon.projectileClass,
+            baseDamage = player.weapon.baseDamage,
+            level = player.weapon.level
+        }
+    end
+    runData.inventory = Utils.deepCopy(player.inventory)
+
     -- save game after clearing initial room
     SaveSystem.saveGame(runData, metaData)
 end

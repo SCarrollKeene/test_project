@@ -541,6 +541,19 @@ function Player:addItem(item)
     table.insert(self.inventory, item)
 end
 
+function Player:dropItem(item)
+    -- find and drop item/weapon from inventory
+    for i, invItem in ipairs(self.inventory) do
+        -- if inventory item equals an item/weapon in player inventory then remove from table
+        if invItem == item then
+            table.remove(self.inventory, i)
+            break -- get out of loop, your work here is done
+        end
+    end
+    -- spawn item into the world at players feet, for now
+    Loot.createWeaponDropFromInstance(item, self.x, self.y)
+end
+
 function Player:triggerGameOver()
     -- Transition to game over screen, restart, or respawn, etc
     print("Game Over! Final Score: " .. playerScore)

@@ -5,17 +5,22 @@ local Utils = {}
 -- maintainability and reduce redundancy
 
 -- used to copy rundata, make sure player inventory persists through room transitions
-function Utils.deepCopy(orig)
-    local orig_type = type(orig)
+-- seen tables is a common fix for deep copy functions in lua and other languages
+function Utils.deepCopy(orig, seen) -- seen table used internally
+    seen = seen or {} -- seen table maps original tables to their copies
+    -- local orig_type = type(orig)
+    -- before copying a table, checks if it's already been copied 
+    -- If so, it reuses the copy instead of recursing again
+    if type(orig) ~= 'table' then return orig end -- if orig is not a table, return as is
+    if seen[orig] then return seen[orig] end -- if already copied, return previously created copy
+    local copy = {}
+    seen[orig] = copy -- associates orig with its copy to the seen table
+    for k, v in next, orig, nil do -- iterates over k-v pair in orig
+        copy[Utils.deepCopy(k, seen)] = Utils.deepCopy(v, seen) -- recursively deep copies k-v pair and assigns them to the new copy table
+    end
 
-  if orig_type ~= 'table' then return orig end
-  local copy = {}
-  for k, v in next, orig, nil do
-    copy[deepCopy(k)] = deepCopy(v)
-  end
-
-  setmetatable(copy, Utils.deepCopy(getmetatable(orig)))
-  return copy
+    setmetatable(copy, Utils.deepCopy(getmetatable(orig), seen)) -- if orig has a metatable, recursively deep-copies it and assigns it to the new table
+    return copy -- retuns fully deep copied copy table
 end
 
 function Utils.takeDamage(target, dmg)
