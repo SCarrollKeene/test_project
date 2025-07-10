@@ -31,7 +31,7 @@ function Utils.takeDamage(target, dmg)
 end
 
 function Utils.dealDamage(attacker, target, dmg)
-    if attacker == target then return end -- preven hurting self
+    if attacker == target then return end -- prevent hurting self
     print("UTILS DEBUG: " .. attacker.name .. " dealt " .. dmg .. " damage to " .. target.name)
     if target.takeDamage then
         target:takeDamage(dmg)

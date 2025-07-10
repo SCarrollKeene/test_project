@@ -554,6 +554,22 @@ function Player:dropItem(item)
     Loot.createWeaponDropFromInstance(item, self.x, self.y)
 end
 
+-- call on pickups, level ups, shop upgrades, modifiers/buffs and scripted events
+function Player:updateEquipmentInventory()
+    if not self.weapon then return end
+
+    for i, item in ipairs(self.inventory) do
+    if item.name == self.weapon.name and item.weaponType == self.weapon.weaponType then
+        item.level = self.weapon.level
+        item.baseDamage = self.weapon.baseDamage
+        item.fireRate = self.weapon.fireRate
+        -- revisit to add other fields as I see fit
+        break
+    end
+end
+
+end
+
 function Player:triggerGameOver()
     -- Transition to game over screen, restart, or respawn, etc
     print("Game Over! Final Score: " .. playerScore)

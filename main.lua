@@ -108,20 +108,10 @@ function love.keypressed(key)
         player:addItem(player.canPickUpItem) -- add item to player inventory
         equipWeapon(player.canPickUpItem) -- equip item/weapon
         Loot.removeDroppedItem(player.canPickUpItem) -- remove picked up item from world
-        player.canPickUpItem = nil -- safety check / error prevetion
+        player.canPickUpItem = nil -- safety check / error prevention
 
-        -- After level up
-        -- player.weapon.level = player.weapon.level + 1
-        -- player.weapon:recalculateStats()
-        -- if mult weapons in inventory, update the matching entry for equipped weapon
-        -- for i, item in ipairs(player.inventory) do
-        --     if item.name == player.weapon.name and item.weaponType == player.weapon.weaponType then
-        --         item.level = player.weapon.level
-        --         item.baseDamage = player.weapon.baseDamage
-        --         item.fireRate = player.weapon.fireRate
-        --         break
-        --     end
-        -- end
+        -- After level up, if mult weapons in inventory, update the matching entry for equipped weapon
+        player:updateEquipmentInventory()
     end
 
     -- fire crystal level up test
@@ -260,10 +250,10 @@ end
 -- Pick up weapon
 function equipWeapon(weaponToEquip)
     if player.weapon and player.weapon.weaponType == weaponToEquip.weaponType then
-    -- Auto-level up
-    player.weapon.level = player.weapon.level + 1
-    -- Recalculate stats based on new level reached
-    player.weapon:recalculateStats()
+    -- weapon level up
+    player.weapon:levelUp()
+    -- update player inventory
+    player:updateEquipmentInventory()
     -- Remove the item from droppedItems
     Loot.removeDroppedItem(weaponToEquip)
     else
@@ -697,11 +687,12 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- reset cleared flag for each new room
     runData.cleared = false
-    player.health = runData.playerHealth or 100
-    -- restore player inventory
-    player.inventory = Utils.deepCopy(runData.inventory)
 
-    -- reconstruct equipped weapon from player inventory table data
+     -- restore player inventory
+    player.inventory = Utils.deepCopy(runData.inventory)
+    player.health = runData.playerHealth or 100
+
+    -- reconstruct equipped weapon from player inventory
     if player.inventory[1] then
         local w = player.inventory[1]
         player.weapon = Weapon:new(
@@ -756,11 +747,6 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     --         enemy.currentAnimation = enemy.animations.idle
     --         -- enemy.currentAnimation:reset()
     --     end
-    -- end
-
-     -- Enemy batching
-    -- for _, batch in pairs(self.enemyBatches) do
-    --     batch:clear()
     -- end
 
      -- Single draw call for batching all enemies of same type
@@ -854,27 +840,15 @@ function playing:leave()
     -- reset flags
     pendingRoomTransition = false
     print("Leaving playing state, cleaning up resources.")
-    -- save game after clearing initial room
-    SaveSystem.saveGame(runData, metaData)
 
+    -- copy current weapon stats to runData
+    player:updateEquipmentInventory()
     -- synch to runData
     runData.inventory = Utils.deepCopy(player.inventory)
     runData.playerHealth = player.health
 
-    -- update player inventory slot with current weapons stats
-    if player.weapon then
-        player.inventory[1] = {
-            name = player.weapon.name,
-            image = player.weapon.image,
-            weaponType = player.weapon.weaponType,
-            fireRate = player.weapon.fireRate,
-            projectileClass = player.weapon.projectileClass,
-            baseDamage = player.weapon.baseDamage,
-            level = player.weapon.level
-        }
-    end
-    runData.inventory = Utils.deepCopy(player.inventory)
-
+    -- save game after clearing initial room
+    SaveSystem.saveGame(runData, metaData)
 end
 
 function love.update(dt)
@@ -1409,6 +1383,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- restore player inventory
     player.inventory = Utils.deepCopy(runData.inventory)
+    player.health = runData.playerHealth or 100
 
     -- reconstruct equipped weapon from player inventory table data
     if player.inventory[1] then
@@ -1523,23 +1498,11 @@ function safeRoom:leave()
     pendingRoomTransition = false
     print("Leaving safeRoom state, cleaning up resources.")
 
+    -- copy current weapon stats to runData
+    player:updateEquipmentInventory()
     -- synch to runData
     runData.inventory = Utils.deepCopy(player.inventory)
     runData.playerHealth = player.health
-
-    -- update player inventory slot with current weapons stats
-    if player.weapon then
-        player.inventory[1] = {
-            name = player.weapon.name,
-            image = player.weapon.image,
-            weaponType = player.weapon.weaponType,
-            fireRate = player.weapon.fireRate,
-            projectileClass = player.weapon.projectileClass,
-            baseDamage = player.weapon.baseDamage,
-            level = player.weapon.level
-        }
-    end
-    runData.inventory = Utils.deepCopy(player.inventory)
 
     -- save game after clearing initial room
     SaveSystem.saveGame(runData, metaData)

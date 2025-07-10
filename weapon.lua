@@ -37,6 +37,13 @@ function Weapon:update(dt)
     self.cooldown:update(dt)
 end
 
+function Weapon:levelUp()
+    -- Auto-level up
+    self.level = self.level + 1
+    -- Recalculate stats based on new level reached
+    self:recalculateStats()
+end
+
 function Weapon:recalculateStats()
     self.damage = (self.baseDamage or 10) + (self.level - 1) * 2
     self.fireRate = self.baseFireRate + (self.level - 1) * 0.05
