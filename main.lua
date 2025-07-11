@@ -107,6 +107,7 @@ function love.keypressed(key)
     if key == "e" and player.canPickUpItem then
         player:addItem(player.canPickUpItem) -- add item to player inventory
         equipWeapon(player.canPickUpItem) -- equip item/weapon
+        player.weapon:levelUp() -- weapon level up
         Loot.removeDroppedItem(player.canPickUpItem) -- remove picked up item from world
         player.canPickUpItem = nil -- safety check / error prevention
 
@@ -250,8 +251,7 @@ end
 -- Pick up weapon
 function equipWeapon(weaponToEquip)
     if player.weapon and player.weapon.weaponType == weaponToEquip.weaponType then
-    -- weapon level up
-    player.weapon:levelUp()
+    
     -- update player inventory
     player:updateEquipmentInventory()
     -- Remove the item from droppedItems
@@ -273,6 +273,12 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.baseDamage,
             weaponToEquip.level
         )
+
+        -- write some frigin equippedSlot logic, i think
+
+        -- Sync inventory to ensure equipped weapon entry is up to date
+        player:updateEquipmentInventory()
+
         -- Remove item from droppedItems...
         Loot.removeDroppedItem(weaponToEquip)
     end
@@ -572,8 +578,22 @@ function love.load()
 
         -- Check for Projectile-Wall collision
         if (dataA and dataA.type == "wall" and dataB and dataB.type == "projectile") then
+            -- impact projectile effect
+            local particleImpact = Particle.getOnImpactEffect()
+            if particleImpact then
+                particleImpact:setPosition(dataB.x, dataB.y)
+                particleImpact:emit(8)
+                table.insert(globalParticleSystems, particleImpact)
+            end
             dataB:destroySelf() -- destroy projectile on wall collision
         elseif (dataB and dataB.type == "wall" and dataA and dataA.type == "projectile") then
+            -- impact projectile effect
+            local particleImpact = Particle.getOnImpactEffect()
+            if particleImpact then
+                particleImpact:setPosition(dataA.x, dataA.y)
+                particleImpact:emit(8)
+                table.insert(globalParticleSystems, particleImpact)
+            end
             dataA:destroySelf() -- destroy projectile on wall collision
             -- One is wall, one is projectile
             -- local projectile = dataA.type and dataA or dataB
@@ -691,6 +711,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
      -- restore player inventory
     player.inventory = Utils.deepCopy(runData.inventory)
     player.health = runData.playerHealth or 100
+    runData.equippedSlot = player.equippedSlot
 
     -- reconstruct equipped weapon from player inventory
     if player.inventory[1] then
@@ -846,6 +867,7 @@ function playing:leave()
     -- synch to runData
     runData.inventory = Utils.deepCopy(player.inventory)
     runData.playerHealth = player.health
+    runData.equippedSlot = player.equippedSlot
 
     -- save game after clearing initial room
     SaveSystem.saveGame(runData, metaData)
@@ -1503,6 +1525,7 @@ function safeRoom:leave()
     -- synch to runData
     runData.inventory = Utils.deepCopy(player.inventory)
     runData.playerHealth = player.health
+    runData.equippedSlot = player.equippedSlot
 
     -- save game after clearing initial room
     SaveSystem.saveGame(runData, metaData)

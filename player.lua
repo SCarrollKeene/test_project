@@ -150,6 +150,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.collider:setObject(self)
 
     self.baseDamage = 1
+    self.equippedSlot = 1
     self.health = 100
     self.speed = 300
     self.xVel = 0

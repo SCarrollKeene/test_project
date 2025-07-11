@@ -4,11 +4,11 @@ local Particle = {}
 local _imgCache = {}
 
 -- pool sparks for projecticles, better performance
-local pools = { baseSpark = {}, itemIndicator = {} }
+local pools = { baseSpark = {}, onImpactEffect = {}, burstOnDeath = {}, itemIndicator = {} }
 
 local fireflySystems = {}
 
-local MAX_POOL_SIZE = 50 -- limit particle pool
+local MAX_POOL_SIZE = 100 -- limit particle pool
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)
@@ -253,6 +253,57 @@ end
 -- for debugging and measuring pool size
 function Particle.getItemIndicatorPoolSize()
     return #pools.itemIndicator
+end
+
+-- for impact on walls, enemy, etc
+function Particle.onImpactEffect()
+    if #pools.onImpactEffect > 0 then
+        local ps = table.remove(pools.onImpactEffect)
+        ps:reset()
+        ps:start()
+        return ps
+    end
+
+    local particleImage = getImage("sprites/particle.png")
+    if not particleImage then
+        print("ERROR: particle.png NOT FOUND!")
+        return nil
+    end -- No further setup if image is missing
+
+    local ps = love.graphics.newParticleSystem(particleImage, 30)
+    ps:setParticleLifetime(0.2, 0.4)
+    ps:setEmissionRate(0) -- Usually emit burst manually
+    ps:setSizes(3, 12)
+    ps:setSizeVariation(0.7)
+    ps:setSpread(math.pi * 2)
+    ps:setSpeed(80, 180)
+    -- ps:setLinearAcceleration(-20, -20, 20, 20)
+    ps:setColors(
+        1, 0.85, 0.2, 0.8,   -- bright yellow/orange, mostly opaque
+        1, 0.6, 0.1, 0.2     -- fades to orange, transparent
+    )
+    return ps
+end
+
+function Particle.getOnImpactEffect()
+    if #pools.onImpactEffect > 0 then
+        local ps = table.remove(pools.onImpactEffect)
+        ps:reset() -- clear particles
+        ps:start() -- enable emits
+        return ps
+    elseif #pools.onImpactEffect < MAX_POOL_SIZE then
+        return Particle.onImpactEffect() -- use onImpactEffect to create ps
+    else
+        return nil -- skip particle creation if pool is full
+    end
+end
+
+function Particle.returOnImpactEffect(ps)
+    if #pools.onImpactEffect < MAX_POOL_SIZE then
+        ps:stop() -- stop emission
+        ps:reset() -- clear particles
+        table.insert(pools.onImpactEffect, ps)
+    end
 end
 
 function Particle:load()

@@ -221,6 +221,15 @@ function Projectile:onHitEnemy(enemy)
     elseif enemy and enemy.takeDamage then
         enemy:takeDamage(self.damage)
     end
+
+    -- impact particles on projectile collision
+    local particleImpact = Particle.getOnImpactEffect()
+    if particleImpact then
+    -- impact particles
+    particleImpact:setPosition(self.x, self.y)
+    particleImpact:emit(10) -- however many particles you want in the impact burst
+    table.insert(globalParticleSystems, particleImpact)
+end
     
     -- Unified destruction sequence
     -- self:deactivate() -- Deactivate the projectile
