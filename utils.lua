@@ -1,3 +1,5 @@
+local Particle = require("particle")
+
 local Utils = {}
 
 -- logic used in both player and enemy
@@ -41,7 +43,18 @@ end
 function Utils.die(target)
     if target and target.name then
         print(target.name .. " has died!")
+
     -- Additional death logic here
+
+    -- when an entity dies
+    local deathEffect = Particle.getOnDeathEffect()
+    if deathEffect then
+        deathEffect:setPosition(target.x, target.y)
+        deathEffect:emit(20)
+        table.insert(globalParticleSystems, deathEffect)
+    end
+
+    -- increment score on each enemy kill
     if target.type == "enemy" then
         if _G.incrementPlayerScore then
             _G.incrementPlayerScore(1)

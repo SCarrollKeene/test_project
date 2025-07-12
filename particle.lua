@@ -4,7 +4,7 @@ local Particle = {}
 local _imgCache = {}
 
 -- pool sparks for projecticles, better performance
-local pools = { baseSpark = {}, onImpactEffect = {}, burstOnDeath = {}, itemIndicator = {} }
+local pools = { baseSpark = {}, onImpactEffect = {}, onDeath = {}, itemIndicator = {} }
 
 local fireflySystems = {}
 
@@ -303,6 +303,57 @@ function Particle.returOnImpactEffect(ps)
         ps:stop() -- stop emission
         ps:reset() -- clear particles
         table.insert(pools.onImpactEffect, ps)
+    end
+end
+
+-- for player and enemy death
+function Particle.onDeathEffect()
+    if #pools.onImpactEffect > 0 then
+        local ps = table.remove(pools.onImpactEffect)
+        ps:reset()
+        ps:start()
+        return ps
+    end
+
+    local particleImage = getImage("sprites/particle.png")
+    if not particleImage then
+        print("ERROR: particle.png NOT FOUND!")
+        return nil
+    end -- No further setup if image is missing
+
+    local ps = love.graphics.newParticleSystem(particleImage, 30)
+    ps:setParticleLifetime(0.2, 0.4)
+    ps:setEmissionRate(0) -- Emit burst manually in Utils.die
+    ps:setSizes(3, 12)
+    ps:setSizeVariation(0.7)
+    ps:setSpread(math.pi * 2)
+    ps:setSpeed(80, 180)
+    -- ps:setLinearAcceleration(-20, -20, 20, 20)
+    ps:setColors(
+        1, 0, 0, 1,    -- bright red
+        1, 0.3, 0, 0   -- fades to orange, transparent
+    )
+    return ps
+end
+
+function Particle.getOnDeathEffect()
+    if #pools.onDeath > 0 then
+        local ps = table.remove(pools.onDeath)
+        ps:reset()
+        ps:start()
+        return ps
+    elseif #pools.onDeath < MAX_POOL_SIZE then
+        return Particle.onDeathEffect()
+    else
+        return nil
+    end
+end
+
+function Particle.returnOnDeathEffect(ps)
+    if #pools.onDeath < MAX_POOL_SIZE then
+        ps:stop()
+        ps:reset()
+        table.insert(pools.onDeath, ps)
     end
 end
 
