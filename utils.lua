@@ -51,7 +51,8 @@ function Utils.die(target)
     if deathEffect then
         deathEffect:setPosition(target.x, target.y)
         deathEffect:emit(20)
-        table.insert(globalParticleSystems, deathEffect)
+        -- table.insert(globalParticleSystems, deathEffect)
+        table.insert(globalParticleSystems, { ps = deathEffect, type = "deathEffect" } ) -- context-based pooling
     end
 
     -- increment score on each enemy kill

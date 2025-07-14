@@ -3,12 +3,17 @@ local Particle = {}
 -- image cache to avoid redundant/repeated image loading
 local _imgCache = {}
 
--- pool sparks for projecticles, better performance
+-- pool list for various ps systems, better performance
 local pools = { baseSpark = {}, onImpactEffect = {}, onDeath = {}, itemIndicator = {} }
 
 local fireflySystems = {}
 
-local MAX_POOL_SIZE = 100 -- limit particle pool
+local MAX_POOL_SIZE = {
+    baseSpark = 100,
+    onImpactEffect = 100,
+    onDeath = 50,
+    itemIndicator = 50
+} -- limit particle pool for each table
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)
@@ -61,21 +66,18 @@ function Particle.getBaseSpark()
         ps:reset() -- clear particles
         ps:start() -- enable emits
         return ps
-    elseif #pools.baseSpark < MAX_POOL_SIZE then
+    elseif #pools.baseSpark < MAX_POOL_SIZE.baseSpark then
         return Particle.baseSpark() -- use baseSpark to create ps
     else
         return nil -- skip particle creation if pool is full
     end
 end
 
--- 
 function Particle.returnBaseSpark(ps)
-    if #pools.baseSpark < MAX_POOL_SIZE then
+    if #pools.baseSpark < MAX_POOL_SIZE.baseSpark then
         ps:stop()
         ps:reset()
-        -- table.insert(pools.baseSpark, ps)
-    -- else
-        -- ps:release() -- destroy if particle pool is full
+        table.insert(pools.baseSpark, ps)
     end
 end
 
@@ -155,7 +157,6 @@ function Particle.firefly()
         0.7, 1.0, 0.3, 0.4,   -- Middle: greener, semi-transparent
         0.2, 0.8, 1.0, 0.0    -- End: blueish, fully transparent
     )
-
     return ps
 end
 
@@ -230,7 +231,7 @@ function Particle.getItemIndicator()
         ps:reset() -- clear particles
         ps:start() -- enable emits
         return ps
-    elseif #pools.itemIndicator < MAX_POOL_SIZE then
+    elseif #pools.itemIndicator < MAX_POOL_SIZE.itemIndicator then
         return Particle.itemIndicator() -- use itemIndicator to create ps
     else
         return nil -- skip particle creation if pool is full
@@ -238,7 +239,7 @@ function Particle.getItemIndicator()
 end
 
 function Particle.returnItemIndicator(ps)
-    if #pools.itemIndicator < MAX_POOL_SIZE then
+    if #pools.itemIndicator < MAX_POOL_SIZE.itemIndicator then
         ps:stop()
         ps:reset()
         table.insert(pools.itemIndicator, ps)
@@ -291,7 +292,7 @@ function Particle.getOnImpactEffect()
         ps:reset() -- clear particles
         ps:start() -- enable emits
         return ps
-    elseif #pools.onImpactEffect < MAX_POOL_SIZE then
+    elseif #pools.onImpactEffect < MAX_POOL_SIZE.onImpactEffect then
         return Particle.onImpactEffect() -- use onImpactEffect to create ps
     else
         return nil -- skip particle creation if pool is full
@@ -299,7 +300,7 @@ function Particle.getOnImpactEffect()
 end
 
 function Particle.returOnImpactEffect(ps)
-    if #pools.onImpactEffect < MAX_POOL_SIZE then
+    if #pools.onImpactEffect < MAX_POOL_SIZE.onImpactEffect then
         ps:stop() -- stop emission
         ps:reset() -- clear particles
         table.insert(pools.onImpactEffect, ps)
@@ -308,8 +309,8 @@ end
 
 -- for player and enemy death
 function Particle.onDeathEffect()
-    if #pools.onImpactEffect > 0 then
-        local ps = table.remove(pools.onImpactEffect)
+    if #pools.onDeath > 0 then
+        local ps = table.remove(pools.onDeath)
         ps:reset()
         ps:start()
         return ps
@@ -342,7 +343,7 @@ function Particle.getOnDeathEffect()
         ps:reset()
         ps:start()
         return ps
-    elseif #pools.onDeath < MAX_POOL_SIZE then
+    elseif #pools.onDeath < MAX_POOL_SIZE.onDeath then
         return Particle.onDeathEffect()
     else
         return nil
@@ -350,7 +351,7 @@ function Particle.getOnDeathEffect()
 end
 
 function Particle.returnOnDeathEffect(ps)
-    if #pools.onDeath < MAX_POOL_SIZE then
+    if #pools.onDeath < MAX_POOL_SIZE.onDeath then
         ps:stop()
         ps:reset()
         table.insert(pools.onDeath, ps)

@@ -241,6 +241,8 @@ function spawnWeaponDrop(name, image, weaponType, fireRate, projectileClass, bas
         -- table.insert(globalParticleSystems, weaponDrop.particle)
         -- table.insert(itemDropSystems, weaponDrop.particle)
         print("[WEAPONDROP PARTICLE] Created item particle:", weaponDrop.particle)
+        weaponDrop.particle:emit(10) -- initial burst on drop
+        table.insert(globalParticleSystems, { ps = weaponDrop.particle, type = "itemIndicator" } ) -- context-based pooling
 
     end
   table.insert(droppedItems, weaponDrop)
@@ -415,6 +417,7 @@ end
 
 function roomComplete()
     runData.cleared = true
+    pendingPortalSpawn = true
     spawnPortal() -- TODO: maybe, revisit later 6/20/25
     print("Room " ..runData.currentRoom.. " completed!")
 end
@@ -583,7 +586,8 @@ function love.load()
             if particleImpact then
                 particleImpact:setPosition(dataB.x, dataB.y)
                 particleImpact:emit(8)
-                table.insert(globalParticleSystems, particleImpact)
+                -- table.insert(globalParticleSystems, particleImpact)
+                table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect" } ) -- Context-based pooling
             end
             dataB:destroySelf() -- destroy projectile on wall collision
         elseif (dataB and dataB.type == "wall" and dataA and dataA.type == "projectile") then
@@ -592,7 +596,8 @@ function love.load()
             if particleImpact then
                 particleImpact:setPosition(dataA.x, dataA.y)
                 particleImpact:emit(8)
-                table.insert(globalParticleSystems, particleImpact)
+                -- table.insert(globalParticleSystems, particleImpact)
+                table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect" } ) -- Context-based pooling
             end
             dataA:destroySelf() -- destroy projectile on wall collision
             -- One is wall, one is projectile
@@ -976,12 +981,12 @@ function playing:update(dt)
     -- print("Calling Particle.updateItemDropParticles, count:", #itemDropSystems)
 
     --  update each item's particle:
-    for _, item in ipairs(droppedItems) do
-        if item.particle then
-            item.particle:setPosition(item.x, item.y)
-            item.particle:update(dt)
-        end
-    end
+    -- for _, item in ipairs(droppedItems) do
+    --     if item.particle then
+    --         item.particle:setPosition(item.x, item.y)
+    --         item.particle:update(dt)
+    --     end
+    -- end
 
     -- NOTE: I need collision detection before I can continue and the logic for player attacks, enemy attacking player, getting damage values from projectile.damage
     -- and calling the appropriate dealDamage function
@@ -1042,24 +1047,67 @@ function playing:update(dt)
         print("DEBUG: Attempting to update:", #enemies, "enemies in table.")
     end
 
-    -- if particle systems exists, update it
-    for i = #globalParticleSystems, 1, -1 do
-        local ps = globalParticleSystems[i]
-        ps:update(dt)
+    -- -- if particle systems exists, update it
+    -- for i = #globalParticleSystems, 1, -1 do
+    --     local ps = globalParticleSystems[i]
+    --     ps:update(dt)
 
-        -- remove inactive particle systems
-        -- switched 'and' to 'or' as this removes particles between transitions
-        -- may need to revisit once we start adding other particle 
-        if ps:getCount() == 0 or not ps:isActive() then
+    --     -- remove inactive particle systems
+    --     -- switched 'and' to 'or' as this removes particles between transitions
+    --     -- may need to revisit once we start adding other particle 
+    --     if ps:getCount() == 0 or not ps:isActive() then
+    --         table.remove(globalParticleSystems, i)
+    --         Particle.returnBaseSpark(ps)
+    --         Particle.returnItemIndicator(ps)
+    --         Particle.returOnImpactEffect(ps)
+    --         Particle.returnOnDeathEffect(ps)
+    --         print("REMOVED INACTIVE PARTICLE SYSTEM")
+    --     end
+    -- end
+
+    -- Defensive check: remove any invalid entries before updating/drawing
+    for i = #globalParticleSystems, 1, -1 do
+        local entry = globalParticleSystems[i]
+        if type(entry) ~= "table" or not entry.ps then
+            print("[ERROR] Invalid entry in globalParticleSystems at index", i, entry)
             table.remove(globalParticleSystems, i)
-            print("REMOVED INACTIVE PARTICLE SYSTEM")
         end
     end
 
-    -- particle culling
-    if #globalParticleSystems > 100 then
+    -- if particle systems exists, update it
+    for i = #globalParticleSystems, 1, -1 do
+        local entry = globalParticleSystems[i]   -- entry is a table: { ps = ..., type = ... }
+        local ps = entry.ps
+        if not entry.ps then
+            print("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
+            table.remove(globalParticleSystems, i)
+        else
+            ps:update(dt)
+        end
+
+    -- remove inactive particle systems
+    -- switched 'and' to 'or' as this removes particles between transitions
+    -- may need to revisit once we start adding other particle 
+    if ps:getCount() == 0 or not ps:isActive() then
+        table.remove(globalParticleSystems, i)
+        if entry.type == "impactEffect" then
+            Particle.returOnImpactEffect(ps)
+        elseif entry.type == "deathEffect" then
+            Particle.returnOnDeathEffect(ps)
+        elseif entry.type == "particleTrail" then
+            Particle.returnBaseSpark(ps)
+        elseif entry.type == "itemIndicator" then
+            Particle.returnItemIndicator(ps)
+        end
+        print("REMOVED INACTIVE PARTICLE SYSTEM")
+    end
+end
+
+    -- particle culling if over cap
+    local ps_cap = 100
+    if #globalParticleSystems > ps_cap then
         -- remove oldest particles systems first
-        local toRemove = #globalParticleSystems - 100
+        local toRemove = #globalParticleSystems - ps_cap
         for i = 1, toRemove do
             table.remove(globalParticleSystems, 1)
         end
@@ -1249,11 +1297,11 @@ function playing:draw()
         -- print("Drawing item drop particles, count:", #itemDropSystems)
 
         -- draw droppable loot/items particles
-        for _, item in ipairs(droppedItems) do
-            if item.particle then
-                love.graphics.draw(item.particle)
-            end
-        end
+        -- for _, item in ipairs(droppedItems) do
+        --     if item.particle then
+        --         love.graphics.draw(item.particle)
+        --     end
+        -- end
 
         if player.canPickUpItem then
             local prompt = "Press E to pick up " .. (player.canPickUpItem.name or "Weapon")
@@ -1342,8 +1390,25 @@ function playing:draw()
 
         love.graphics.setBlendMode("add") -- for visibility
         -- draw particles systems last after other entities
-        for _, ps in ipairs(globalParticleSystems) do
-            love.graphics.draw(ps)
+        -- for _, ps in ipairs(globalParticleSystems) do
+        --     love.graphics.draw(ps)
+        -- end
+
+        -- clean up sweep defensive nil check to make sure ps != nil or a raw nil is the result
+        for i = #globalParticleSystems, 1, -1 do
+            local entry = globalParticleSystems[i]
+            if type(entry) ~= "table" or not entry.ps then
+                print("[CLEANUP] Removing invalid entry from globalParticleSystems at index", i)
+                table.remove(globalParticleSystems, i)
+            end
+        end
+
+        for _, entry in ipairs(globalParticleSystems) do
+            if entry.ps then
+                love.graphics.draw(entry.ps) -- context-based pooling
+            else
+                print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
+            end
         end
         love.graphics.setBlendMode("alpha") -- reset to normal
 
@@ -1665,8 +1730,25 @@ function safeRoom:draw()
 
     love.graphics.setBlendMode("add") -- for visibility
     -- draw particles systems last after other entities
-    for _, ps in ipairs(globalParticleSystems) do
-        love.graphics.draw(ps)
+    -- for _, ps in ipairs(globalParticleSystems) do
+    --     love.graphics.draw(ps)
+    -- end
+
+    -- clean up sweep defensive nil check to make sure ps != nil or a raw nil is the result
+    for i = #globalParticleSystems, 1, -1 do
+        local entry = globalParticleSystems[i]
+        if type(entry) ~= "table" or not entry.ps then
+            print("[CLEANUP] Removing invalid entry from globalParticleSystems at index", i)
+            table.remove(globalParticleSystems, i)
+        end
+    end
+
+    for _, entry in ipairs(globalParticleSystems) do
+        if entry.ps then
+            love.graphics.draw(entry.ps) -- context-based pooling
+        else
+            print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
+        end
     end
     love.graphics.setBlendMode("alpha") -- reset to normal
 

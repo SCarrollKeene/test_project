@@ -143,7 +143,8 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level)
 
         self.particleTrail:setPosition(trailX, trailY)
         self.particleTrail:emit(1) -- initial burst
-        table.insert(globalParticleSystems, self.particleTrail) -- insert particles into global table
+        -- table.insert(globalParticleSystems, self.particleTrail) -- insert particles into global table
+        table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail"} ) -- context-based pooling
     end
 
     return self
@@ -228,7 +229,8 @@ function Projectile:onHitEnemy(enemy)
     -- impact particles
     particleImpact:setPosition(self.x, self.y)
     particleImpact:emit(10) -- however many particles you want in the impact burst
-    table.insert(globalParticleSystems, particleImpact)
+    -- table.insert(globalParticleSystems, particleImpact)
+    table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect" } ) -- context-based pooling
 end
     
     -- Unified destruction sequence
@@ -427,7 +429,8 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     local trailY = y - math.sin(angle) * offset
     self.particleTrail:setPosition(trailX, trailY)
     self.particleTrail:emit(1)
-    table.insert(globalParticleSystems, self.particleTrail)
+    -- table.insert(globalParticleSystems, self.particleTrail)
+    table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail"} ) -- context-based pooling
 end
 
 function Projectile:deactivate()
