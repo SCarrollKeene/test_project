@@ -14,6 +14,12 @@ function Debug.keypressed(key)
     end
 end
 
+function Debug.debugPrint(...)
+    if Debug.mode then
+        print(...)
+    end
+end
+
 function Debug.draw(projectiles, enemies, globalParticleSystems, projectileBatch)
     if not Debug.mode then return end
     love.graphics.setColor(1, 1, 1, 1)

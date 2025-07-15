@@ -276,7 +276,7 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.level
         )
 
-        -- write some frigin equippedSlot logic, i think
+        -- TODO: write some frigin equippedSlot logic, i think
 
         -- Sync inventory to ensure equipped weapon entry is up to date
         player:updateEquipmentInventory()
@@ -396,24 +396,17 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
     -- end
 end
 
--- based on window coords
--- function spawnPortal()
---     local portalX = love.graphics.getWidth() / 2
---     local portalY = love.graphics.getHeight() / 2
---     portal = Portal:new(world, portalX, portalY)
---     print("A portal has spawned! Traverse to " ..runData.currentRoom.. " room.")
--- end
-
 -- based on [Player collider] recreated at map coords:
 function spawnPortal()
+    -- local portalX = love.graphics.getWidth() / 2
     local mapW = currentMap.width * currentMap.tilewidth
+    -- local portalY = love.graphics.getHeight() / 2
     local mapH = currentMap.height * currentMap.tileheight
     local portalX = mapW / 2
     local portalY = mapH / 2
     portal = Portal:new(world, portalX, portalY)
     print("A portal has spawned! Traverse to " ..runData.currentRoom.. " room.")
 end
-
 
 function roomComplete()
     runData.cleared = true
@@ -1569,6 +1562,7 @@ function safeRoom:leave()
 
     -- clear particles
     globalParticleSystems = {}
+    Particle.clearFireflies()
 
     -- destroy any remaining player/enemy colliders
     for _, enemy in ipairs(enemies) do
@@ -1761,7 +1755,10 @@ function safeRoom:draw()
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
     Debug.drawCollisions(world)
     Debug.drawColliders(wallColliders, player, portal)
-    Particle.drawFireflies()
+
+    if not fading then
+        Particle.drawFireflies()
+    end
 
     cam:detach()
     -- Safe room UI

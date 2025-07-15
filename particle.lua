@@ -95,13 +95,13 @@ function Particle.portalGlow(isBurst)
     print("[Particles] Portal system created")
     print("[Particles] Image:", particleImage and "Loaded" or "MISSING")
 
-
     -- sets particle lifespan range (in seconds)
     ps:setParticleLifetime(0.6, 1.2)
 
     -- particles emitted per second, the higher it is the more dense it gets
     -- ps:setEmissionRate(isBurst and 0 or 80) -- disable continuous if isBurst
     ps:setEmissionRate(80) -- continuous
+    ps:setEmissionArea("ellipse", 40, 40) -- trying to add a swirl or motion to the portal
 
     -- particle size transition from 50%-120% size
     -- ps:setSizes(0.5, 1.2)
@@ -125,11 +125,10 @@ function Particle.portalGlow(isBurst)
     -- ps:setColors(1, 0.3, 0, 1,  1, 0.8, 0, 0.8)  -- Bright orange
     ps:setColors(0.2, 0.8, 0.7, 1, 0.1, 0.6, 0.5, 0) -- teal green : Slightly darker teal, but transparent
 
-
     -- burst area for portal
     if isBurst then
         -- ps:setEmissionArea("uniform", 50, 50)
-        ps:emit(30) -- initial burst
+        ps:emit(50) -- initial burst
     end
     return ps
 end
@@ -144,6 +143,7 @@ function Particle.firefly()
     local ps = love.graphics.newParticleSystem(particleImage, 50)
     ps:setParticleLifetime(4, 8) -- Wisps live longer
     ps:setEmissionRate(20)            -- low: Gentle, sparse emission, high: swarms
+    ps:setEmissionArea("uniform", 100, 60) -- 100x60 grid, emit randomly in this grid
     ps:setSizes(0.1, 0.2)            -- Start small, grow a bit
     ps:setSizeVariation(1)           -- variation if you want different firefly sizes
     ps:setSpread(math.pi * 2)        -- 360° emission
@@ -274,7 +274,8 @@ function Particle.onImpactEffect()
     local ps = love.graphics.newParticleSystem(particleImage, 30)
     ps:setParticleLifetime(0.2, 0.4)
     ps:setEmissionRate(0) -- Usually emit burst manually
-    ps:setSizes(3, 12)
+    ps:setEmissionArea("ellipse", 12, 12) -- splash effect on impact
+    ps:setSizes(1, 6)
     ps:setSizeVariation(0.7)
     ps:setSpread(math.pi * 2)
     ps:setSpeed(80, 180)
@@ -324,8 +325,9 @@ function Particle.onDeathEffect()
 
     local ps = love.graphics.newParticleSystem(particleImage, 30)
     ps:setParticleLifetime(0.2, 0.4)
-    ps:setEmissionRate(0) -- Emit burst manually in Utils.die
-    ps:setSizes(3, 12)
+    ps:setEmissionRate(0) -- Emit burst manually in Utils.dies
+    ps:setEmissionArea("ellipse", 10, 10)
+    ps:setSizes(0.2, 0.5)
     ps:setSizeVariation(0.7)
     ps:setSpread(math.pi * 2)
     ps:setSpeed(80, 180)
