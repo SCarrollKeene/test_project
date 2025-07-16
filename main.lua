@@ -63,9 +63,9 @@ local enemies = {} -- enemies table to house all active enemies
 
 -- define enemy types and configurations in configuration table
 local randomBlobs = { 
-    { name = "Black Blob", spritePath = "sprites/slime_black.png", health = 60, speed = 50, baseDamage = 5 },
-    { name = "Blue Blob", spritePath = "sprites/slime_blue.png", health = 120, speed = 70, baseDamage = 10 }, 
-    { name = "Violet Blob", spritePath = "sprites/slime_violet.png", health = 180, speed = 90, baseDamage = 15 } 
+    { name = "Black Blob", spritePath = "sprites/slime_black.png", health = 60, speed = 50, baseDamage = 5, xpAmount = 10 },
+    { name = "Blue Blob", spritePath = "sprites/slime_blue.png", health = 120, speed = 70, baseDamage = 10, xpAmount = 15 }, 
+    { name = "Violet Blob", spritePath = "sprites/slime_violet.png", health = 180, speed = 90, baseDamage = 15, xpAmount = 25 } 
 }
 
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
@@ -1419,10 +1419,18 @@ function playing:draw()
         love.graphics.setFont(scoreFont)
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
-    love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel - 1), 20, 50)
-    love.graphics.print("Health: " .. player.health, 20,80)
-    love.graphics.print("Score: " .. playerScore, 20, 110)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
+    
+    love.graphics.print("Health: " .. player.health, 20, 20)
+    love.graphics.print("Level: " .. player.level or 1, 20, 50)
+
+    local xpNext = player:getXPToNextLevelUp()
+    love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 80)
+
+    local percent = math.floor((player.experience / xpNext) * 100)
+    love.graphics.print("Level Progress: " .. percent .. "%", 20, 110)
+
+    love.graphics.print("Score: " .. playerScore, 20, 140)
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 170)
     if player.weapon then
     if player.canPickUpItem then
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
@@ -1432,10 +1440,11 @@ function playing:draw()
         love.graphics.print("Fire rate: " .. player.weapon.fireRate, 20, 580)
         love.graphics.print("Damage: " .. player.weapon.damage, 20, 610)
         love.graphics.print("Cooldown: " .. string.format("%.2f", player.weapon.cooldown.time), 20, 640)
-        love.graphics.print("Level: " .. tostring(player.weapon.level or 1), 20, 670)
+        love.graphics.print("Weapon level: " .. tostring(player.weapon.level or 1), 20, 670)
     end
 
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)
+    love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel - 1), 1100, 700)
 end
 
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)

@@ -13,6 +13,8 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     self.name = "Player"
+    self.level = self.level or 1
+    self.experience = self.experience or 0
     self.x = 60
     self.y = love.graphics.getHeight() / 3
     self.width = 32
@@ -150,6 +152,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.collider:setObject(self)
 
     self.baseDamage = 1
+    self.damageGrowth = { min = 1, max = 4 }
     self.equippedSlot = 1
     self.health = 100
     self.speed = 300
@@ -172,6 +175,28 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
     self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 2, Projectile, 10, 1)
     table.insert(self.inventory, self.weapon)
+end
+
+function Player:addExperience(xpAmount)
+    self.experience = self.experience + xpAmount
+    while self.experience >= self:getXPToNextLevelUp() do
+        self.experience = self.experience - self:getXPToNextLevelUp()
+        self:onLevelUp()
+    end
+end
+
+function Player:getXPToNextLevelUp()
+    return math.floor(20 * math.pow(1.5, self.level - 1)) -- exponential growth, I think, in math.pow(1.5)
+end
+
+function Player:onLevelUp()
+    local percent = love.math.random(self.damageGrowth.min, self.damageGrowth.max) / 100
+    self.level = self.level + 1
+
+    -- come back to add increases to stats, effects, etc
+    self.health = self.health + math.floor(self.health * 0.07)
+    self.baseDamage = self.baseDamage + math.floor(self.baseDamage * percent)
+    self.speed = self.speed + math.floor(self.speed * 0.03)
 end
 
 function Player:update(dt, mapW, mapH)

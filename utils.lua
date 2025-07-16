@@ -32,19 +32,27 @@ function Utils.takeDamage(target, dmg)
     end
 end
 
-function Utils.dealDamage(attacker, target, dmg)
+function Utils.dealDamage(attacker, target, dmg, killer)
     if attacker == target then return end -- prevent hurting self
     print("UTILS DEBUG: " .. attacker.name .. " dealt " .. dmg .. " damage to " .. target.name)
     if target.takeDamage then
-        target:takeDamage(dmg)
+        target:takeDamage(dmg, killer)
     end
 end
 
-function Utils.die(target)
+function Utils.die(target, killer)
     if target and target.name then
         print(target.name .. " has died!")
 
     -- Additional death logic here
+
+     -- grant XP on enemy death
+    if target.type == "enemy" and killer and killer.addExperience then
+        killer:addExperience(target.xpAmount or 10)
+    end
+    print("[CURRENT XP] Killer XP: " .. killer.experience .. ".")
+    print("[XP GAIN] recieved " .. target.xpAmount .. ".")
+    print("[NEW XP] Killer XP: " .. killer.experience .. ".")
 
     -- when an entity dies
     local deathEffect = Particle.getOnDeathEffect()

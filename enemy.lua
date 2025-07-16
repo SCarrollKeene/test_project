@@ -6,7 +6,7 @@ local flashShader = require("libraries/flashshader")
 local Enemy = {}
 Enemy.__index = Enemy
 
-function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, spriteImage)
+function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, xpAmount, spriteImage)
     local instance = {
         name = name or "Enemy",
         x = x or 0,
@@ -18,6 +18,7 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         health = health or 40,
         speed = speed or 40,
         baseDamage = baseDamage or 5,
+        xpAmount = xpAmount or 10,
 
         spriteSheet = spriteImage, -- add sprite later on, possibly in main.lua find a test sprite to use
         animations = {},
@@ -351,7 +352,7 @@ function Enemy:draw()
 end
 
 -- take damage, deal damage and direction
-function Enemy:takeDamage(dmg)
+function Enemy:takeDamage(dmg, killer)
     if self.isDead or self.isFlashing then return end -- no more damage taken if dead or if already flashing
 
     self.isFlashing = true
@@ -362,7 +363,7 @@ function Enemy:takeDamage(dmg)
     print(self.name .. " was hit! Flash on hit activated")
     print(string.format("%s took %.2f damage. Health is now %.2f", self.name, dmg, self.health))
     if self.health <= 0 then
-        self:die()
+        self:die(killer)
     end
 end
 
@@ -376,13 +377,13 @@ function Enemy:dealDamage(target, dmg)
     -- end
 end
 
-function Enemy:die()
+function Enemy:die(killer)
     if self.isDead then return end
 
     print(self.name .. " almost dead, preparing to call Utils.die()!")
     self.isDead = true
 
-    Utils.die(self)
+    Utils.die(self, killer)
 
     if self.collider then
         print("Attempting to destroy collider for: " .. self.name)

@@ -217,7 +217,7 @@ function Projectile:onHitEnemy(enemy)
 
     -- applying damage based on owner
     if self.owner and self.owner.dealDamage then
-        Utils.dealDamage(self.owner, enemy, self.damage)
+        Utils.dealDamage(self.owner, enemy, self.damage, self.owner) -- self.owner, 1. owner 2. who gets credit for the kill
     -- Direct damage fallback if owner not set
     elseif enemy and enemy.takeDamage then
         enemy:takeDamage(self.damage)
