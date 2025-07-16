@@ -61,6 +61,7 @@ function SaveSystem.resetRun()
         clearedRooms = {},
         playerHealth = 100,
         inventory = {},
+        equippedSlot = 1,
         playerLevel = 1,
         playerExperience = 0,
         playerBaseDamage = 1,
