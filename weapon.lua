@@ -22,10 +22,12 @@ function Weapon:new(name, image, weaponType, fireRate, projectileClass, baseDama
         weaponType = weaponType or "Crystal",
         level = level, -- scale stats based on level
         baseDamage = baseDamage or 10, --store base damage OR default to 10
+
         fireRate = fireRate,
         baseFireRate = fireRate + (level - 1) * 0.05,
         cooldown = Cooldown:new(1 / (fireRate - (level - 1) * 0.05)), -- convert fireRate to cooldown duration. duration and time are params/args from the cooldown object/table
         projectileClass = projectileClass -- projectileClass to spawn, return to this
+        --projectileSpeedBonus = 1
     }
 
     setmetatable(self, {__index = Weapon}) -- point back at weapon table, Weapon methods and fields/data will get looked up
@@ -48,6 +50,12 @@ function Weapon:recalculateStats()
     self.damage = (self.baseDamage or 10) + (self.level - 1) * 2
     self.fireRate = self.baseFireRate + (self.level - 1) * 0.05
     self.cooldown = Cooldown:new(1 / self.fireRate)
+    self.projectileSpeedBonus = 1 + 0.1 * (self.level - 1)
+end
+
+function Weapon:getProjectileSpeed()
+    local baseSpeed = 200
+    return baseSpeed + (self.projectileSpeedBonus or 0)
 end
 
 function Weapon.loadAssets()
@@ -70,15 +78,16 @@ function Weapon:shoot(world, x, y, angle, speed, owner)
         self.cooldown:reset()
         local proj_width = 10
         local proj_height = 10
-        local proj_dmg = self.damage or 5
+        local proj_dmg = self:getDamage()
         local proj_corners = 10
         local proj_radius = self.radius or 10
+        local proj_speed = self:getProjectileSpeed()
 
         if not self.projectileClass or not self.projectileClass.new then
             error("Weapon's projectileClass is not set or has no :new() method!")
         end
 
-        return self.projectileClass:new(world, x, y, angle, speed, proj_radius, proj_dmg, owner) -- creates a new projectile class, gotta wrap my head around this one, how should radius work here?...
+        return self.projectileClass:new(world, x, y, angle, proj_speed, proj_radius, proj_dmg, owner) -- creates a new projectile class, gotta wrap my head around this one, how should radius work here?...
     end
     return nil -- return nil if cooldown isn't ready
 end

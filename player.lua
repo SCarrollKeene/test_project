@@ -57,6 +57,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
 
     -- for player inventory between runs
     self.inventory = {}
+    -- self.weaponSlots = { nil, nil }
     self.equippedSlot = self.equippedSlot or 1
 
     -- Load player sprite sheet if path provided (following enemy.lua pattern)
@@ -159,6 +160,11 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.xVel = 0
     self.yVel = 0
 
+    -- eventually replace self.weapon with a table that has multiple weapon slots
+    -- self.weaponSlots = {[1] = weaponSlotA, [2] = weaponSlotB } -- TODO: how many active slots do I want? 7/16/25
+    -- don't forget to add to all runData logic to make sure this persists later throughout main and the save game data resetRun func
+    -- use an integar variable in equippedSlot refactor
+
     -- data only snapshot of weapon in player inventory
     if self.weapon then
     table.insert(self.inventory, {
@@ -173,9 +179,12 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     end
 
     -- if no weapon in inventory, create a new weapon and insert into inventory, please work
-    if self.inventory == 0 then
+    if not self.weapon then
         -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
         self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 2, Projectile, 10, 1)
+    end
+
+    if #self.inventory == 0 then
         table.insert(self.inventory, {
             name = self.weapon.name,
             image = self.weapon.image,

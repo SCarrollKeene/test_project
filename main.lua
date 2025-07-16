@@ -1155,16 +1155,24 @@ end
             )
             print("DEBUG: calculated angle: ", angle)
 
-            -- create projectiles with angle and speed
-            local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, 200, 10, player)
-            print("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
+            -- REWRITE TIME FOR THE 3rd TIME, I think..
+            -- local weapon = player.weaponSlots[player.equippedSlot]
+            local weapon = player.weapon
+            
+            if weapon then
+                local damage = weapon:getDamage() or 10
+                local speed = weapon:getProjectileSpeed() or 200
+                -- create projectiles with angle and speed
+                local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player)
 
-            if newProjectile then
-                print("Projectile created at x", newProjectile.x, "y:", newProjectile.y)
+               --print("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
+                if newProjectile then
+                    print("Projectile created at x", newProjectile.x, "y:", newProjectile.y)
                 table.insert(projectiles, newProjectile)
-                print("DEBUG: SUCCESS, Projectile table size NOW:", #projectiles)
-            else
-                print("DEBUG: FAILED, returned NIL, Cooldown might be active or other issue in shoot.")
+                    print("DEBUG: SUCCESS, Projectile table size NOW:", #projectiles)
+                else
+                    print("DEBUG: FAILED, returned NIL, Cooldown might be active or other issue in shoot.")
+                end
             end
         end
     end
