@@ -33,6 +33,7 @@ local runData = {
     clearedRooms = {},
     playerHealth = 100,
     inventory = {},
+    equippedSlot = 1,
     playerLevel = 1,
     playerExperience = 0,
     playerBaseDamage = 1,
@@ -712,8 +713,8 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- restore player stats and inventory
     player.inventory = Utils.deepCopy(runData.inventory)
+    player.equippedSlot = runData.equippedSlot
     player.health = runData.playerHealth or 100
-    runData.equippedSlot = player.equippedSlot
     player.level = runData.playerLevel or 1
     player.experience = runData.playerExperience or 0
     player.baseDamage = runData.playerBaseDamage or 1
@@ -721,8 +722,8 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
 
 
     -- reconstruct equipped weapon from player inventory
-    if player.inventory[1] then
-        local w = player.inventory[1]
+    if player.equippedSlot and player.inventory[player.equippedSlot] then
+        local w = player.inventory[player.equippedSlot]
         player.weapon = Weapon:new(
             w.name,
             w.image,
@@ -873,8 +874,8 @@ function playing:leave()
     player:updateEquipmentInventory()
     -- synch to runData
     runData.inventory = Utils.deepCopy(player.inventory)
-    runData.playerHealth = player.health
     runData.equippedSlot = player.equippedSlot
+    runData.playerHealth = player.health
     runData.playerLevel = player.level
     runData.playerExperience = player.experience
     runData.playerBaseDamage = player.baseDamage
@@ -1485,16 +1486,16 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- restore player stats and inventory
     player.inventory = Utils.deepCopy(runData.inventory)
+    player.equippedSlot = runData.equippedSlot
     player.health = runData.playerHealth or 100
-    runData.equippedSlot = player.equippedSlot
     player.level = runData.playerLevel or 1
     player.experience = runData.playerExperience or 0
     player.baseDamage = runData.playerBaseDamage or 1
     player.speed = runData.playerSpeed or 300
 
     -- reconstruct equipped weapon from player inventory table data
-    if player.inventory[1] then
-        local w = player.inventory[1]
+    if player.equippedSlot and player.inventory[player.equippedSlot] then
+        local w = player.inventory[player.equippedSlot]
         player.weapon = Weapon:new(
             w.name,
             w.image,
@@ -1610,8 +1611,8 @@ function safeRoom:leave()
     player:updateEquipmentInventory()
     -- synch to runData
     runData.inventory = Utils.deepCopy(player.inventory)
-    runData.playerHealth = player.health
     runData.equippedSlot = player.equippedSlot
+    runData.playerHealth = player.health
     runData.playerLevel = player.level
     runData.playerExperience = player.experience
     runData.playerBaseDamage = player.baseDamage

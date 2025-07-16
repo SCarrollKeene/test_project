@@ -57,6 +57,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
 
     -- for player inventory between runs
     self.inventory = {}
+    self.equippedSlot = self.equippedSlot or 1
 
     -- Load player sprite sheet if path provided (following enemy.lua pattern)
     if sprite_path then
@@ -153,7 +154,6 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
 
     self.baseDamage = 1
     self.damageGrowth = { min = 1, max = 4 }
-    self.equippedSlot = 1
     self.health = 100
     self.speed = 300
     self.xVel = 0
@@ -172,9 +172,21 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     })
     end
 
-    -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
-    self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 2, Projectile, 10, 1)
-    table.insert(self.inventory, self.weapon)
+    -- if no weapon in inventory, create a new weapon and insert into inventory, please work
+    if self.inventory == 0 then
+        -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
+        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 2, Projectile, 10, 1)
+        table.insert(self.inventory, {
+            name = self.weapon.name,
+            image = self.weapon.image,
+            weaponType = self.weapon.weaponType,
+            fireRate = self.weapon.fireRate,
+            projectileClass = self.weapon.projectileClass,
+            baseDamage = self.weapon.baseDamage,
+            level = self.weapon.level
+        })
+        self.equippedSlot = 1
+    end
 end
 
 function Player:addExperience(xpAmount)
