@@ -60,7 +60,11 @@ function SaveSystem.resetRun()
         cleared = false,
         clearedRooms = {},
         playerHealth = 100,
-        inventory = {}
+        inventory = {},
+        playerLevel = 1,
+        playerExperience = 0,
+        playerBaseDamage = 1,
+        playerSpeed = 300
     }
 
     -- Save reset state immediately

@@ -32,7 +32,11 @@ local runData = {
     cleared = false,
     clearedRooms = {},
     playerHealth = 100,
-    inventory = {}
+    inventory = {},
+    playerLevel = 1,
+    playerExperience = 0,
+    playerBaseDamage = 1,
+    playerSpeed = 300
 }
 
 -- high scores, best runs, achievements and milestons
@@ -706,10 +710,15 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     -- reset cleared flag for each new room
     runData.cleared = false
 
-     -- restore player inventory
+    -- restore player stats and inventory
     player.inventory = Utils.deepCopy(runData.inventory)
     player.health = runData.playerHealth or 100
     runData.equippedSlot = player.equippedSlot
+    player.level = runData.playerLevel or 1
+    player.experience = runData.playerExperience or 0
+    player.baseDamage = runData.playerBaseDamage or 1
+    player.speed = runData.playerSpeed or 300
+
 
     -- reconstruct equipped weapon from player inventory
     if player.inventory[1] then
@@ -866,6 +875,10 @@ function playing:leave()
     runData.inventory = Utils.deepCopy(player.inventory)
     runData.playerHealth = player.health
     runData.equippedSlot = player.equippedSlot
+    runData.playerLevel = player.level
+    runData.playerExperience = player.experience
+    runData.playerBaseDamage = player.baseDamage
+    runData.playerSpeed = player.speed
 
     -- save game after clearing initial room
     SaveSystem.saveGame(runData, metaData)
@@ -1470,9 +1483,14 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         table.insert(wallColliders, wall)
     end
 
-    -- restore player inventory
+    -- restore player stats and inventory
     player.inventory = Utils.deepCopy(runData.inventory)
     player.health = runData.playerHealth or 100
+    runData.equippedSlot = player.equippedSlot
+    player.level = runData.playerLevel or 1
+    player.experience = runData.playerExperience or 0
+    player.baseDamage = runData.playerBaseDamage or 1
+    player.speed = runData.playerSpeed or 300
 
     -- reconstruct equipped weapon from player inventory table data
     if player.inventory[1] then
@@ -1594,6 +1612,10 @@ function safeRoom:leave()
     runData.inventory = Utils.deepCopy(player.inventory)
     runData.playerHealth = player.health
     runData.equippedSlot = player.equippedSlot
+    runData.playerLevel = player.level
+    runData.playerExperience = player.experience
+    runData.playerBaseDamage = player.baseDamage
+    runData.playerSpeed = player.speed
 
     -- save game after clearing initial room
     SaveSystem.saveGame(runData, metaData)
