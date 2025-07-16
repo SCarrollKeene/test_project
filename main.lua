@@ -126,6 +126,7 @@ function love.keypressed(key)
     local fireCrystalName = "Fire Crystal"
     local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
     local fireCrystalType = "Crystal"
+    local fireCrystalBaseSpeed = 200
     local fireCrystalFireRate = 2
     local fireCrystalProjectileClass = Projectile
     local fireCrystalBaseDamage = 10
@@ -153,6 +154,7 @@ function love.keypressed(key)
         fireCrystalName,
         fireCrystalImage,
         fireCrystalType,
+        fireCrystalBaseSpeed,
         fireCrystalFireRate,
         fireCrystalProjectileClass,
         fireCrystalBaseDamage,
@@ -216,11 +218,12 @@ end
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, fireRate, projectileClass, baseDamage, x, y, level)
+function spawnWeaponDrop(name, image, weaponType, baseSpeed, fireRate, projectileClass, baseDamage, x, y, level)
   local weaponDrop = {
     name = name,
     image = image,
     weaponType = weaponType,
+    baseSpeed = baseSpeed,
     fireRate = fireRate,
     projectileClass = projectileClass,
     baseDamage = baseDamage,
@@ -230,7 +233,7 @@ function spawnWeaponDrop(name, image, weaponType, fireRate, projectileClass, bas
     baseY = y,
     hoverTime = 0
   } 
-  print("[SPAWN WEAPON DROP] Name: ".. weaponDrop.name .. " weaponType: " .. weaponDrop.weaponType .. " fire rate: " .. weaponDrop.fireRate .. " base damage: " .. weaponDrop.baseDamage)
+  print("[SPAWN WEAPON DROP] Name: ".. weaponDrop.name .. " weaponType: " .. weaponDrop.weaponType .."speed: ".. weaponDrop.baseSpeed .. " fire rate: " .. weaponDrop.fireRate .. " base damage: " .. weaponDrop.baseDamage)
     print("Created item particle:", weaponDrop.particle)
    --print("itemDropSystems count after insert:", #itemDropSystems)
 
@@ -275,6 +278,7 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.name,
             weaponToEquip.image,
             weaponToEquip.weaponType,
+            weaponToEquip.baseSpeed,
             weaponToEquip.fireRate,
             weaponToEquip.projectileClass,
             weaponToEquip.baseDamage,
@@ -1457,8 +1461,9 @@ function playing:draw()
     if player.canPickUpItem then
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
     end
-        love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 520)
-        love.graphics.print("Weapon: " .. player.weapon.name, 20, 550)
+        love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 490)
+        love.graphics.print("Weapon: " .. player.weapon.name, 20, 520)
+        love.graphics.print("Speed: " .. player.weapon.baseSpeed, 20, 550)
         love.graphics.print("Fire rate: " .. player.weapon.fireRate, 20, 580)
         love.graphics.print("Damage: " .. player.weapon.damage, 20, 610)
         love.graphics.print("Cooldown: " .. string.format("%.2f", player.weapon.cooldown.time), 20, 640)

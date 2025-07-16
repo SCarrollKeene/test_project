@@ -12,7 +12,7 @@ Weapon.image = nil
 -- saving/loaidng for persisten weapon levels
 -- need to build an inventory screen or at least a UI for weapons held
 
-function Weapon:new(name, image, weaponType, fireRate, projectileClass, baseDamage, level)
+function Weapon:new(name, image, weaponType, baseSpeed, fireRate, projectileClass, baseDamage, level)
     level = level or 1
 
     print("Cooldown duration:", 1 / fireRate)
@@ -22,7 +22,7 @@ function Weapon:new(name, image, weaponType, fireRate, projectileClass, baseDama
         weaponType = weaponType or "Crystal",
         level = level, -- scale stats based on level
         baseDamage = baseDamage or 10, --store base damage OR default to 10
-
+        baseSpeed = 200,
         fireRate = fireRate,
         baseFireRate = fireRate + (level - 1) * 0.05,
         cooldown = Cooldown:new(1 / (fireRate - (level - 1) * 0.05)), -- convert fireRate to cooldown duration. duration and time are params/args from the cooldown object/table
@@ -48,14 +48,14 @@ end
 
 function Weapon:recalculateStats()
     self.damage = (self.baseDamage or 10) + (self.level - 1) * 2
+    self.baseSpeed = (self.baseSpeed or 200) + (self.level - 1) * 0.3
     self.fireRate = self.baseFireRate + (self.level - 1) * 0.05
     self.cooldown = Cooldown:new(1 / self.fireRate)
     self.projectileSpeedBonus = 1 + 0.1 * (self.level - 1)
 end
 
 function Weapon:getProjectileSpeed()
-    local baseSpeed = 200
-    return baseSpeed + (self.projectileSpeedBonus or 0)
+    return self.baseSpeed + (self.projectileSpeedBonus or 0)
 end
 
 function Weapon.loadAssets()
