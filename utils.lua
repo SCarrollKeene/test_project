@@ -25,6 +25,15 @@ function Utils.deepCopy(orig, seen) -- seen table used internally
     return copy -- retuns fully deep copied copy table
 end
 
+-- bounding box test between entity's AABB and current cam viewport
+function Utils.isAABBInView(cam, x, y, w, h)
+    local camX, camY = cam:position()
+    local viewW, viewH = love.graphics.getWidth() / cam.scale, love.graphics.getHeight() / cam.scale
+    local left, right = camX - viewW / 2, camX + viewW / 2
+    local top, bottom = camY - viewH / 2, camY + viewH / 2
+    return x + w > left and x < right and y + h > top and y < bottom
+end
+
 function Utils.takeDamage(target, dmg)
   target.health = target.health - dmg
     if target.health <= 0 then
@@ -37,6 +46,14 @@ function Utils.dealDamage(attacker, target, dmg, killer)
     print("UTILS DEBUG: " .. attacker.name .. " dealt " .. dmg .. " damage to " .. target.name)
     if target.takeDamage then
         target:takeDamage(dmg, killer)
+    end
+end
+
+function Utils.applyKnockback(target, force, angle)
+    if target and target.collider and not target.isDead then
+        local xVel = math.cos(angle) * force
+        local yVel = math.sign(angle) * force
+        target.collider:setLinearVelocity(xVel, yVel)
     end
 end
 

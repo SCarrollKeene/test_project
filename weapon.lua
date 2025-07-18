@@ -13,9 +13,17 @@ Weapon.image = nil
 -- need to build an inventory screen or at least a UI for weapons held
 
 function Weapon:new(name, image, weaponType, baseSpeed, fireRate, projectileClass, baseDamage, level)
+    print("[DEBUG Weapon:new()] Type of fireRate:", type(fireRate), fireRate)
+    if type(fireRate) ~= "number" then
+    for k, v in pairs(fireRate) do
+        print("[DEBUG fireRate content]", k, v)
+    end
+    error("fireRate is not a number: aborting!")
+    end
+
     level = level or 1
 
-    print("Cooldown duration:", 1 / fireRate)
+    -- print("Cooldown duration:", 1 / fireRate)
     local self = {
         name = name or "Fire crystal",
         image = image or Weapon.image,

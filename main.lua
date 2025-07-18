@@ -732,6 +732,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
             w.name,
             w.image,
             w.weaponType,
+            w.baseSpeed,
             w.fireRate,
             w.projectileClass,
             w.baseDamage,
@@ -1330,7 +1331,12 @@ function playing:draw()
 
         -- draw enemies
         for _, enemy in ipairs(enemies) do
-            if not enemy.toBeRemoved then
+            if not enemy.toBeRemoved and Utils.isAABBInView(
+                cam,
+                enemy.x - enemy.width/2,
+                enemy.y - enemy.height/2,
+                enemy.width, enemy.height
+            ) then
                 enemy:draw()
             end
         end
@@ -1513,6 +1519,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
             w.name,
             w.image,
             w.weaponType,
+            w.baseSpeed,
             w.fireRate,
             w.projectileClass,
             w.baseDamage,
