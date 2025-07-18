@@ -31,8 +31,19 @@ function Utils.isAABBInView(cam, x, y, w, h)
     local viewW, viewH = love.graphics.getWidth() / cam.scale, love.graphics.getHeight() / cam.scale
     local left, right = camX - viewW / 2, camX + viewW / 2
     local top, bottom = camY - viewH / 2, camY + viewH / 2
-    return x + w > left and x < right and y + h > top and y < bottom
+    -- Add a small buffer to draw things slightly off-screen for smooth entry/exit
+    -- adjust 50-100px to tweak smoothness
+    local buffer = 50
+
+    return x + w > left - buffer and 
+            x < right + buffer and 
+            y + h > top - buffer and 
+            y < bottom + buffer
 end
+
+-- function isPlayerActive()
+--   return player and not player.isDead and player.collider
+-- end
 
 function Utils.takeDamage(target, dmg)
   target.health = target.health - dmg
@@ -67,9 +78,18 @@ function Utils.die(target, killer)
     if target.type == "enemy" and killer and killer.addExperience then
         killer:addExperience(target.xpAmount or 10)
     end
-    print("[CURRENT XP] Killer XP: " .. killer.experience .. ".")
-    print("[XP GAIN] recieved " .. target.xpAmount .. ".")
-    print("[NEW XP] Killer XP: " .. killer.experience .. ".")
+
+    if killer then
+        print("[CURRENT XP] Killer XP: " .. tostring(killer.experience) .. ".")
+    else
+        print("[CURRENT XP] Enemy is killer, player is dead.")
+    end
+
+    print("[XP GAIN] recieved " .. tostring(target.xpAmount) .. ".")
+
+    if killer then
+        print("[NEW XP] Killer XP: " .. tostring(killer.experience) .. ".")
+    end
 
     -- when an entity dies
     local deathEffect = Particle.getOnDeathEffect()

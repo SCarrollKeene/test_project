@@ -35,6 +35,7 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         -- flags for death and removal upon death
         isDead = false,
         toBeRemoved = false,
+        isMoving = false,
 
         isFlashing = false,
         flashTimer = 0,
@@ -217,6 +218,55 @@ function Enemy:setTarget(Player)
     self.target = Player -- sets the player instance as the enemy target
 end
 
+function Enemy:isNearPlayer(buffer)
+    buffer = buffer or 500
+    if not self.target then return false end
+    local dx = self.x - self.target.x
+    local dy = self.y - self.target.y
+    local distanceSquared = dx * dx + dy * dy
+    return distanceSquared <= buffer * buffer
+end
+
+function Enemy:AILogic(dt)
+    if not self.target then return end
+
+    -- AI: Decide movement direction/velocity
+    if self.target then
+        -- Calculate direction vector from self to target
+        local dx = self.target.x - self.x
+        local dy = self.target.y - self.y
+
+        -- Normalize the direction vector (to get a unit vector)
+        local distance = math.sqrt(dx*dx + dy*dy)
+
+        if distance > 0.1 then -- Only move if not already at the target's exact position
+            self.isMoving = true
+            local dirX = dx / distance
+            local dirY = dy / distance
+
+            -- Update position based on direction and speed
+            -- self.x = self.x + dirX * self.speed * dt
+            -- self.y = self.y + dirY * self.speed * dt
+
+            self.collider:setLinearVelocity(dirX * self.speed, dirY * self.speed)
+        else
+            self.collider:setLinearVelocity(0, 0)
+        end
+    else
+        self.collider:setLinearVelocity(0, 0)
+    end
+    -- Alternatively, if you prefer using xVel/yVel:
+    -- self.xVel = dirX * self.speed
+    -- self.yVel = dirY * self.speed
+
+    -- No target? Default behavior (e.g., patrol, stay idle, or move randomly)
+    -- For now, if no target, it will not move based on target logic.
+    -- You could, for example, make it move slowly to the left:
+        
+    -- self.x = self.x - (self.speed * 0.25) * dt
+    -- self.xvel = (self.speed * 0.25) * dt
+end
+
 function Enemy:update(dt)
     -- self:move(dt)
     if self.isDead then
@@ -252,47 +302,10 @@ function Enemy:update(dt)
 
     print("DEBUG: Enemy:update: " .. "Name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
 
-    local isMoving = false
-    -- AI: Decide movement direction/velocity
-    if self.target then
-        -- Calculate direction vector from self to target
-        local dx = self.target.x - self.x
-        local dy = self.target.y - self.y
-
-        -- Normalize the direction vector (to get a unit vector)
-        local distance = math.sqrt(dx*dx + dy*dy)
-
-        if distance > 0.1 then -- Only move if not already at the target's exact position
-            isMoving = true
-            local dirX = dx / distance
-            local dirY = dy / distance
-
-            -- Update position based on direction and speed
-            -- self.x = self.x + dirX * self.speed * dt
-            -- self.y = self.y + dirY * self.speed * dt
-
-            self.collider:setLinearVelocity(dirX * self.speed, dirY * self.speed)
-        else
-            self.collider:setLinearVelocity(0, 0)
-        end
-
-        else
-            self.collider:setLinearVelocity(0, 0)
-        end
-            -- Alternatively, if you prefer using xVel/yVel:
-            -- self.xVel = dirX * self.speed
-            -- self.yVel = dirY * self.speed
-
-        -- No target? Default behavior (e.g., patrol, stay idle, or move randomly)
-        -- For now, if no target, it will not move based on target logic.
-        -- You could, for example, make it move slowly to the left:
-        
-        -- self.x = self.x - (self.speed * 0.25) * dt
-        -- self.xvel = (self.speed * 0.25) * dt
         -- Switch animation based on state
-        if isMoving and self.animations and self.animations.walk and self.currentAnimation ~= self.animations.walk then
+        if self.isMoving and self.animations and self.animations.walk and self.currentAnimation ~= self.animations.walk then
             self.currentAnimation = self.animations.walk
-        elseif not isMoving and self.animations and self.animations.idle and self.currentAnimation ~= self.animations.idle then
+        elseif not self.isMoving and self.animations and self.animations.idle and self.currentAnimation ~= self.animations.idle then
             self.currentAnimation = self.animations.idle
         end
     -- Enemy.collider:setLinearVelocity(self.xVel, self.yVel)
@@ -312,14 +325,19 @@ function Enemy:update(dt)
     if self.currentAnimation and self.currentAnimation.update then
         self.currentAnimation:update(dt)
     end
-end
 
---  function Enemy:move(dt)
---      self.x = self.x - self.speed * dt -- move left
---      self.x = self.x + self.speed * dt -- move right 
---      self.y = self.y - self.speed * dt -- move up
---      self.y = self.y + self.speed * dt -- move down
---  end
+    -- pursue
+    if self:isNearPlayer(500) then
+        self:AILogic(dt)
+    else
+        self.collider:setLinearVelocity(0, 0)
+        self.isMoving = false
+        -- idle
+        if self.animations and self.animations.idle then
+            self.currentAnimation = self.animations.idle
+        end
+    end
+end
 
 function Enemy:draw()
     if self.currentAnimation and self.spriteSheet then

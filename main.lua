@@ -122,47 +122,52 @@ function love.keypressed(key)
 
     -- fire crystal level up test
     if key == "q" then
-    -- Define Fire Crystal properties
-    local fireCrystalName = "Fire Crystal"
-    local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
-    local fireCrystalType = "Crystal"
-    local fireCrystalBaseSpeed = 200
-    local fireCrystalFireRate = 2
-    local fireCrystalProjectileClass = Projectile
-    local fireCrystalBaseDamage = 10
-    local fireCrystalLevel = 1
+        if not player or player.isDead then
+            print("Cannot drop item: player is nil or dead")
+            return
+        end
+    
+        -- Define Fire Crystal properties
+        local fireCrystalName = "Fire Crystal"
+        local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
+        local fireCrystalType = "Crystal"
+        local fireCrystalBaseSpeed = 200
+        local fireCrystalFireRate = 2
+        local fireCrystalProjectileClass = Projectile
+        local fireCrystalBaseDamage = 10
+        local fireCrystalLevel = 1
 
-    local offset = 20
-    local angle = player.facingAngle or 0
-    local dropX = player.x + math.cos(angle) * offset
-    local dropY = player.y + math.sin(angle) * offset
+        local offset = 20
+        local angle = player.facingAngle or 0
+        local dropX = player.x + math.cos(angle) * offset
+        local dropY = player.y + math.sin(angle) * offset
 
-    -- Create a new Fire Crystal drop
-    -- local fireCrystal = Loot.createWeaponDropFromInstance({
-    --     name = fireCrystalName,
-    --     image = fireCrystalImage,
-    --     weaponType = fireCrystalType,
-    --     fireRate = fireCrystalFireRate,
-    --     projectileClass = fireCrystalProjectileClass,
-    --     baseDamage = fireCrystalBaseDamage,
-    --     level = fireCrystalLevel
-    -- }, dropX, dropY)
-    -- table.insert(droppedItems, weaponDrop)
+        -- Create a new Fire Crystal drop
+        -- local fireCrystal = Loot.createWeaponDropFromInstance({
+        --     name = fireCrystalName,
+        --     image = fireCrystalImage,
+        --     weaponType = fireCrystalType,
+        --     fireRate = fireCrystalFireRate,
+        --     projectileClass = fireCrystalProjectileClass,
+        --     baseDamage = fireCrystalBaseDamage,
+        --     level = fireCrystalLevel
+        -- }, dropX, dropY)
+        -- table.insert(droppedItems, weaponDrop)
 
-    -- call spawnWeaponDrop to drop a Fire Crystal with particles
-    local fireCrystal = spawnWeaponDrop(
-        fireCrystalName,
-        fireCrystalImage,
-        fireCrystalType,
-        fireCrystalBaseSpeed,
-        fireCrystalFireRate,
-        fireCrystalProjectileClass,
-        fireCrystalBaseDamage,
-        dropX,
-        dropY,
-        fireCrystalLevel
-    )
-end
+        -- call spawnWeaponDrop to drop a Fire Crystal with particles
+        local fireCrystal = spawnWeaponDrop(
+            fireCrystalName,
+            fireCrystalImage,
+            fireCrystalType,
+            fireCrystalBaseSpeed,
+            fireCrystalFireRate,
+            fireCrystalProjectileClass,
+            fireCrystalBaseDamage,
+            dropX,
+            dropY,
+            fireCrystalLevel
+        )
+    end
     -- KEEP THIS, ILL NEED IT LATER
     -- drop held weapon 20 pixels in front of player
     -- if key == "q" and player.weapon then
@@ -679,7 +684,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     -- TODO: revisit making spatial grid scale based on the map width and height
     -- right now its not clearing colliders correctly between :enter and :leave states
     -- reverted back to using hard coded dimensions for the time being 7/4/25
-    self.gridCellSize = 400 -- Each cell is 200x200 pixels, tweak for performance.
+    self.gridCellSize = 425 -- Each cell is 200x200 pixels, tweak for performance.
     self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
     self.gridHeight = math.ceil(768 / self.gridCellSize)
     self.spatialGrid = {} -- This will hold all the enemies, sorted into cells.
@@ -736,6 +741,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
             w.fireRate,
             w.projectileClass,
             w.baseDamage,
+            w.knockback,
             w.level
         )
     end
@@ -966,18 +972,23 @@ function playing:update(dt)
         player:update(dt, mapW, mapH)
     end
 
-    -- update droppable loot/items
-    updateDroppedItems(dt)
+    -- if player is dead in grid cell
+    if player and not player.isDead and player.x and player.y then
+    -- return -- skip spatial enemy checks when player is invalid
 
-    local pickupRange = 40  -- Adjust as needed
-    player.canPickUpItem = nil  -- Reset each frame
+        -- update droppable loot/items
+        updateDroppedItems(dt)
 
-    for i, item in ipairs(droppedItems) do
-        local dx = player.x - item.x
-        local dy = player.y - item.y
-        if math.sqrt(dx * dx + dy * dy) <= pickupRange then
-            player.canPickUpItem = item  -- Store the reference for prompt and pickup
-            break  -- Only prompt for the first item in range
+        local pickupRange = 40  -- Adjust as needed
+        player.canPickUpItem = nil  -- Reset each frame
+
+        for i, item in ipairs(droppedItems) do
+            local dx = player.x - item.x
+            local dy = player.y - item.y
+            if math.sqrt(dx * dx + dy * dy) <= pickupRange then
+                player.canPickUpItem = item  -- Store the reference for prompt and pickup
+                break  -- Only prompt for the first item in range
+            end
         end
     end
 
@@ -1523,6 +1534,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
             w.fireRate,
             w.projectileClass,
             w.baseDamage,
+            w.knockback,
             w.level
         )
     end

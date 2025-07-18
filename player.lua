@@ -1,4 +1,5 @@
 local Weapon = require("weapon")
+local Loot = require("loot")
 local Projectile = require("projectile")
 local Utils = require("utils")
 local anim8 = require("libraries/anim8")
@@ -544,12 +545,26 @@ function Player:dealDamage(target, dmg)
     Utils.dealDamage(self, target, dmg)
 end
 
-function Player:die(metaData, playerScore)
+function Player:die(metaData, playerScore, killer)
     metaData.highScore = math.max(metaData.highScore, playerScore)
 
     SaveSystem.highScore = math.max(metaData.highScore, playerScore)
     SaveSystem.resetRun(runData, metaData)  -- Reset current run
     -- Gamestate.switch(gameOver) -- TODO: implement gameOver gamestate
+
+    -- Drop all items in inventory on death
+    for i, item in ipairs(self.inventory) do
+        -- Replace spawnX/spawnY logic as needed for your game
+        local dropX = self.x + math.random(-10, 10)
+        local dropY = self.y + math.random(-10, 10)
+        Loot.createWeaponDropFromInstance(item, dropX, dropY)
+    end
+
+    if self.weapon then
+        -- drop loot on death
+        local drop = Loot.createWeaponDropFromInstance(self.weapon, self.x, self.y)
+        table.insert(droppedItems, drop)
+    end
 
     if self.isDead then return end
 
@@ -577,10 +592,6 @@ function Player:die(metaData, playerScore)
         self.currentAnimation:gotoFrame(1)
         self.currentAnimation:resume() -- Make sure it plays
     end
-
-    -- drop loot on death
-    local drop = Loot.createWeaponDropFromInstance(player.weapon, dropX, dropY)
-    table.insert(droppedItems, drop)
 
      -- Set death timer for game over transition
     self.deathTimer = 2.0  -- x seconds to show death animation, change based on sprite/animation
