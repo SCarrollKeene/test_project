@@ -33,7 +33,7 @@ function Utils.isAABBInView(cam, x, y, w, h)
     local top, bottom = camY - viewH / 2, camY + viewH / 2
     -- Add a small buffer to draw things slightly off-screen for smooth entry/exit
     -- adjust 50-100px to tweak smoothness
-    local buffer = 50
+    local buffer = 32
 
     return x + w > left - buffer and 
             x < right + buffer and 

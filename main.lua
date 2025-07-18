@@ -301,17 +301,18 @@ function equipWeapon(weaponToEquip)
 end
 
 function updateDroppedItems(dt)
-  for _, item in ipairs(droppedItems) do
-    if item.baseY then
-      item.hoverTime = (item.hoverTime or 0) + dt
-      local amplitude = 5
-      local speed = 2 * math.pi
-      item.y = item.baseY + amplitude * math.sin(speed * item.hoverTime)
-        if item.particle then
-            item.particle:setPosition(item.x, item.y)
+    for _, item in ipairs(droppedItems) do
+        if item.baseY then
+        item.hoverTime = (item.hoverTime or 0) + dt
+        local amplitude = 5
+        local speed = 2 * math.pi
+        item.y = item.baseY + amplitude * math.sin(speed * item.hoverTime)
+            if item.particle then
+                item.particle:setPosition(item.x, item.y)
+                item.particle:update(dt)
+            end
         end
     end
-  end
 end
 
 function spawnRandomEnemy(x, y, cache, enemyTypes)
@@ -1316,10 +1317,21 @@ function playing:draw()
             player:draw()
         end
 
-        -- draw droppable loot/items
+        -- draw and cull droppable loot/items
         for _, item in ipairs(droppedItems) do
-            if item.image then
-                love.graphics.draw(item.image, item.x, item.y)
+            if Utils.isAABBInView(
+                cam,
+                item.x - (item.width or 16) / 2,
+                item.y - (item.height or 16) / 2,
+                item.width or 16,
+                item.height or 16
+            ) then
+                if item.image then
+                    love.graphics.draw(item.image, item.x, item.y)
+                end
+                if item.particle then
+                    love.graphics.draw(item.particle)
+                end
             end
         end
 
@@ -1362,15 +1374,27 @@ function playing:draw()
         -- Projectile batching
         self.projectileBatch:clear()
         for _, p in ipairs(projectiles) do
-            -- Verify position is numeric
-            if type(p.x) == "number" and type(p.y) == "number" then
-                self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
+                -- Verify position is numeric
+                if type(p.x) == "number" and type(p.y) == "number" then
+                -- For a circular projectile, use radius; for sprite, use width/height
+                local projW = p.width  or (p.radius and p.radius * 2) or 10
+                local projH = p.height or (p.radius and p.radius * 2) or 10
+
+                local left = p.x - projW/2
+                local top  = p.y - projH/2
+
+                if Utils.isAABBInView(cam, left, top, projW, projH) then
+                    self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
+                    -- print("Projectile batched at position:", p.x, p.y)
+                else
+                    -- print("Projectile culled at position:", p.x, p.y)
+                end
             else
-                print("WARN: Invalid projectile position", p.x, p.y)
+                -- print("[WARN] Invalid projectile position", p.x, p.y)
             end
         end
         love.graphics.draw(self.projectileBatch)
-        print("Projectiles in batch:", self.projectileBatch:getCount())
+        -- print("Total projectiles in batch:", self.projectileBatch:getCount())
 
         -- Enemy rendering
         for _, batch in pairs(self.enemyBatches) do
@@ -1440,8 +1464,22 @@ function playing:draw()
         end
 
         for _, entry in ipairs(globalParticleSystems) do
-            if entry.ps then
-                love.graphics.draw(entry.ps) -- context-based pooling
+            local ps = entry.ps
+            if ps then
+                local x, y = ps:getPosition()
+                -- Use entry.radius or default to 48 if not set
+                local effectRadius = entry.radius or 48
+                if Utils.isAABBInView(
+                        cam,
+                        x - effectRadius,
+                        y - effectRadius,
+                        effectRadius * 2,
+                        effectRadius * 2
+                ) then
+                    love.graphics.draw(ps) -- context-based pooling
+                else
+                    print(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
+                end
             else
                 print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
             end
@@ -1802,13 +1840,27 @@ function safeRoom:draw()
     end
 
     for _, entry in ipairs(globalParticleSystems) do
-        if entry.ps then
-            love.graphics.draw(entry.ps) -- context-based pooling
-        else
-            print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
+            local ps = entry.ps
+            if ps then
+                local x, y = ps:getPosition()
+                -- Use entry.radius or default to 48 if not set
+                local effectRadius = entry.radius or 48
+                if Utils.isAABBInView(
+                        cam,
+                        x - effectRadius,
+                        y - effectRadius,
+                        effectRadius * 2,
+                        effectRadius * 2
+                ) then
+                    love.graphics.draw(ps) -- context-based pooling
+                else
+                    print(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
+                end
+            else
+                print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
+            end
         end
-    end
-    love.graphics.setBlendMode("alpha") -- reset to normal
+        love.graphics.setBlendMode("alpha") -- reset to normal
 
     if fading and fadeAlpha > 0 then
         love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
