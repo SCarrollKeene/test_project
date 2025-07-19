@@ -94,8 +94,9 @@ function Utils.die(target, killer)
     -- when an entity dies
     local deathEffect = Particle.getOnDeathEffect()
     if deathEffect then
+        print("[DeathEffect] Activated PS ID:", tostring(deathEffect))
         deathEffect:setPosition(target.x, target.y)
-        deathEffect:emit(20)
+        deathEffect:emit(40)
         -- table.insert(globalParticleSystems, deathEffect)
         table.insert(globalParticleSystems, { ps = deathEffect, type = "deathEffect", radius = 32 } ) -- context-based pooling
     end

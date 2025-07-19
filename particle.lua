@@ -158,7 +158,7 @@ function Particle.firefly()
         return nil 
     end -- nomore updates from here if not img
 
-    local ps = love.graphics.newParticleSystem(particleImage, 250)
+    local ps = love.graphics.newParticleSystem(particleImage, 200)
     ps:setParticleLifetime(4, 8) -- Wisps live longer
     ps:setEmissionRate(20)            -- low: Gentle, sparse emission, high: swarms
     ps:setEmissionArea("uniform", 100, 60) -- 100x60 grid, emit randomly in this grid
@@ -224,7 +224,7 @@ function Particle.itemIndicator()
         return nil
     end -- nomore updates from here if not img)
 
-    local ps = love.graphics.newParticleSystem(particleImage, 50)
+    local ps = love.graphics.newParticleSystem(particleImage, 100)
     ps:setParticleLifetime(2, 4)
     ps:setEmissionRate(20)
     ps:setSizes(0.2, 0.5)
@@ -338,10 +338,10 @@ function Particle.onDeathEffect()
     end -- No further setup if image is missing
 
     local ps = love.graphics.newParticleSystem(particleImage, 30)
-    ps:setParticleLifetime(0.5, 1.0) -- longer life to make sure each ps persists
+    ps:setParticleLifetime(0.2, 0.4) -- longer life to make sure each ps persists
     ps:setEmissionRate(0) -- Emit burst manually in Utils.dies
     ps:setEmissionArea("ellipse", 10, 10)
-    ps:setSizes(0.2, 0.5)
+    ps:setSizes(1, 6)
     ps:setSizeVariation(0.7)
     ps:setSpread(math.pi * 2)
     ps:setSpeed(80, 180)

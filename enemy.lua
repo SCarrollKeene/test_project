@@ -401,15 +401,6 @@ function Enemy:die(killer)
     print(self.name .. " almost dead, preparing to call Utils.die()!")
     self.isDead = true
 
-    -- Add death particle effect
-    -- local ps = Particle.getOnDeathEffect()
-    -- if ps then
-    --     ps:setPosition(self.x, self.y)
-    --     ps:emit(20)
-    --     table.insert(globalParticleSystems, { ps = ps, type = "deathEffect", radius = 32 })
-    -- end
-    -- print("Enemy", self.name, "spawning deathEffect:", tostring(ps))
-
     Utils.die(self, killer)
 
     if self.collider then
