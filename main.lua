@@ -255,7 +255,7 @@ function spawnWeaponDrop(name, image, weaponType, baseSpeed, fireRate, projectil
         -- table.insert(itemDropSystems, weaponDrop.particle)
         print("[WEAPONDROP PARTICLE] Created item particle:", weaponDrop.particle)
         weaponDrop.particle:emit(10) -- initial burst on drop
-        table.insert(globalParticleSystems, { ps = weaponDrop.particle, type = "itemIndicator" } ) -- context-based pooling
+        table.insert(globalParticleSystems, { ps = weaponDrop.particle, type = "itemIndicator", radius = 24 } ) -- context-based pooling
 
     end
   table.insert(droppedItems, weaponDrop)
@@ -595,7 +595,7 @@ function love.load()
                 particleImpact:setPosition(dataB.x, dataB.y)
                 particleImpact:emit(8)
                 -- table.insert(globalParticleSystems, particleImpact)
-                table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect" } ) -- Context-based pooling
+                table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect", radius = 32 } ) -- Context-based pooling
             end
             dataB:destroySelf() -- destroy projectile on wall collision
         elseif (dataB and dataB.type == "wall" and dataA and dataA.type == "projectile") then
@@ -605,7 +605,7 @@ function love.load()
                 particleImpact:setPosition(dataA.x, dataA.y)
                 particleImpact:emit(8)
                 -- table.insert(globalParticleSystems, particleImpact)
-                table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect" } ) -- Context-based pooling
+                table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect", radius = 32 } ) -- Context-based pooling
             end
             dataA:destroySelf() -- destroy projectile on wall collision
             -- One is wall, one is projectile
@@ -860,8 +860,6 @@ function playing:leave()
 
     -- clear particles
     globalParticleSystems = {}
-    -- Particle.clearItemDropParticles()
-    Particle.clearItemIndicatorPool()
 
     -- destroy any remaining player/enemy colliders
     for _, enemy in ipairs(enemies) do
@@ -1116,12 +1114,16 @@ function playing:update(dt)
         table.remove(globalParticleSystems, i)
         if entry.type == "impactEffect" then
             Particle.returOnImpactEffect(ps)
+        elseif entry.type == "firefly" then
+            Particle.returnFirefly(ps)
         elseif entry.type == "deathEffect" then
             Particle.returnOnDeathEffect(ps)
         elseif entry.type == "particleTrail" then
             Particle.returnBaseSpark(ps)
         elseif entry.type == "itemIndicator" then
             Particle.returnItemIndicator(ps)
+        elseif entry.type == "portalGlow" then
+            Particle.returnPortalGlow(ps)
         end
         print("REMOVED INACTIVE PARTICLE SYSTEM")
     end
@@ -1601,7 +1603,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     end
 
     -- firefly funhouse lol, just particles
-    for i = 1, 20 do
+    for i = 1, 40 do
         local x = love.math.random(mapW * 0.2, mapW * 0.8) -- position x
         local y = love.math.random(mapH * 0.2, mapH * 0.8) -- position y
         Particle.spawnFirefly(x, y)
@@ -1660,7 +1662,6 @@ function safeRoom:leave()
 
     -- clear particles
     globalParticleSystems = {}
-    Particle.clearFireflies()
 
     -- destroy any remaining player/enemy colliders
     for _, enemy in ipairs(enemies) do
@@ -1711,8 +1712,6 @@ function safeRoom:update(dt)
 
     -- update physics world AFTER all positions are set
     if world then world:update(dt) end
-
-    Particle.updateFireflies(dt)
 
     if fading then
         -- SUPPOSED to clear particles when starting fade out
@@ -1871,10 +1870,6 @@ function safeRoom:draw()
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
     Debug.drawCollisions(world)
     Debug.drawColliders(wallColliders, player, portal)
-
-    if not fading then
-        Particle.drawFireflies()
-    end
 
     cam:detach()
     -- Safe room UI

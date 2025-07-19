@@ -32,9 +32,12 @@ function Portal:new(world, x, y)
         ps = Particle.portalGlow(false) -- true only if emission burst
     }
     
+    local portalPosition = Particle.portalGlow(true)
     -- set position after Portal table creation
-    instance.ps:setPosition(instance.x, instance.y)
-    table.insert(globalParticleSystems, instance.ps)
+    portalPosition:setPosition(instance.x, instance.y)
+    portalPosition:start()
+    table.insert(globalParticleSystems, { ps = portalPosition, type = "portalGlow", radius = 48 })
+    instance.ps = portalPosition
 
     print("Portal particles created:", instance.ps ~= nil)
     if instance.ps then
@@ -64,8 +67,8 @@ function Portal:update(dt)
     self.ps:moveTo(self.x, self.y)
 
     if self.ps then
-        self.ps:update(dt)
         self.ps:setPosition(self.x, self.y)
+        self.ps:update(dt)
     end
 
     self.animationTimer = self.animationTimer + dt
@@ -80,11 +83,12 @@ end
 function Portal:draw()
     if not self.isActive then return end
     
-    if self.ps then
-        -- center particles at portal center
-        self.ps:setPosition(self.x, self.y)
-        love.graphics.draw(self.ps)
-    end
+    -- possible redundant, 7/19/25
+    -- if self.ps then
+    --     -- center particles at portal center
+    --     self.ps:setPosition(self.x, self.y)
+    --     love.graphics.draw(self.ps)
+    -- end
 
     if self.cooldownActive then
         -- Simple animated portal effect

@@ -86,6 +86,16 @@ function Projectile.updatePool(dt)
     end
 end
 
+function Projectile:initializeTrailPosition(offset)
+    offset = offset or 12
+    if self.angle and self.x and self.y and self.particleTrail then
+        local trailX = self.x - math.cos(self.angle) * offset
+        local trailY = self.y - math.sin(self.angle) * offset
+        self.particleTrail:setPosition(trailX, trailY)
+        self.particleTrail:emit(1) -- initial burst
+    end
+end
+
 -- constructor function, if you wanted to create multiple projectiles with different methods/data
 function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level)
     local self = {
@@ -137,14 +147,10 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level)
 
     if self.particleTrail then
         -- trail behind the Projectile
-        local offset = 10
-        local trailX = self.x - math.cos(self.angle) * offset
-        local trailY = self.y - math.sin(self.angle) * offset
+        self:initializeTrailPosition()
 
-        self.particleTrail:setPosition(trailX, trailY)
-        self.particleTrail:emit(1) -- initial burst
         -- table.insert(globalParticleSystems, self.particleTrail) -- insert particles into global table
-        table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail"} ) -- context-based pooling
+        table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail", radius = 16 } ) -- context-based pooling
     end
 
     return self
@@ -230,7 +236,7 @@ function Projectile:onHitEnemy(enemy)
     particleImpact:setPosition(self.x, self.y)
     particleImpact:emit(10) -- however many particles you want in the impact burst
     -- table.insert(globalParticleSystems, particleImpact)
-    table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect" } ) -- context-based pooling
+    table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect", radius = 32 } ) -- context-based pooling
 end
     
     -- Unified destruction sequence
@@ -421,16 +427,14 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     else
         -- Get new particles if missing
         self.particleTrail = Particle.getBaseSpark()
+        -- table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail", radius = 16 })
     end  
 
     -- Initialize particle position
-    local offset = 10
-    local trailX = x - math.cos(angle) * offset
-    local trailY = y - math.sin(angle) * offset
-    self.particleTrail:setPosition(trailX, trailY)
-    self.particleTrail:emit(1)
+    self:initializeTrailPosition()
+
     -- table.insert(globalParticleSystems, self.particleTrail)
-    table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail"} ) -- context-based pooling
+    table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail", radius = 16 } ) -- context-based pooling
 end
 
 function Projectile:deactivate()

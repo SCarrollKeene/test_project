@@ -1,18 +1,18 @@
-local Particle = {}
+Particle = {}
 
 -- image cache to avoid redundant/repeated image loading
 local _imgCache = {}
 
 -- pool list for various ps systems, better performance
-local pools = { baseSpark = {}, onImpactEffect = {}, onDeath = {}, itemIndicator = {} }
-
-local fireflySystems = {}
+local pools = { baseSpark = {}, fireflies = {}, onImpactEffect = {}, onDeath = {}, itemIndicator = {}, portalGlow = {} }
 
 local MAX_POOL_SIZE = {
     baseSpark = 100,
+    fireflies = 150,
     onImpactEffect = 100,
-    onDeath = 50,
-    itemIndicator = 50
+    onDeath = 100,
+    itemIndicator = 60,
+    portalGlow = 150
 } -- limit particle pool for each table
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
@@ -127,10 +127,28 @@ function Particle.portalGlow(isBurst)
 
     -- burst area for portal
     if isBurst then
-        -- ps:setEmissionArea("uniform", 50, 50)
         ps:emit(50) -- initial burst
     end
     return ps
+end
+
+function Particle.getPortalGlow()
+    if #pools.portalGlow > 0 then
+        local ps = table.remove(pools.portalGlow)
+        ps:reset()
+        ps:start()
+        return ps
+    else
+        return Particle.portalGlow()
+    end
+end
+
+function Particle.returnPortalGlow(ps)
+    if #pools.portalGlow < (MAX_POOL_SIZE.portalGlow) then
+        ps:stop()
+        ps:reset()
+        table.insert(pools.portalGlow, ps)
+    end
 end
 
 function Particle.firefly()
@@ -160,40 +178,36 @@ function Particle.firefly()
     return ps
 end
 
+function Particle.getFirefly()
+    if #pools.fireflies > 0 then
+        local ps = table.remove(pools.fireflies)
+        ps:reset()
+        ps:start()
+        return ps
+    elseif #pools.fireflies < MAX_POOL_SIZE.fireflies then
+        return Particle.firefly() -- use fireflies to create ps
+    else
+        return nil -- skip particle creation if pool is full
+    end
+end
+
 -- refactor into globalParticleSystems later
 function Particle.spawnFirefly(x, y)
-    local ps = Particle.firefly()
+    local ps = Particle.getFirefly()
     if ps then
         ps:setPosition(x, y)
         ps:start()
-        table.insert(fireflySystems, ps)
+        ps:emit(20)
+        table.insert(globalParticleSystems, { ps = ps, type = "firefly", radius = 60 })
     end
 end
 
-function Particle.updateFireflies(dt)
-    for i = #fireflySystems, 1, -1 do
-        local ps = fireflySystems[i]
-        ps:update(dt)
-        if ps:getCount() == 0 or not ps:isActive() then
-            table.remove(fireflySystems, i)
-        end
+function Particle.returnFirefly(ps)
+    if #pools.fireflies < MAX_POOL_SIZE.fireflies then
+        ps:stop()
+        ps:reset()
+        table.insert(pools.fireflies, ps)
     end
-end
-
-function Particle.drawFireflies()
-    love.graphics.setBlendMode("add")
-    for _, ps in ipairs(fireflySystems) do
-        love.graphics.draw(ps)
-    end
-    love.graphics.setBlendMode("alpha")
-end
-
-function Particle.clearFireflies()
-    fireflySystems = {}
-end
-
-function Particle.getFireflyCount()
-    return #fireflySystems
 end
 
 function Particle.itemIndicator()
@@ -342,12 +356,17 @@ end
 function Particle.getOnDeathEffect()
     if #pools.onDeath > 0 then
         local ps = table.remove(pools.onDeath)
+        print("[DeathEffect] Reusing PS:", tostring(ps))
         ps:reset()
         ps:start()
         return ps
     elseif #pools.onDeath < MAX_POOL_SIZE.onDeath then
-        return Particle.onDeathEffect()
+        -- return Particle.onDeathEffect()
+        local newps = Particle.onDeathEffect()
+        print("[DeathEffect] Creating New PS:", tostring(newps))
+        return newps
     else
+        print("[DeathEffect] Pool empty, not spawning new deathEffect!")
         return nil
     end
 end
