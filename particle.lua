@@ -158,10 +158,11 @@ function Particle.firefly()
         return nil 
     end -- nomore updates from here if not img
 
-    local ps = love.graphics.newParticleSystem(particleImage, 50)
+    local ps = love.graphics.newParticleSystem(particleImage, 250)
     ps:setParticleLifetime(4, 8) -- Wisps live longer
     ps:setEmissionRate(20)            -- low: Gentle, sparse emission, high: swarms
     ps:setEmissionArea("uniform", 100, 60) -- 100x60 grid, emit randomly in this grid
+    ps:setEmitterLifetime(-1) -- infinite continuous emission
     ps:setSizes(0.1, 0.2)            -- Start small, grow a bit
     ps:setSizeVariation(1)           -- variation if you want different firefly sizes
     ps:setSpread(math.pi * 2)        -- 360° emission
@@ -197,7 +198,6 @@ function Particle.spawnFirefly(x, y)
     if ps then
         ps:setPosition(x, y)
         ps:start()
-        ps:emit(20)
         table.insert(globalParticleSystems, { ps = ps, type = "firefly", radius = 60 })
     end
 end
@@ -338,7 +338,7 @@ function Particle.onDeathEffect()
     end -- No further setup if image is missing
 
     local ps = love.graphics.newParticleSystem(particleImage, 30)
-    ps:setParticleLifetime(0.2, 0.4)
+    ps:setParticleLifetime(0.5, 1.0) -- longer life to make sure each ps persists
     ps:setEmissionRate(0) -- Emit burst manually in Utils.dies
     ps:setEmissionArea("ellipse", 10, 10)
     ps:setSizes(0.2, 0.5)
@@ -361,12 +361,9 @@ function Particle.getOnDeathEffect()
         ps:start()
         return ps
     elseif #pools.onDeath < MAX_POOL_SIZE.onDeath then
-        -- return Particle.onDeathEffect()
-        local newps = Particle.onDeathEffect()
-        print("[DeathEffect] Creating New PS:", tostring(newps))
-        return newps
+        return Particle.onDeathEffect()
     else
-        print("[DeathEffect] Pool empty, not spawning new deathEffect!")
+        print("[DeathEffect] Pool empty, spawning new deathEffect!")
         return nil
     end
 end

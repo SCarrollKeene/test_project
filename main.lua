@@ -1603,7 +1603,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     end
 
     -- firefly funhouse lol, just particles
-    for i = 1, 40 do
+    for i = 1, 20 do
         local x = love.math.random(mapW * 0.2, mapW * 0.8) -- position x
         local y = love.math.random(mapH * 0.2, mapH * 0.8) -- position y
         Particle.spawnFirefly(x, y)
@@ -1710,13 +1710,55 @@ function safeRoom:update(dt)
     local camY = math.max(h/2 / cam.scale, math.min(py, mapH - h/2 / cam.scale))
     cam:lookAt(camX, camY)
 
+    -- Defensive check: remove any invalid entries before updating/drawing
+    for i = #globalParticleSystems, 1, -1 do
+        local entry = globalParticleSystems[i]
+        if type(entry) ~= "table" or not entry.ps then
+            print("[ERROR] Invalid entry in globalParticleSystems at index", i, entry)
+            table.remove(globalParticleSystems, i)
+        end
+    end
+
+    -- if particle systems exists, update it
+    for i = #globalParticleSystems, 1, -1 do
+        local entry = globalParticleSystems[i]   -- entry is a table: { ps = ..., type = ... }
+        local ps = entry.ps
+        if not entry.ps then
+            print("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
+            table.remove(globalParticleSystems, i)
+        else
+            ps:update(dt)
+        end
+
+        -- remove inactive particle systems
+        -- switched 'and' to 'or' as this removes particles between transitions
+        -- may need to revisit once we start adding other particle 
+        if ps:getCount() == 0 or not ps:isActive() then
+            table.remove(globalParticleSystems, i)
+            if entry.type == "impactEffect" then
+                Particle.returOnImpactEffect(ps)
+            elseif entry.type == "firefly" then
+                Particle.returnFirefly(ps)
+            elseif entry.type == "deathEffect" then
+                Particle.returnOnDeathEffect(ps)
+            elseif entry.type == "particleTrail" then
+                Particle.returnBaseSpark(ps)
+            elseif entry.type == "itemIndicator" then
+                Particle.returnItemIndicator(ps)
+            elseif entry.type == "portalGlow" then
+                Particle.returnPortalGlow(ps)
+            end
+            print("REMOVED INACTIVE PARTICLE SYSTEM")
+        end
+    end
+
     -- update physics world AFTER all positions are set
     if world then world:update(dt) end
 
     if fading then
         -- SUPPOSED to clear particles when starting fade out
+        -- globalParticleSystems = {}
         if fadeDirection == 1 and nextState == playing then
-            globalParticleSystems = {}
         end
 
         if fadeDirection == 1 then
@@ -1735,6 +1777,7 @@ function safeRoom:update(dt)
             if fadeHoldTimer >= fadeHoldDuration then
                 -- Hold complete, switch state and start fade in
                 Gamestate.switch(nextState, unpack(nextStateParams))
+                globalParticleSystems = {} -- testing for now
                 fadeDirection = -1
                 fadeTimer = 0
             end
@@ -1839,27 +1882,27 @@ function safeRoom:draw()
     end
 
     for _, entry in ipairs(globalParticleSystems) do
-            local ps = entry.ps
-            if ps then
-                local x, y = ps:getPosition()
-                -- Use entry.radius or default to 48 if not set
-                local effectRadius = entry.radius or 48
-                if Utils.isAABBInView(
-                        cam,
-                        x - effectRadius,
-                        y - effectRadius,
-                        effectRadius * 2,
-                        effectRadius * 2
-                ) then
-                    love.graphics.draw(ps) -- context-based pooling
-                else
-                    print(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
-                end
+        local ps = entry.ps
+        if ps then
+            local x, y = ps:getPosition()
+            -- Use entry.radius or default to 48 if not set
+            local effectRadius = entry.radius or 48
+            if Utils.isAABBInView(
+                    cam,
+                    x - effectRadius,
+                    y - effectRadius,
+                    effectRadius * 2,
+                    effectRadius * 2
+            ) then
+                love.graphics.draw(ps) -- context-based pooling
             else
-                print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
+                    print(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
             end
+        else
+            print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
         end
-        love.graphics.setBlendMode("alpha") -- reset to normal
+    end
+    love.graphics.setBlendMode("alpha") -- reset to normal
 
     if fading and fadeAlpha > 0 then
         love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
