@@ -97,7 +97,7 @@ function Projectile:initializeTrailPosition(offset)
 end
 
 -- constructor function, if you wanted to create multiple projectiles with different methods/data
-function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level)
+function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level, knockback)
     local self = {
         level = level or 1,
         newCreateCount = newCreateCount + 1,
@@ -110,6 +110,7 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level)
         width = 20,
         height = 20,
         damage = damage or 10, -- store damage
+        knockback = knockback or 0,
         world = world,
         owner = owner, --store the owner of the shot projectile, in this case, the player
         ignoreTarget = owner,
@@ -184,26 +185,7 @@ function Projectile:destroySelf()
         self.collider = nil -- possibly not needed anymore since walls has metadata of type 'wall'
     end
 
-    -- self.toBeRemoved = true
-    -- self.isActive = false -- Set active to false to prevent further updates, reuse eligible
     self.isDestroyed = true -- Add a flag to prevent re-entry
-    -- self.toBeRemoved = true -- Flag to remove from the game loop
-
-    -- stop emitting
-    -- TODO #1: debate remove from global particle system table
-    -- TODO #2: do not remove from globalps from here if I want particles to fade out
-    -- if self.particleTrail then
-        -- stop emitting
-        -- self.particleTrail:setEmissionRate(0)
-        -- self.particleTrail:stop()-- Stop emitting and reset if needed
-
-        -- If using pooling, return it:
-        -- Timer.after(1.0, function() -- wait for particle to fade
-        --     Particle.returnBaseSpark(self.particleTrail)
-        -- -- If not pooling, just set to nil
-        -- -- self.particleTrail = nil
-        -- end)
-    -- end
 
     -- Return particles to pool safely
     if self.particleTrail then
@@ -228,52 +210,26 @@ function Projectile:onHitEnemy(enemy)
         enemy:takeDamage(self.damage)
     end
 
+    -- check for and apply knockback
+    if self.owner and self.owner.weapon and self.knockback and self.knockback > 0 and self.owner.weapon.level >= 5 then
+        local angle = math.atan2(enemy.y - self.y, enemy.x - self.x)
+        Utils.applyKnockback(enemy, self.owner.weapon.knockback, angle)
+    end
+
     -- impact particles on projectile collision
     local particleImpact = Particle.getOnImpactEffect()
     if particleImpact then
-    -- impact particles
-    particleImpact:setPosition(self.x, self.y)
-    particleImpact:emit(10) -- however many particles you want in the impact burst
-    -- table.insert(globalParticleSystems, particleImpact)
-    table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect", radius = 32 } ) -- context-based pooling
-end
+        -- impact particles
+        particleImpact:setPosition(self.x, self.y)
+        particleImpact:emit(10) -- however many particles you want in the impact burst
+        -- table.insert(globalParticleSystems, particleImpact)
+        table.insert(globalParticleSystems, { ps = particleImpact, type = "impactEffect", radius = 32 } ) -- context-based pooling
+    end
     
     -- Unified destruction sequence
     -- self:deactivate() -- Deactivate the projectile
     self:destroySelf() -- Call the generic cleanup, :destroySelf()
 end
-
--- function Projectile:onHitEnemy(enemy_collided_with)
---     if self.isDestroyed then return end
-
---     print(string.format("[ON HIT] - Projectile (Owner: %s) hit Enemy: %s", 
---         (self.owner and self.owner.name) or "Unknown", 
---         (enemy_collided_with and enemy_collided_with.name) or "Unknown Enemy"))
-
---     -- applying damage
---     if self.owner and self.owner.dealDamage then
---         Utils.dealDamage(self.owner, enemy_collided_with, self.damage)
---     elseif enemy_collided_with and enemy_collided_with.takeDamage then
---         enemy_collided_with:takeDamage(self.damage) -- Fallback if owner not set
---     end
-    
---     self:deactivate() -- Deactivate the projectile
---     self:destroySelf() -- Call the generic cleanup, :destroySelf()
--- end
-
--- -- alter this later if enemies will also launch projectiles
--- -- this could possibly be a utils function later
--- function Projectile:onHitEnemy(enemy_target)
---     if self.owner and self.owner.dealDamage then
---         Utils.dealDamage(self.owner, enemy_target, self.damage)
---     elseif enemy_target and enemy_target.takeDamage then
---         print("Projectile hit enemy, directly calling enemy:takeDamage.")
---         enemy_target:takeDamage(self.damage)  
---     end
-
---     self:deactivate() -- Deactivate the projectile
---     self:destroySelf() -- Call the generic cleanup, :destroySelf()
--- end
 
 -- function Projectile:load()
 
@@ -350,20 +306,20 @@ function Projectile:draw()
     end 
 end
 
-function Projectile.getProjectile(world, x, y, angle, speed, damage, owner)
+function Projectile.getProjectile(world, x, y, angle, speed, damage, owner, knockback)
     for _, p in ipairs(pool) do
         if not p.active then -- skip destroyed projectiles
             print("[REUSE] Reusing inactive projectile, was destroyed:", p.isDestroyed)
-            p:reactivate(world, x, y, angle, speed, damage, owner)
+            p:reactivate(world, x, y, angle, speed, damage, owner, knockback)
             return p
         end
     end
      print("[EXPAND POOL] Creating new projectile")
 
      -- Fallback: Expand pool if needed
-    local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner)
+    local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner, knockback)
     newProj.active = true
-    newProj:reactivate(world, x, y, angle, speed, damage, owner)
+    newProj:reactivate(world, x, y, angle, speed, damage, owner, knockback)
     table.insert(pool, newProj)
     return newProj
 end
@@ -382,7 +338,7 @@ function Projectile.getStats()
   return active, inactive
 end
 
-function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
+function Projectile:reactivate(world, x, y, angle, speed, damage, owner, knockback)
     -- to turn this baby back on, its essentially just the collider table with its collider props set again
     print("[REACTIVATE] Reactivating projectiles and particles state:", self)
     self.world = world
@@ -392,6 +348,7 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner)
     self.angle = angle
     self.speed = speed
     self.damage = damage
+    self.knockback = knockback or 0
     self.owner = owner
     self.isDestroyed = false -- reset destroyed state
     self.toBeRemoved = false -- reset removal flag

@@ -56,6 +56,9 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     self.invincibleDuration = 1.0
     self.invincibleTimer = 0
 
+    self.isKnockedBack = false
+    self.knockbackTimer = 0
+
     -- for player inventory between runs
     self.inventory = {}
     -- self.weaponSlots = { nil, nil }
@@ -176,6 +179,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
         fireRate = self.weapon.fireRate,
         projectileClass = self.weapon.projectileClass,
         baseDamage = self.weapon.baseDamage,
+        knockback = self.weapon.knockback,
         level = self.weapon.level
     })
     end
@@ -183,7 +187,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     -- if no weapon in inventory, create a new weapon and insert into inventory, please work
     if not self.weapon then
         -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
-        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 200, 2, Projectile, 10, 1)
+        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 200, 2, Projectile, 10, 0, 1)
     end
 
     if #self.inventory == 0 then
@@ -195,6 +199,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             fireRate = self.weapon.fireRate,
             projectileClass = self.weapon.projectileClass,
             baseDamage = self.weapon.baseDamage,
+            knockback = self.weapon.knockback,
             level = self.weapon.level
         })
         self.equippedSlot = 1

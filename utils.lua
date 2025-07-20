@@ -63,8 +63,11 @@ end
 function Utils.applyKnockback(target, force, angle)
     if target and target.collider and not target.isDead then
         local xVel = math.cos(angle) * force
-        local yVel = math.sign(angle) * force
+        local yVel = math.sin(angle) * force
         target.collider:setLinearVelocity(xVel, yVel)
+        target.isKnockedBack = true
+        target.knockbackTimer = 0.1 -- timer if you want to pause target
+        print(string.format("[KNOCKBACK] Applied %.1f force at angle %.2f (%.1f, %.1f)", force, angle, xVel, yVel)) -- Debug info
     end
 end
 

@@ -135,6 +135,7 @@ function love.keypressed(key)
         local fireCrystalFireRate = 2
         local fireCrystalProjectileClass = Projectile
         local fireCrystalBaseDamage = 10
+        local fireCrystalKnockback = 0
         local fireCrystalLevel = 1
 
         local offset = 20
@@ -163,6 +164,7 @@ function love.keypressed(key)
             fireCrystalFireRate,
             fireCrystalProjectileClass,
             fireCrystalBaseDamage,
+            fireCrystalKnockback,
             dropX,
             dropY,
             fireCrystalLevel
@@ -223,7 +225,7 @@ function love.keypressed(key)
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, baseSpeed, fireRate, projectileClass, baseDamage, x, y, level)
+function spawnWeaponDrop(name, image, weaponType, baseSpeed, fireRate, projectileClass, baseDamage, knockback, x, y, level)
   local weaponDrop = {
     name = name,
     image = image,
@@ -232,6 +234,7 @@ function spawnWeaponDrop(name, image, weaponType, baseSpeed, fireRate, projectil
     fireRate = fireRate,
     projectileClass = projectileClass,
     baseDamage = baseDamage,
+    knockback = knockback,
     x = x,
     y = y,
     level = level or 1,
@@ -287,6 +290,7 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.fireRate,
             weaponToEquip.projectileClass,
             weaponToEquip.baseDamage,
+            weaponToEquip.knockback,
             weaponToEquip.level
         )
 
@@ -1182,7 +1186,7 @@ end
                 local damage = weapon:getDamage() or 10
                 local speed = weapon:getProjectileSpeed() or 200
                 -- create projectiles with angle and speed
-                local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player)
+                local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player, player.weapon.knockback)
 
                --print("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
                 if newProjectile then
@@ -1518,7 +1522,8 @@ function playing:draw()
     if player.canPickUpItem then
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
     end
-        love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 490)
+        love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 460)
+        love.graphics.print("Knockback:" .. player.weapon.knockback, 20, 490)
         love.graphics.print("Weapon: " .. player.weapon.name, 20, 520)
         love.graphics.print("Speed: " .. player.weapon.baseSpeed, 20, 550)
         love.graphics.print("Fire rate: " .. player.weapon.fireRate, 20, 580)

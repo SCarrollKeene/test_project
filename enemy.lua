@@ -39,7 +39,10 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
 
         isFlashing = false,
         flashTimer = 0,
-        flashDuration = 0.12 -- seconds, tweak as needed
+        flashDuration = 0.12, -- seconds, tweak as needed
+
+        isKnockedBack = false,
+        knockbackTimer = 0
     }
 
     print("DEBUG: Enemy:new - Instance name:", instance.name, " Health:", instance.health, "Speed:", instance.speed, "Type of speed:", type(instance.speed), 
@@ -269,6 +272,14 @@ end
 
 function Enemy:update(dt)
     -- self:move(dt)
+    if self.isKnockedBack then
+        self.knockbackTimer = self.knockbackTimer - dt
+        if self.knockbackTimer <= 0 then
+            self.isKnockedBack = false
+        end
+        return -- Skip normal AI movement logic while knocked back
+    end
+
     if self.isDead then
          if self.animations and self.animations.death and self.currentAnimation ~= self.animations.death then
             self.currentAnimation = self.animations.death

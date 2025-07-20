@@ -53,6 +53,13 @@ function Weapon:recalculateStats()
     self.fireRate = self.baseFireRate + (self.level - 1) * 0.05
     self.cooldown = Cooldown:new(1 / self.fireRate)
     self.projectileSpeedBonus = 1 + 0.1 * (self.level - 1)
+
+    -- special/status effects
+    if self.level >= 5 then
+        self.knockback = 140
+    else
+        self.knockback = 0
+    end
 end
 
 function Weapon:getProjectileSpeed()
@@ -83,12 +90,13 @@ function Weapon:shoot(world, x, y, angle, speed, owner)
         local proj_corners = 10
         local proj_radius = self.radius or 10
         local proj_speed = self:getProjectileSpeed()
+        local proj_knockback = self.knockback
 
         if not self.projectileClass or not self.projectileClass.new then
             error("Weapon's projectileClass is not set or has no :new() method!")
         end
 
-        return self.projectileClass:new(world, x, y, angle, proj_speed, proj_radius, proj_dmg, owner) -- creates a new projectile class, gotta wrap my head around this one, how should radius work here?...
+        return self.projectileClass:new(world, x, y, angle, proj_speed, proj_radius, proj_dmg, owner, proj_knockback)
     end
     return nil -- return nil if cooldown isn't ready
 end
