@@ -50,7 +50,7 @@ function Weapon:levelUp(player)
     local offset = (player.height or 32) / 2 + 18
 
     if popupManager then
-        popupManager:add("Level Up!", px, py - offset)
+        popupManager:add("Weapon up!", px, py - offset)
         popupManager:add("+Health", px, py - offset, {0.2, 1, 0.2, 1}, 1.0, nil, 0.25)
         popupManager:add("+Speed", px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
         local percent = 0.02
