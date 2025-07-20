@@ -14,6 +14,10 @@ local MAX_POOL_SIZE = {
     itemIndicator = 60,
     portalGlow = 150
 } -- limit particle pool for each table
+-- 7/19/25 later on, add prints (or optional UI overlay) 
+-- showing real-time peak pool usage for each effect type,
+-- so you can balance MAX_POOL_SIZE based on actual gameplay demand,
+-- not just estimates.
 
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)

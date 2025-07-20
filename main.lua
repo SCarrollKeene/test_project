@@ -649,7 +649,7 @@ function love.load()
 
     scoreFont = love.graphics.newFont(30)
 
-    -- register gamestate events and start game in playing state
+    -- TODO: register gamestate events and start game in playing state
     -- Gamestate.registerEvents({
     --     leave = function()
     --         globalParticleSystems = {}
@@ -1925,10 +1925,6 @@ function safeRoom:draw()
     -- love.graphics.print("Particles alive:", ps:getCount(), 20, 170)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
 end
-
--- refactor some of this code eventually TODO: add level manager
--- especially since I need to account for loading different maps
--- 6/17/2025
 
 -- TODO: make ESC key global for quiting no matter what game state they are in
 function love.quit()

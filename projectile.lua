@@ -143,7 +143,6 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level)
     self.collider:setUserData(self) -- associate projectile to its collider
     self.collider:setCollisionClass('projectile')
     self.collider:setObject(self)
-    -- self.collider:setMask('enemy') -- Projectiles only care about hitting enemies
 
     if self.particleTrail then
         -- trail behind the Projectile
@@ -442,9 +441,7 @@ function Projectile:deactivate()
 
     self.active = false
     self.toBeRemoved = true
-    -- if self.collider then
-    --     self.collider:setActive(false)
-    -- end
+
     if self.particleTrail then
         self.particleTrail:stop()
         self.particleTrail:reset() -- reset the baseSpark particle system
