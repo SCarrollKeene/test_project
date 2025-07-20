@@ -55,10 +55,12 @@ function Weapon:recalculateStats()
     self.projectileSpeedBonus = 1 + 0.1 * (self.level - 1)
 
     -- special/status effects
-    if self.level >= 5 then
-        self.knockback = 140
-    else
+    if self.level < 5 then
         self.knockback = 0
+    elseif self.level == 5 then
+        self.knockback = 140
+    else 
+        self.knockback = 140 * (1 + 0.10 * (self.level - 5))
     end
 end
 
