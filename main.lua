@@ -10,6 +10,7 @@ local MapLoader = require("maploader")
 local LevelManager = require("levelmanager")
 local WaveManager = require("wavemanager")
 local Loading = require("loading")
+local PopupManager = require("popupmanager")
 local sti = require("libraries/sti")
 local Weapon = require("weapon")
 local Cooldown = require("cooldown")
@@ -46,6 +47,8 @@ local metaData = {
     permanentUpgrades = {},
     highScore = 0
 }
+
+popupManager = PopupManager:new() 
 
 -- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
 -- Particle.preloadImages()
@@ -112,7 +115,7 @@ function love.keypressed(key)
     if key == "e" and player.canPickUpItem then
         player:addItem(player.canPickUpItem) -- add item to player inventory
         equipWeapon(player.canPickUpItem) -- equip item/weapon
-        player.weapon:levelUp() -- weapon level up
+        player.weapon:levelUp(player) -- weapon level up
         Loot.removeDroppedItem(player.canPickUpItem) -- remove picked up item from world
         player.canPickUpItem = nil -- safety check / error prevention
 
@@ -651,7 +654,7 @@ function love.load()
     -- sounds.music:setLooping(true)
     -- sounds.music:play()
 
-    scoreFont = love.graphics.newFont(30)
+    scoreFont = love.graphics.newFont(20)
 
     -- TODO: register gamestate events and start game in playing state
     -- Gamestate.registerEvents({
@@ -916,12 +919,13 @@ function playing:update(dt)
     local camY = math.max(h/2 / cam.scale, math.min(py, mapH - h/2 / cam.scale))
     cam:lookAt(camX, camY)
 
-    -- Needed to resolve Box2D locking when trying to create new colliders during the physics being updated
     if self.pendingLevelLoad then
         LevelManager:loadLevel(self.pendingLevelLoad)
         self.pendingLevelLoad = nil
         return  -- Skip rest of update this frame
     end
+
+    popupManager:update(dt)
 
     if fading then
         -- SUPPOSED to clear particles when starting fade out
@@ -1498,8 +1502,9 @@ function playing:draw()
             love.graphics.setColor(1, 1, 1, 1)
         end
 
+        popupManager:draw()
     cam:detach()
-
+    
      -- Display player score
      -- debate change to an event system or callback function later when enemy dies or check for when the enemy is dead
     if scoreFont then
@@ -1523,7 +1528,7 @@ function playing:draw()
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
     end
         love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 460)
-        love.graphics.print("Knockback:" .. player.weapon.knockback, 20, 490)
+        love.graphics.print("Knockback: " .. player.weapon.knockback, 20, 490)
         love.graphics.print("Weapon: " .. player.weapon.name, 20, 520)
         love.graphics.print("Speed: " .. player.weapon.baseSpeed, 20, 550)
         love.graphics.print("Fire rate: " .. player.weapon.fireRate, 20, 580)
@@ -1757,6 +1762,8 @@ function safeRoom:update(dt)
         end
     end
 
+    popupManager:update(dt)
+
     -- update physics world AFTER all positions are set
     if world then world:update(dt) end
 
@@ -1919,6 +1926,7 @@ function safeRoom:draw()
     Debug.drawCollisions(world)
     Debug.drawColliders(wallColliders, player, portal)
 
+    popupManager:draw()
     cam:detach()
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
