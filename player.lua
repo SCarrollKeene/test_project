@@ -187,7 +187,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     -- if no weapon in inventory, create a new weapon and insert into inventory, please work
     if not self.weapon then
         -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
-        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", 200, 2, Projectile, 10, 0, 1)
+        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", "Common", 200, 2, Projectile, 10, 0, 1)
     end
 
     if #self.inventory == 0 then
@@ -195,6 +195,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             name = self.weapon.name,
             image = self.weapon.image,
             weaponType = self.weapon.weaponType,
+            rarity = self.weapon.rarity,
             baseSpeed = self.weapon.baseSpeed,
             fireRate = self.weapon.fireRate,
             projectileClass = self.weapon.projectileClass,
@@ -249,7 +250,7 @@ function Player:onLevelUp()
         popupManager:add(string.format("+%d Speed (%.1f%%)", speedIncrease, speedPct), px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
         popupManager:add(string.format("+%d DMG (%.1f%%)", damageIncrease, damagePct), px, py - offset, {1, 0.6, 0.2, 1}, 1.0, nil, 0.5)
     else
-        print("[WEAPON LEVEL UP POPUP] PopupManager is nil in Weapon:levelUp()")
+        print("[PLAYER LEVEL UP POPUP] PopupManager is nil in Player:onLevepUp()")
     end
 end
 

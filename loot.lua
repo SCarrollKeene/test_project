@@ -47,10 +47,12 @@ function createWeaponDropFromInstance(weapon, x, y)
     name = weapon.name,
     image = weapon.image,
     weaponType = weapon.weaponType,
+    rarity = weapon.rarity or "Common",
     baseFireRate = weapon.baseFireRate,
     fireRate = weapon.fireRate,
     projectileClass = weapon.projectileClass,
     baseDamage = baseDamage or weapon.damage, -- or baseDamage if you store it
+    knockback = weapon.knockback,
     level = weapon.level,
     x = x,
     y = y

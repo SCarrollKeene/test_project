@@ -12,7 +12,7 @@ Weapon.image = nil
 -- saving/loaidng for persisten weapon levels
 -- need to build an inventory screen or at least a UI for weapons held
 
-function Weapon:new(name, image, weaponType, baseSpeed, fireRate, projectileClass, baseDamage, knockback, level)
+function Weapon:new(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, level)
     level = level or 1
 
     -- print("Cooldown duration:", 1 / fireRate)
@@ -20,6 +20,7 @@ function Weapon:new(name, image, weaponType, baseSpeed, fireRate, projectileClas
         name = name or "Fire crystal",
         image = image or Weapon.image,
         weaponType = weaponType or "Crystal",
+        rarity = rarity or "Common",
         level = level, -- scale stats based on level
         baseDamage = baseDamage or 10, --store base damage OR default to 10
         knockback = knockback or 0,

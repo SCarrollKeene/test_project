@@ -141,6 +141,7 @@ function love.keypressed(key)
         local fireCrystalName = "Fire Crystal"
         local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
         local fireCrystalType = "Crystal"
+        local fireCrystalRarity = "Common"
         local fireCrystalBaseSpeed = 200
         local fireCrystalFireRate = 2
         local fireCrystalProjectileClass = Projectile
@@ -170,6 +171,7 @@ function love.keypressed(key)
             fireCrystalName,
             fireCrystalImage,
             fireCrystalType,
+            fireCrystalRarity,
             fireCrystalBaseSpeed,
             fireCrystalFireRate,
             fireCrystalProjectileClass,
@@ -235,11 +237,12 @@ function love.keypressed(key)
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, baseSpeed, fireRate, projectileClass, baseDamage, knockback, x, y, level)
+function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, x, y, level)
   local weaponDrop = {
     name = name,
     image = image,
     weaponType = weaponType,
+    rarity = rarity,
     baseSpeed = baseSpeed,
     fireRate = fireRate,
     projectileClass = projectileClass,
@@ -256,7 +259,7 @@ function spawnWeaponDrop(name, image, weaponType, baseSpeed, fireRate, projectil
    --print("itemDropSystems count after insert:", #itemDropSystems)
 
   --weaponDrop.particle = Particle.itemIndicator()
-  weaponDrop.particle = Particle.getItemIndicator()
+  weaponDrop.particle = Particle.getItemIndicator(weaponDrop.rarity)
     -- print("Created item particle:", weaponDrop.particle)
     -- print("itemDropSystems count after insert:", #itemDropSystems)
     assert(weaponDrop.particle, "[FAILED] to create item indicator particle")
@@ -296,6 +299,7 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.name,
             weaponToEquip.image,
             weaponToEquip.weaponType,
+            weaponToEquip.rarity,
             weaponToEquip.baseSpeed,
             weaponToEquip.fireRate,
             weaponToEquip.projectileClass,
@@ -786,6 +790,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
             w.name,
             w.image,
             w.weaponType,
+            w.rarity,
             w.baseSpeed,
             w.fireRate,
             w.projectileClass,
@@ -1578,7 +1583,8 @@ function playing:draw()
     if player.canPickUpItem then
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
     end
-        love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 460)
+        love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 430)
+        love.graphics.print("Rarity: " .. player.weapon.rarity, 20, 460)
         love.graphics.print("Knockback: " .. player.weapon.knockback, 20, 490)
         love.graphics.print("Weapon: " .. player.weapon.name, 20, 520)
         love.graphics.print("Speed: " .. player.weapon.baseSpeed, 20, 550)
@@ -1632,6 +1638,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
             w.name,
             w.image,
             w.weaponType,
+            w.rarity,
             w.baseSpeed,
             w.fireRate,
             w.projectileClass,

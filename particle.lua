@@ -34,9 +34,9 @@ local function getImage(path)
 end
 
 function Particle.baseSpark()
-    local particleImage = getImage("sprites/particle.png")
+    local particleImage = getImage("sprites/projectile.png")
     if not particleImage then 
-        print("ERROR: particle.png NOT FOUND!")
+        print("ERROR: projectile.png NOT FOUND!")
         return nil 
     end -- nomore updates from here if not img
 
@@ -60,7 +60,12 @@ function Particle.baseSpark()
     ps:setLinearAcceleration(-30, 30)
 
     -- color transition from white to transparent
-    ps:setColors(1, 0.1, 0, 1, 1, 0.4, 0, 0) -- Start: red with a hint of orange, End: orange transparent
+    ps:setColors(
+        1, 0.1, 0, 1,
+        1, 0.5, 0, 1,
+        0.7, 0.7, 0.7, 0.7,
+        1, 1, 1, 0 
+    ) -- Start: red with a hint of orange, smoke grey, white
     return ps
 end
 
@@ -214,7 +219,18 @@ function Particle.returnFirefly(ps)
     end
 end
 
-function Particle.itemIndicator()
+local RARITY_COLORS = {
+    common    = {0.40, 0.40, 0.40, 0.9},     -- dark gray; standard/common items, #666666
+    uncommon  = {0.00, 0.52, 0.00, 0.9},     -- accessible green; #008400
+    rare      = {0.00, 0.24, 0.89, 0.9},     -- accessible blue; #003DFE
+    epic      = {0.44, 0.09, 0.84, 0.9},     -- accessible purple; #710FE6
+    legendary = {0.80, 0.38, 0.01, 0.9},     -- deep orange; #CC6103 (strong against both light & dark)
+    exotic    = {0.93, 0.67, 0.10, 0.9},     -- vivid gold; #EDAB1A (good on dark, see notes)
+    mythic    = {0.80, 0.00, 0.53, 0.9},     -- magenta; #CC0087 (strong contrast, tested)
+}
+
+function Particle.itemIndicator(rarity)
+    local color = RARITY_COLORS[rarity or "Common"] or RARITY_COLORS.common
     if #pools.itemIndicator > 0 then
         local ps = table.remove(pools.itemIndicator)
         ps:reset()
@@ -222,24 +238,28 @@ function Particle.itemIndicator()
         return ps
     end
 
-    local particleImage = getImage("sprites/circle-particle.png")
+    local particleImage = getImage("sprites/itemindicator.png")
     if not particleImage then
         print("ERROR: circle-particle.png NOT FOUND!")
         return nil
     end -- nomore updates from here if not img)
 
     local ps = love.graphics.newParticleSystem(particleImage, 100)
-    ps:setParticleLifetime(2, 4)
-    ps:setEmissionRate(20)
-    ps:setSizes(0.2, 0.5)
-    ps:setSizeVariation(1)
+    ps:setParticleLifetime(1.5, 2.5)
+    ps:setEmissionRate(4)
+    ps:setEmissionArea("ellipse", 10, 5)
+    -- ps:setEmitterLifetime(1.8)
+    ps:setSizes(0.6, 0.1)
+    ps:setSizeVariation(0.7)
     ps:setSpread(math.pi * 2)
-    ps:setSpeed(6, 18)
-    ps:setLinearAcceleration(-4, -4, 4, 4)
-
-    ps:setColors(1, 1, 0.5, 0.7,
-                 1, 1, 0.2, 0
+    ps:setSpeed(8, 14)
+    ps:setLinearAcceleration(-4, -30, 4, -10)
+    local color = RARITY_COLORS.common
+    ps:setColors(
+        color[1], color[2], color[3], 0.9,
+        color[1], color[2], color[3], 0
     )
+
     return ps
 end
 
@@ -283,9 +303,9 @@ function Particle.onImpactEffect()
         return ps
     end
 
-    local particleImage = getImage("sprites/particle.png")
+    local particleImage = getImage("sprites/impact.png")
     if not particleImage then
-        print("ERROR: particle.png NOT FOUND!")
+        print("ERROR: impact.png NOT FOUND!")
         return nil
     end -- No further setup if image is missing
 
@@ -299,9 +319,12 @@ function Particle.onImpactEffect()
     ps:setSpeed(80, 180)
     -- ps:setLinearAcceleration(-20, -20, 20, 20)
     ps:setColors(
-        1, 0.85, 0.2, 0.8,   -- bright yellow/orange, mostly opaque
-        1, 0.6, 0.1, 0.2     -- fades to orange, transparent
+    1, 1, 0.8, 1.0,     -- white-yellow, fully opaque (impact flash)
+    1, 0.85, 0.2, 0.8,  -- vivid yellow-orange, mostly opaque
+    1, 0.6, 0.1, 0.3,   -- orange, semi-transparent
+    0.1, 0.1, 0.1, 0.0  -- fade to near-black, fully transparent
     )
+
     return ps
 end
 

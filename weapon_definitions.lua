@@ -3,6 +3,7 @@ local weaponDefinitions = {
         name = "Fire Crystal",
         imagePath = "sprites/crystal.png",
         group = "Crystal",
+        rarity = "Common",
         element = "Fire",
         baseSpeed = 200,
         baseFireRate = 2.0,
@@ -18,11 +19,13 @@ local weaponDefinitions = {
             { key = "InfernoCrystal", requiredLevel = 5 },
             { key = "DiamondCrystal", requiredLevel = 5 },
         },
-        description = "A basic fire crystal weapon."
+        description = "A basic fire crystal."
     },
     infernoCrystal = {
         name = "Inferno Crystal",
         group = "Crystal",
+        rarity = "Rare",
+        modifier = "Burn",
         knockback = 120
     }
 }
