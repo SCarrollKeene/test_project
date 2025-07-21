@@ -38,3 +38,9 @@ Desktop.ini
 *.log
 temp/
 tmp/
+
+# External Dependencies / Libraries
+
+# large_assets/
+# *.psd
+# *.blend

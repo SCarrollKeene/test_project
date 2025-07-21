@@ -41,20 +41,32 @@ function Weapon:update(dt)
 end
 
 function Weapon:levelUp(player)
+    local oldDamage = self.damage or 0
+    local oldFireRate = self.fireRate or 0
+    local oldSpeed = self.baseSpeed or 0
+
     -- Auto-level up
     self.level = self.level + 1
     -- Recalculate stats based on new level reached
     self:recalculateStats()
+
+    -- NEW values vs old values
+    local dmgIncrease = self.damage - oldDamage
+    local fireRateIncrease = self.fireRate - oldFireRate
+    local speedIncrease = self.baseSpeed - oldSpeed
+
+    local dmgPct = oldDamage > 0 and (dmgIncrease / oldDamage) * 100 or 0
+    local fireRatePct = oldFireRate > 0 and (fireRateIncrease / oldFireRate) * 100 or 0
+    local speedPct = oldSpeed > 0 and (speedIncrease / oldSpeed) * 100 or 0
 
     local px, py = player.x or 0, player.y or 0
     local offset = (player.height or 32) / 2 + 18
 
     if popupManager then
         popupManager:add("Weapon up!", px, py - offset)
-        popupManager:add("+Health", px, py - offset, {0.2, 1, 0.2, 1}, 1.0, nil, 0.25)
-        popupManager:add("+Speed", px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
-        local percent = 0.02
-        popupManager:add("+" .. math.floor(percent * 100) .."+Damage", px, py - offset, {1, 0.6, 0.2, 1}, 1.0, nil, 0.5)
+        popupManager:add(string.format("+%.1f%% Damage", dmgPct), px, py - offset, {1, 0.6, 0.2, 1}, 1.0, nil, 0.5)
+        popupManager:add(string.format("+%.1f%% Fire rate", fireRatePct), px, py - offset, {0.2, 1, 0.2, 1}, 1.0, nil, 0.25)
+        popupManager:add(string.format("+%.1f%% Speed", speedPct), px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
     else
         print("[WEAPON LEVEL UP POPUP] PopupManager is nil in Weapon:levelUp()")
     end

@@ -23,6 +23,13 @@ local Utils = require("utils")
 local SaveSystem = require("save_game_data")
 local Debug = require("game_debug")
 
+-- virtual resolution
+local VIRTUAL_WIDTH = 1280
+local VIRTUAL_HEIGHT = 768
+
+local gameCanvas -- off-screen drawing surface
+local scaleX, scaleY, offsetX, offsetY -- variables for scaling and positioning
+
 local cam = Camera()
 cam:zoomTo(1.5)
 
@@ -438,6 +445,17 @@ function roomComplete()
 end
 
 function love.load()
+    -- Initialize the game canvas with virtual resolution
+    gameCanvas = love.graphics.newCanvas(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
+
+    -- Set default filter for crisp pixel art scaling (optional, but good for pixel games)
+    -- love.graphics.setDefaultFilter("nearest", "nearest")
+
+    -- Call initial game setup
+    love.window.setMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, { resizable = true, fullscreen = false, vsync = true }) -- Ensure window is resizable
+    love.graphics.setLineStyle("rough")
+    love.graphics.setLineWidth(2)
+
     world = wf.newWorld(0, 0)
     -- initialize first
     wallColliders = {}
@@ -664,6 +682,29 @@ function love.load()
     -- })
     Gamestate.registerEvents()
     Gamestate.switch(Loading, world, playing, randomBlobs)
+
+    -- Call love.resize to set up initial scaling
+    love.resize(love.graphics.getWidth(), love.graphics.getHeight())
+end
+
+function love.resize(w, h)
+    -- called when the window is resized
+    local aspectRatio = VIRTUAL_WIDTH / VIRTUAL_HEIGHT
+    local windowAspectRatio = w / h
+
+    if windowAspectRatio > aspectRatio then
+        -- Window is wider than our virtual resolution aspect ratio (pillarboxing)
+        scaleY = h / VIRTUAL_HEIGHT
+        scaleX = scaleY
+        offsetX = (w - VIRTUAL_WIDTH * scaleX) / 2
+        offsetY = 0
+    else
+        -- Window is taller than our virtual resolution aspect ratio (letterboxing)
+        scaleX = w / VIRTUAL_WIDTH
+        scaleY = scaleX
+        offsetX = 0
+        offsetY = (h - VIRTUAL_HEIGHT * scaleY) / 2
+    end
 end
 
 -- Entering playing gamestate
@@ -1300,6 +1341,17 @@ end
 
 function love.draw()
     -- moved all logic into func playing:draw() because I'm utilizing hump.gamestate
+
+    -- Set the render target to your gameCanvas
+    love.graphics.setCanvas(gameCanvas)
+    love.graphics.clear(0.1, 0.1, 0.1, 1) -- Clear the canvas (e.g., to a dark grey)
+
+    -- Reset the render target to the screen
+    love.graphics.setCanvas()
+    love.graphics.clear(0, 0, 0, 1) -- Clear the actual screen to black (for letter/pillarboxing)
+
+    -- Draw the gameCanvas to the actual screen, scaled and offset
+    love.graphics.draw(gameCanvas, offsetX, offsetY, 0, scaleX, scaleY)
 end
 
 function playing:draw()
@@ -1520,9 +1572,8 @@ function playing:draw()
 
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 110)
-
     love.graphics.print("Score: " .. playerScore, 20, 140)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 170)
+    
     if player.weapon then
     if player.canPickUpItem then
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
@@ -1537,6 +1588,7 @@ function playing:draw()
         love.graphics.print("Weapon level: " .. tostring(player.weapon.level or 1), 20, 670)
     end
 
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)
     love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel - 1), 1100, 700)
 end
@@ -1931,12 +1983,19 @@ function safeRoom:draw()
     -- Safe room UI
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
-    love.graphics.print("SAFE ROOM", 20, 50)
-    love.graphics.print("Health: " .. player.health, 20,80)
-    love.graphics.print("Score: " .. playerScore, 20, 110)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 20, 140)
+    
+    love.graphics.print("Health: " .. player.health, 20, 20)
+    love.graphics.print("Level: " .. player.level or 1, 20, 50)
+    local xpNext = player:getXPToNextLevelUp()
+    love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 80)
+    local percent = math.floor((player.experience / xpNext) * 100)
+    love.graphics.print("Level Progress: " .. percent .. "%", 20, 110)
+    love.graphics.print("Score: " .. playerScore, 20, 140)
     -- love.graphics.print("Particles alive:", ps:getCount(), 20, 170)
-    love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 640)
+
+    love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
+    love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)
+    love.graphics.print("SAFE ROOM", 1100, 700)
 end
 
 -- TODO: make ESC key global for quiting no matter what game state they are in

@@ -219,23 +219,35 @@ function Player:getXPToNextLevelUp()
 end
 
 function Player:onLevelUp()
+    local oldHealth = self.health or 0
+    local oldBaseDamage = self.baseDamage or 0
+    local oldSpeed = self.speed or 0
+
     local percent = love.math.random(self.damageGrowth.min, self.damageGrowth.max) / 100
     self.level = self.level + 1
 
     -- come back to add increases to stats, effects, etc
-    self.health = self.health + math.floor(self.health * 0.07)
-    self.baseDamage = self.baseDamage + math.floor(self.baseDamage * percent)
-    self.speed = self.speed + math.floor(self.speed * 0.03)
+    local healthIncrease = math.floor(self.health * 0.07)
+    local damageIncrease = math.floor(self.baseDamage * percent)
+    local speedIncrease = math.floor(self.speed * 0.03)
+
+    self.health = self.health + healthIncrease
+    self.baseDamage = self.baseDamage + damageIncrease
+    self.speed = self.speed + speedIncrease
+
+    -- new percent increases based on previous values
+    local healthPct = oldHealth > 0 and (healthIncrease / oldHealth) * 100 or 0
+    local damagePct = oldBaseDamage > 0 and (damageIncrease / oldBaseDamage) * 100 or 0
+    local speedPct = oldSpeed > 0 and (speedIncrease / oldSpeed) * 100 or 0
 
     local px, py = self.x or 0, self.y or 0
     local offset = (self.height or 32) / 2 + 18
 
     if popupManager then
         popupManager:add("Level up!", px, py - offset)
-        popupManager:add("+Health", px, py - offset, {0.2, 1, 0.2, 1}, 1.0, nil, 0.25)
-        popupManager:add("+Speed", px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
-        local percent = 0.02
-        popupManager:add("+" .. math.floor(percent * 100) .."+Damage", px, py - offset, {1, 0.6, 0.2, 1}, 1.0, nil, 0.5)
+        popupManager:add(string.format("+%d HP (%.1f%%)", healthIncrease, healthPct), px, py - offset, {0.2, 1, 0.2, 1}, 1.0, nil, 0.25)
+        popupManager:add(string.format("+%d Speed (%.1f%%)", speedIncrease, speedPct), px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
+        popupManager:add(string.format("+%d DMG (%.1f%%)", damageIncrease, damagePct), px, py - offset, {1, 0.6, 0.2, 1}, 1.0, nil, 0.5)
     else
         print("[WEAPON LEVEL UP POPUP] PopupManager is nil in Weapon:levelUp()")
     end
