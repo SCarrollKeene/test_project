@@ -20,7 +20,7 @@ function Weapon:new(name, image, weaponType, rarity, baseSpeed, fireRate, projec
         name = name or "Fire crystal",
         image = image or Weapon.image,
         weaponType = weaponType or "Crystal",
-        rarity = rarity or "Common",
+        rarity = rarity or "common",
         level = level, -- scale stats based on level
         baseDamage = baseDamage or 10, --store base damage OR default to 10
         knockback = knockback or 0,

@@ -187,7 +187,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     -- if no weapon in inventory, create a new weapon and insert into inventory, please work
     if not self.weapon then
         -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
-        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", "Common", 200, 2, Projectile, 10, 0, 1)
+        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", "common", 200, 2, Projectile, 10, 0, 1)
     end
 
     if #self.inventory == 0 then

@@ -19,6 +19,16 @@ local MAX_POOL_SIZE = {
 -- so you can balance MAX_POOL_SIZE based on actual gameplay demand,
 -- not just estimates.
 
+Particle.RARITY_COLORS = {
+    common    = {0.40, 0.40, 0.40, 0.9},     -- dark gray; standard/common items, #666666
+    uncommon  = {0.00, 0.52, 0.00, 0.9},     -- accessible green; #008400
+    rare      = {0.00, 0.24, 0.89, 0.9},     -- accessible blue; #003DFE
+    epic      = {0.44, 0.09, 0.84, 0.9},     -- accessible purple; #710FE6
+    legendary = {0.80, 0.38, 0.01, 0.9},     -- deep orange; #CC6103 (strong against both light & dark)
+    exotic    = {0.93, 0.67, 0.10, 0.9},     -- vivid gold; #EDAB1A (good on dark, see notes)
+    mythic    = {0.80, 0.00, 0.53, 0.9},     -- magenta; #CC0087 (strong contrast, tested)
+}
+
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)
     if not _imgCache[path] then
@@ -41,7 +51,7 @@ function Particle.baseSpark()
     end -- nomore updates from here if not img
 
     -- ps == particleSystem
-    local ps = love.graphics.newParticleSystem(particleImage, 50)
+    local ps = love.graphics.newParticleSystem(particleImage, 250)
 
     ps:setParticleLifetime(0.2, 0.5)
     ps:setEmissionRate(0) -- start at 0 for projectiles
@@ -219,18 +229,8 @@ function Particle.returnFirefly(ps)
     end
 end
 
-local RARITY_COLORS = {
-    common    = {0.40, 0.40, 0.40, 0.9},     -- dark gray; standard/common items, #666666
-    uncommon  = {0.00, 0.52, 0.00, 0.9},     -- accessible green; #008400
-    rare      = {0.00, 0.24, 0.89, 0.9},     -- accessible blue; #003DFE
-    epic      = {0.44, 0.09, 0.84, 0.9},     -- accessible purple; #710FE6
-    legendary = {0.80, 0.38, 0.01, 0.9},     -- deep orange; #CC6103 (strong against both light & dark)
-    exotic    = {0.93, 0.67, 0.10, 0.9},     -- vivid gold; #EDAB1A (good on dark, see notes)
-    mythic    = {0.80, 0.00, 0.53, 0.9},     -- magenta; #CC0087 (strong contrast, tested)
-}
-
 function Particle.itemIndicator(rarity)
-    local color = RARITY_COLORS[rarity or "Common"] or RARITY_COLORS.common
+    local color = Particle.RARITY_COLORS[rarity or "common"] or Particle.RARITY_COLORS.common
     if #pools.itemIndicator > 0 then
         local ps = table.remove(pools.itemIndicator)
         ps:reset()
@@ -254,7 +254,7 @@ function Particle.itemIndicator(rarity)
     ps:setSpread(math.pi * 2)
     ps:setSpeed(8, 14)
     ps:setLinearAcceleration(-4, -30, 4, -10)
-    local color = RARITY_COLORS.common
+    local color = Particle.RARITY_COLORS.common
     ps:setColors(
         color[1], color[2], color[3], 0.9,
         color[1], color[2], color[3], 0

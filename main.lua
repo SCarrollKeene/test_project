@@ -11,6 +11,7 @@ local LevelManager = require("levelmanager")
 local WaveManager = require("wavemanager")
 local Loading = require("loading")
 local PopupManager = require("popupmanager")
+local UI = require("ui")
 local sti = require("libraries/sti")
 local Weapon = require("weapon")
 local Cooldown = require("cooldown")
@@ -73,6 +74,7 @@ local projectiles = {}
 local player = Player -- create new player instance, change player.lua to a constructor pattern if you want multiple players
 
 droppedItems = droppedItem or {} -- global table to manage dropped items, such as weapons
+local selectedItemToCompare = nil
 
 local enemies = {} -- enemies table to house all active enemies
 
@@ -119,19 +121,51 @@ function love.keypressed(key)
         return -- prevent other keys from utilizing r
     end
 
-    if key == "e" and player.canPickUpItem then
-        player:addItem(player.canPickUpItem) -- add item to player inventory
-        equipWeapon(player.canPickUpItem) -- equip item/weapon
-        player.weapon:levelUp(player) -- weapon level up
-        Loot.removeDroppedItem(player.canPickUpItem) -- remove picked up item from world
-        player.canPickUpItem = nil -- safety check / error prevention
+    -- if key == "e" and player.canPickUpItem then
+    --         player:addItem(player.canPickUpItem) -- add item to player inventory
+    --         selectedItemToCompare = player.canPickUpItem
+    --         equipWeapon(player.canPickUpItem) -- equip item/weapon
+    --         player.weapon:levelUp(player) -- weapon level up
+    --         Loot.removeDroppedItem(player.canPickUpItem) -- remove picked up item from world
+    --         player.canPickUpItem = nil -- safety check / error prevention
+           
+    --     -- After level up, if mult weapons in inventory, update the matching entry for equipped weapon
+    --     player:updateEquipmentInventory()
+    -- end
 
+    if key == "e" and selectedItemToCompare then
+            player:addItem(selectedItemToCompare) -- add item to player inventory
+            -- selectedItemToCompare = player.canPickUpItem
+            equipWeapon(selectedItemToCompare) -- equip item/weapon
+            player.weapon:levelUp(player) -- weapon level up
+            Loot.removeDroppedItem(selectedItemToCompare) -- remove picked up item from world
+            -- player.canPickUpItem = nil -- safety check / error prevention
+            selectedItemToCompare = nil
         -- After level up, if mult weapons in inventory, update the matching entry for equipped weapon
         player:updateEquipmentInventory()
     end
 
+    -- if key == "e" and selectedItemToCompare then
+    --     player:addItem(selectedItemToCompare)
+    --     equipWeapon(selectedItemToCompare)
+    --     Loot.removeDroppedItem(selectedItemToCompare)
+    --     selectedItemToCompare = nil
+    --     player.canPickUpItem = nil
+    --     player:updateEquipmentInventory()
+    -- end
+
+    -- if key == "q" and selectedItemToCompare then
+    --     selectedItemToCompare = nil -- Skip
+    --     player.canPickUpItem = nil
+    -- end
+
+
+    if key == "q" and selectedItemToCompare then
+        selectedItemToCompare = nil -- Cancel/skip weapon swap
+    end
+
     -- fire crystal level up test
-    if key == "q" then
+    if key == "z" then
         if not player or player.isDead then
             print("Cannot drop item: player is nil or dead")
             return
@@ -141,7 +175,7 @@ function love.keypressed(key)
         local fireCrystalName = "Fire Crystal"
         local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
         local fireCrystalType = "Crystal"
-        local fireCrystalRarity = "Common"
+        local fireCrystalRarity = "common"
         local fireCrystalBaseSpeed = 200
         local fireCrystalFireRate = 2
         local fireCrystalProjectileClass = Projectile
@@ -1032,17 +1066,52 @@ function playing:update(dt)
         -- update droppable loot/items
         updateDroppedItems(dt)
 
-        local pickupRange = 40  -- Adjust as needed
-        player.canPickUpItem = nil  -- Reset each frame
+        -- local pickupRange = 40  -- Adjust as needed
+        -- player.canPickUpItem = nil  -- Reset each frame
 
-        for i, item in ipairs(droppedItems) do
-            local dx = player.x - item.x
-            local dy = player.y - item.y
-            if math.sqrt(dx * dx + dy * dy) <= pickupRange then
-                player.canPickUpItem = item  -- Store the reference for prompt and pickup
-                break  -- Only prompt for the first item in range
+        -- for i, item in ipairs(droppedItems) do
+        --     local dx = player.x - item.x
+        --     local dy = player.y - item.y
+        --     if math.sqrt(dx * dx + dy * dy) <= pickupRange then
+        --         player.canPickUpItem = item  -- Store the reference for prompt and pickup
+        --         break  -- Only prompt for the first item in range
+
+            -- if math.sqrt(dx * dx + dy * dy) <= pickupRange then
+            -- -- Determine if this item should be auto-picked up or compared
+            --     if player.weapon and isSameWeaponAndRarity(player.weapon, item) then
+            --         -- Auto pickup logic
+            --         player:addItem(item)
+            --         equipWeapon(item) -- Optional: levelUp logic if needed
+            --         Loot.removeDroppedItem(item)
+            --         player:updateEquipmentInventory()
+            --     else
+            --         -- Set it as a candidate for comparison menu
+            --         player.canPickUpItem = item
+            --         selectedItemToCompare = item
+            --     end
+            --     break
+            -- end
+
+        --     end
+        -- end
+        local comparisonRange = 40
+            local foundNearbyItem = nil
+            for i, item in ipairs(droppedItems) do
+                local dx = player.x - item.x
+                local dy = player.y - item.y
+                if math.sqrt(dx * dx + dy * dy) <= comparisonRange then
+                    foundNearbyItem = item
+                    break
+                end
             end
-        end
+
+            if foundNearbyItem then
+                if selectedItemToCompare ~= foundNearbyItem then
+                    selectedItemToCompare = foundNearbyItem
+                end
+            else
+                selectedItemToCompare = nil  -- Hide menu when out of range
+            end
     end
 
     -- update the moving/hovering items particle’s position each frame:
@@ -1597,6 +1666,11 @@ function playing:draw()
     love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)
     love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel - 1), 1100, 700)
+
+    -- weapon compare draw logic
+    if selectedItemToCompare then
+        UI.drawWeaponComparison(player.weapon, selectedItemToCompare)
+    end
 end
 
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)

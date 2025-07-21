@@ -6,6 +6,10 @@ local Utils = {}
 -- create and require Utils in ..blob1.health..
 -- maintainability and reduce redundancy
 
+function Utils.isSameWeaponAndRarity(weaponA, weaponB)
+    return weaponA.name == weaponB.name and (weaponA.rarity or "common"):lower() == (weaponB.rarity or "common"):lower()
+end
+
 -- used to copy rundata, make sure player inventory persists through room transitions
 -- seen tables is a common fix for deep copy functions in lua and other languages
 function Utils.deepCopy(orig, seen) -- seen table used internally
