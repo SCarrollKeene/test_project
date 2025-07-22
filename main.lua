@@ -103,6 +103,14 @@ local fadeHoldTimer = 0
 local fadeTimer = 0
 local nextState = nil       -- The state to switch to after fade
 
+-- take damage on screen variables
+local damageFlashTimer = 0
+local DAMAGE_FLASH_DURATION = 0.3 -- 0.3 seconds
+
+function triggerDamageFlash()
+    damageFlashTimer = DAMAGE_FLASH_DURATION
+end
+
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
@@ -1017,6 +1025,11 @@ function playing:update(dt)
 
     popupManager:update(dt)
 
+    -- Handle on screen damage taken flash timer
+    if damageFlashTimer > 0 then
+        damageFlashTimer = damageFlashTimer - dt
+    end
+
     if fading then
         -- SUPPOSED to clear particles when starting fade out
         if fadeDirection == 1 and nextState == playing then
@@ -1103,45 +1116,7 @@ function playing:update(dt)
         if not player.canPickUpItem then
             selectedItemToCompare = nil
         end
-
-    --     local comparisonRange = 40
-    --         local foundNearbyItem = nil
-    --         for i, item in ipairs(droppedItems) do
-    --             local dx = player.x - item.x
-    --             local dy = player.y - item.y
-    --             if math.sqrt(dx * dx + dy * dy) <= comparisonRange then
-    --                 foundNearbyItem = item
-    --                 break
-    --             end
-    --         end
-
-    --         if foundNearbyItem then
-    --             if selectedItemToCompare ~= foundNearbyItem then
-    --                 selectedItemToCompare = foundNearbyItem
-    --             end
-    --         else
-    --             selectedItemToCompare = nil  -- Hide menu when out of range
-    --         end
 end
-
-    -- update the moving/hovering items particle’s position each frame:
-    -- for _, item in ipairs(droppedItems) do
-    --     if item.particle then
-    --         item.particle:setPosition(item.x, item.y)
-    --     end
-    -- end
-
-    -- Update the item drop particle systems
-    -- Particle.updateItemDropParticles(dt)
-    -- print("Calling Particle.updateItemDropParticles, count:", #itemDropSystems)
-
-    --  update each item's particle:
-    -- for _, item in ipairs(droppedItems) do
-    --     if item.particle then
-    --         item.particle:setPosition(item.x, item.y)
-    --         item.particle:update(dt)
-    --     end
-    -- end
 
     -- NOTE: I need collision detection before I can continue and the logic for player attacks, enemy attacking player, getting damage values from projectile.damage
     -- and calling the appropriate dealDamage function
@@ -1640,6 +1615,16 @@ function playing:draw()
 
         popupManager:draw()
     cam:detach()
+
+    -- Draw damage flash in corners
+    if damageFlashTimer > 0 then
+        local alpha = damageFlashTimer / DAMAGE_FLASH_DURATION
+        love.graphics.setColor(1, 0.1, 0.1, 0.5 * alpha) -- Red
+        love.graphics.rectangle("fill", 0, love.graphics.getHeight() - 90, 140, 90, 0, 0)
+        love.graphics.setColor(1, 0.1, 0.1, 0.5 * alpha) -- Red
+        love.graphics.rectangle("fill", love.graphics.getWidth() - 140, love.graphics.getHeight() - 90, 140, 90, 0, 0)
+        love.graphics.setColor(1, 1, 1, 1)
+    end
     
      -- Display player score
      -- debate change to an event system or callback function later when enemy dies or check for when the enemy is dead

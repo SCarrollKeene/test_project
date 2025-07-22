@@ -556,6 +556,8 @@ function Player:takeDamage(dmg, metaData, playerScore)
     print("DAMAGE TRIGGERED")
     if self.isDead or self.isInvincible then return end -- no more damage taken if dead
 
+    if triggerDamageFlash then triggerDamageFlash() end
+
      -- maybe move this into Utils take damage later
      -- look into state machines 6/11/25
     self.isFlashing = true
