@@ -22,11 +22,24 @@ function UI.drawWeaponComparison(current, candidate)
         love.graphics.setColor(borderColor[1], borderColor[2], borderColor[3], 1)
         love.graphics.rectangle("line", x, y, panelW, panelH, 14, 14)
 
+        -- Draw the weapon image
+        if weapon.image then
+            -- Set image dimensions (adjust to fit card design)
+            local imgW, imgH = 48, 48
+            -- Offset for image placement within the card panel
+            local imgX = x + 10
+            local imgY = y + 15
+            love.graphics.setColor(1, 1, 1, 1)
+            love.graphics.draw(weapon.image, imgX, imgY, 0, imgW 
+                / weapon.image:getWidth(), imgH 
+                / weapon.image:getHeight())
+        end
+
         -- Draw weapon label, name, and stats
         love.graphics.setColor(1, 1, 1, 1)
-        love.graphics.print(label, x + 10, y + 10)
+        love.graphics.print(label, x + 80, y + 10)
         love.graphics.setColor(borderColor[1], borderColor[2], borderColor[3], 1)
-        love.graphics.printf(" (" .. rarity .. ")", x + 10, y + 36, panelW - 20)
+        love.graphics.printf(" (" .. rarity .. ")", x + 70, y + 36, panelW - 20)
         love.graphics.setColor(1, 1, 1, 1)
 
         -- Distinguish between actual and base damage
@@ -34,9 +47,9 @@ function UI.drawWeaponComparison(current, candidate)
         local fireRateValue = tostring(weapon.fireRate)
         local speedValue = tostring(weapon.speed)
 
-        love.graphics.print("Damage: " .. dmgValue, x + 10, y + 66)
-        love.graphics.print("Fire rate: " .. fireRateValue, x + 10, y + 96)
-        love.graphics.print("Speed: " .. speedValue, x + 10, y + 126)
+        love.graphics.print("Damage: " .. dmgValue, x + 10, y + 76)
+        love.graphics.print("Fire rate: " .. fireRateValue, x + 10, y + 106)
+        love.graphics.print("Speed: " .. speedValue, x + 10, y + 136)
     end
 
     -- Draw current weapon (left) and candidate (right)
