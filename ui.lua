@@ -26,21 +26,35 @@ function UI.drawWeaponComparison(current, candidate)
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.print(label, x + 10, y + 10)
         love.graphics.setColor(borderColor[1], borderColor[2], borderColor[3], 1)
-        love.graphics.printf(weapon.name .. " (" .. rarity .. ")", x + 10, y + 36, panelW - 20)
+        love.graphics.printf(" (" .. rarity .. ")", x + 10, y + 36, panelW - 20)
         love.graphics.setColor(1, 1, 1, 1)
 
         -- Distinguish between actual and base damage
-        local dmgLabel, dmgValue
+        local dmgLabel, dmgValue, speedLabel, speedValue, fireRateLabel, fireRateValue
         if isEquipped then
             dmgLabel = "Current Dmg: "
             dmgValue = tostring(weapon.damage)
+            speedLabel = "Current speed: "
+            speedValue = tostring(weapon.speed or "??")
+            fireRateLabel = "Current rate: "
+            fireRateValue = tostring(weapon.fireRate or "??")
         else
-            dmgLabel = "Base Dmg: "
-            dmgValue = tostring(weapon.baseDamage)
+            -- dmgLabel = "Base Dmg: "
+            -- dmgValue = tostring(weapon.baseDamage)
+            -- speedLabel = "Base speed: "
+            -- speedValue = tostring(weapon.baseSpeed or "??")
+            -- fireRateLabel = "Base rate: "
+            -- fireRateValue = tostring(weapon.baseFireRate )
+            dmgLabel = "Current Dmg: "
+            dmgValue = tostring(weapon.damage)
+            speedLabel = "Current speed: "
+            speedValue = tostring(weapon.speed or "??")
+            fireRateLabel = "Current rate: "
+            fireRateValue = tostring(weapon.fireRate or "??")
         end
         love.graphics.print(dmgLabel .. dmgValue, x + 10, y + 66)
-        love.graphics.print("Rate: " .. tostring(weapon.fireRate), x + 10, y + 96)
-        love.graphics.print("Speed: " .. tostring(weapon.baseSpeed or weapon.speed), x + 10, y + 126)
+        love.graphics.print(fireRateLabel .. fireRateValue, x + 10, y + 96)
+        love.graphics.print(speedLabel .. speedValue, x + 10, y + 126)
     end
 
     -- Draw current weapon (left) and candidate (right)

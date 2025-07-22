@@ -2,6 +2,21 @@ local Cooldown = require("cooldown")
 
 local Weapon = {}
 
+Weapon.RARITY_ORDER = {
+  "common", "uncommon", "rare", "epic", "legendary", "exotic", "mythic"
+}
+
+-- TODO: consider unique passive effects or weapon mods in addition to stat boosts (e.g., burn, freeze, shockwaves, lifesteal, or on-hit explosions)
+Weapon.RARITY_STAT_MULTIPLIERS = {
+  common    = { damage = 1.00, speed = 1.00, fireRate = 1.00 },
+  uncommon  = { damage = 1.15, speed = 1.05, fireRate = 1.07 },
+  rare      = { damage = 1.30, speed = 1.10, fireRate = 1.15 },
+  epic      = { damage = 1.50, speed = 1.16, fireRate = 1.24 },
+  legendary = { damage = 1.75, speed = 1.23, fireRate = 1.33 },
+  exotic    = { damage = 2.05, speed = 1.31, fireRate = 1.43 },
+  mythic    = { damage = 2.40, speed = 1.40, fireRate = 1.55 }
+}
+
 Weapon.image = nil
 
 -- implement leveling system
@@ -12,24 +27,24 @@ Weapon.image = nil
 -- saving/loaidng for persisten weapon levels
 -- need to build an inventory screen or at least a UI for weapons held
 
-function Weapon:new(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, level)
-    level = level or 1
+function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, projectileClass, baseDamage, knockback, level, id)
 
-    -- print("Cooldown duration:", 1 / fireRate)
     local self = {
-        name = name or "Fire crystal",
+        name = name or "Fire Crystal",
         image = image or Weapon.image,
         weaponType = weaponType or "Crystal",
         rarity = rarity or "common",
-        level = level, -- scale stats based on level
         baseDamage = baseDamage or 10, --store base damage OR default to 10
         knockback = knockback or 0,
-        baseSpeed = 200,
-        fireRate = fireRate,
-        baseFireRate = fireRate + (level - 1) * 0.05,
-        cooldown = Cooldown:new(1 / (fireRate - (level - 1) * 0.05)), -- convert fireRate to cooldown duration. duration and time are params/args from the cooldown object/table
-        projectileClass = projectileClass -- projectileClass to spawn, return to this
+        speed = nil,
+        baseSpeed = baseSpeed or 200,
+        fireRate = nil,
+        baseFireRate = baseFireRate or 2,
+        cooldown = nil, -- convert fireRate to cooldown duration. duration and time are params/args from the cooldown object/table
+        projectileClass = projectileClass, -- projectileClass to spawn, return to this
         --projectileSpeedBonus = 1
+        level = level or 1, -- scale stats based on level
+        id = id or love.math.random(1, 99999999) .. "-" .. tostring(os.time()) -- use a UUID lib later
     }
 
     setmetatable(self, {__index = Weapon}) -- point back at weapon table, Weapon methods and fields/data will get looked up
@@ -44,7 +59,7 @@ end
 function Weapon:levelUp(player)
     local oldDamage = self.damage or 0
     local oldFireRate = self.fireRate or 0
-    local oldSpeed = self.baseSpeed or 0
+    local oldSpeed = self.speed or 0
 
     -- Auto-level up
     self.level = self.level + 1
@@ -54,7 +69,7 @@ function Weapon:levelUp(player)
     -- NEW values vs old values
     local dmgIncrease = self.damage - oldDamage
     local fireRateIncrease = self.fireRate - oldFireRate
-    local speedIncrease = self.baseSpeed - oldSpeed
+    local speedIncrease = self.speed - oldSpeed
 
     local dmgPct = oldDamage > 0 and (dmgIncrease / oldDamage) * 100 or 0
     local fireRatePct = oldFireRate > 0 and (fireRateIncrease / oldFireRate) * 100 or 0
@@ -74,11 +89,14 @@ function Weapon:levelUp(player)
 end
 
 function Weapon:recalculateStats()
-    self.damage = (self.baseDamage or 10) + (self.level - 1) * 2
-    self.baseSpeed = (self.baseSpeed or 200) + (self.level - 1) * 0.3
-    self.fireRate = self.baseFireRate + (self.level - 1) * 0.05
+    local rarity = self.rarity or "common"
+    local multipliers = Weapon.RARITY_STAT_MULTIPLIERS[rarity] or Weapon.RARITY_STAT_MULTIPLIERS.common
+
+    self.damage = ((self.baseDamage or 10) + (self.level - 1) * 2) * (multipliers.damage or 1)
+    self.speed = ((self.baseSpeed or 200) + (self.level - 1) * 0.3) * (multipliers.speed or 1)
+    self.fireRate = (self.baseFireRate + (self.level - 1) * 0.05) * (multipliers.fireRate or 1)
     self.cooldown = Cooldown:new(1 / self.fireRate)
-    self.projectileSpeedBonus = 1 + 0.1 * (self.level - 1)
+    self.projectileSpeedBonus = (1 + 0.1 * (self.level - 1)) * (multipliers.speed or 1)
 
     -- special/status effects
     if self.level < 5 then
@@ -90,8 +108,29 @@ function Weapon:recalculateStats()
     end
 end
 
+function Weapon.pickRandomRarity(rarityWeights)
+    rarityWeights = rarityWeights or {}
+    local total = 0
+
+    for _, weight in pairs(rarityWeights) do
+        total = total + weight
+    end
+
+    local rnd = math.random() * total
+    local cumulative = 0
+
+    for rarity, weight in pairs(rarityWeights) do
+        cumulative = cumulative + weight
+        if rnd <= cumulative then
+            return rarity
+        end
+    end
+    return "common" -- fallback
+end
+
+
 function Weapon:getProjectileSpeed()
-    return self.baseSpeed + (self.projectileSpeedBonus or 0)
+    return self.speed
 end
 
 function Weapon.loadAssets()

@@ -11,7 +11,7 @@ local MAX_POOL_SIZE = {
     fireflies = 150,
     onImpactEffect = 100,
     onDeath = 100,
-    itemIndicator = 60,
+    itemIndicator = 200,
     portalGlow = 150
 } -- limit particle pool for each table
 -- 7/19/25 later on, add prints (or optional UI overlay) 
@@ -230,7 +230,6 @@ function Particle.returnFirefly(ps)
 end
 
 function Particle.itemIndicator(rarity)
-    local color = Particle.RARITY_COLORS[rarity or "common"] or Particle.RARITY_COLORS.common
     if #pools.itemIndicator > 0 then
         local ps = table.remove(pools.itemIndicator)
         ps:reset()
@@ -244,9 +243,9 @@ function Particle.itemIndicator(rarity)
         return nil
     end -- nomore updates from here if not img)
 
-    local ps = love.graphics.newParticleSystem(particleImage, 100)
+    local ps = love.graphics.newParticleSystem(particleImage, 200)
     ps:setParticleLifetime(1.5, 2.5)
-    ps:setEmissionRate(4)
+    ps:setEmissionRate(5)
     ps:setEmissionArea("ellipse", 10, 5)
     -- ps:setEmitterLifetime(1.8)
     ps:setSizes(0.6, 0.1)
@@ -254,26 +253,31 @@ function Particle.itemIndicator(rarity)
     ps:setSpread(math.pi * 2)
     ps:setSpeed(8, 14)
     ps:setLinearAcceleration(-4, -30, 4, -10)
-    local color = Particle.RARITY_COLORS.common
+
+    Particle.setIndicatorColor(ps, rarity)
+    return ps
+end
+
+function Particle.getItemIndicator(rarity)
+    if #pools.itemIndicator > 0 then
+        local ps = table.remove(pools.itemIndicator)
+        ps:reset() -- clear particles
+        Particle.setIndicatorColor(ps, rarity)
+        ps:start() -- enable emits
+        return ps
+    elseif #pools.itemIndicator < MAX_POOL_SIZE.itemIndicator then
+        return Particle.itemIndicator(rarity) -- use itemIndicator to create ps
+    else
+        return nil -- skip particle creation if pool is full
+    end
+end
+
+function Particle.setIndicatorColor(ps, rarity)
+    local color = Particle.RARITY_COLORS[rarity or "common"] or Particle.RARITY_COLORS.common
     ps:setColors(
         color[1], color[2], color[3], 0.9,
         color[1], color[2], color[3], 0
     )
-
-    return ps
-end
-
-function Particle.getItemIndicator()
-    if #pools.itemIndicator > 0 then
-        local ps = table.remove(pools.itemIndicator)
-        ps:reset() -- clear particles
-        ps:start() -- enable emits
-        return ps
-    elseif #pools.itemIndicator < MAX_POOL_SIZE.itemIndicator then
-        return Particle.itemIndicator() -- use itemIndicator to create ps
-    else
-        return nil -- skip particle creation if pool is full
-    end
 end
 
 function Particle.returnItemIndicator(ps)

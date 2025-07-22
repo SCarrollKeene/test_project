@@ -133,36 +133,35 @@ function love.keypressed(key)
     --     player:updateEquipmentInventory()
     -- end
 
-    if key == "e" and selectedItemToCompare then
-            player:addItem(selectedItemToCompare) -- add item to player inventory
-            -- selectedItemToCompare = player.canPickUpItem
-            equipWeapon(selectedItemToCompare) -- equip item/weapon
-            player.weapon:levelUp(player) -- weapon level up
-            Loot.removeDroppedItem(selectedItemToCompare) -- remove picked up item from world
-            -- player.canPickUpItem = nil -- safety check / error prevention
-            selectedItemToCompare = nil
-        -- After level up, if mult weapons in inventory, update the matching entry for equipped weapon
-        player:updateEquipmentInventory()
-    end
-
     -- if key == "e" and selectedItemToCompare then
-    --     player:addItem(selectedItemToCompare)
-    --     equipWeapon(selectedItemToCompare)
-    --     Loot.removeDroppedItem(selectedItemToCompare)
-    --     selectedItemToCompare = nil
-    --     player.canPickUpItem = nil
+    --         player:addItem(selectedItemToCompare) -- add item to player inventory
+    --         -- selectedItemToCompare = player.canPickUpItem
+    --         equipWeapon(selectedItemToCompare) -- equip item/weapon
+    --         player.weapon:levelUp(player) -- weapon level up
+    --         Loot.removeDroppedItem(selectedItemToCompare) -- remove picked up item from world
+    --         -- player.canPickUpItem = nil -- safety check / error prevention
+    --         selectedItemToCompare = nil
+    --     -- After level up, if mult weapons in inventory, update the matching entry for equipped weapon
     --     player:updateEquipmentInventory()
     -- end
 
-    -- if key == "q" and selectedItemToCompare then
-    --     selectedItemToCompare = nil -- Skip
-    --     player.canPickUpItem = nil
-    -- end
-
+    if key == "e" and selectedItemToCompare then
+        -- player:addItem(selectedItemToCompare)
+        equipWeapon(selectedItemToCompare)
+        Loot.removeDroppedItem(selectedItemToCompare)
+        selectedItemToCompare = nil
+        player.canPickUpItem = nil
+        player:updateEquipmentInventory()
+    end
 
     if key == "q" and selectedItemToCompare then
-        selectedItemToCompare = nil -- Cancel/skip weapon swap
+        selectedItemToCompare = nil -- Skip
+        player.canPickUpItem = nil
     end
+
+    -- if key == "q" and selectedItemToCompare then
+    --     selectedItemToCompare = nil -- Cancel/skip weapon swap
+    -- end
 
     -- fire crystal level up test
     if key == "z" then
@@ -170,18 +169,20 @@ function love.keypressed(key)
             print("Cannot drop item: player is nil or dead")
             return
         end
+        Utils.adjustRarityWeightsForLevel(player.level)
     
         -- Define Fire Crystal properties
         local fireCrystalName = "Fire Crystal"
         local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
         local fireCrystalType = "Crystal"
-        local fireCrystalRarity = "common"
+        local fireCrystalRarity = Weapon.pickRandomRarity(Utils.RARITY_WEIGHTS)
         local fireCrystalBaseSpeed = 200
-        local fireCrystalFireRate = 2
+        local fireCrystalBaseFireRate = 2
         local fireCrystalProjectileClass = Projectile
         local fireCrystalBaseDamage = 10
         local fireCrystalKnockback = 0
         local fireCrystalLevel = 1
+        local fireCrystalID = (love.math.random(1, 99999999) .. "-" .. tostring(os.time()))
 
         local offset = 20
         local angle = player.facingAngle or 0
@@ -207,13 +208,14 @@ function love.keypressed(key)
             fireCrystalType,
             fireCrystalRarity,
             fireCrystalBaseSpeed,
-            fireCrystalFireRate,
+            fireCrystalBaseFireRate,
             fireCrystalProjectileClass,
             fireCrystalBaseDamage,
             fireCrystalKnockback,
             dropX,
             dropY,
-            fireCrystalLevel
+            fireCrystalLevel,
+            fireCrystalID
         )
     end
     -- KEEP THIS, ILL NEED IT LATER
@@ -271,7 +273,7 @@ function love.keypressed(key)
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, x, y, level)
+function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, x, y, level, id)
   local weaponDrop = {
     name = name,
     image = image,
@@ -285,6 +287,7 @@ function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, p
     x = x,
     y = y,
     level = level or 1,
+    id = id or (love.math.random(1, 99999999) .. "-" .. tostring(os.time())),
     baseY = y,
     hoverTime = 0
   } 
@@ -315,13 +318,19 @@ end
 
 -- Pick up weapon
 function equipWeapon(weaponToEquip)
-    if player.weapon and player.weapon.weaponType == weaponToEquip.weaponType then
-    
-    -- update player inventory
-    player:updateEquipmentInventory()
-    -- Remove the item from droppedItems
-    Loot.removeDroppedItem(weaponToEquip)
-    else
+    -- if player.weapon and player.weapon.weaponType == weaponToEquip.weaponType then
+    if Utils.isSameWeaponForLevelUp(player.weapon, weaponToEquip) then
+
+        -- Level up!
+        player.weapon:levelUp(player)
+
+        -- Remove the item from droppedItems
+        Loot.removeDroppedItem(weaponToEquip)
+
+        -- update player inventory
+        player:updateEquipmentInventory()
+        return
+    end
         -- Drop current weapon if it exists
         if player.weapon then
             local drop = createWeaponDropFromInstance(player.weapon, player.x, player.y)
@@ -335,11 +344,12 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.weaponType,
             weaponToEquip.rarity,
             weaponToEquip.baseSpeed,
-            weaponToEquip.fireRate,
+            weaponToEquip.baseFireRate,
             weaponToEquip.projectileClass,
             weaponToEquip.baseDamage,
             weaponToEquip.knockback,
-            weaponToEquip.level
+            weaponToEquip.level,
+            weaponToEquip.id
         )
 
         -- TODO: write some frigin equippedSlot logic, i think
@@ -349,7 +359,6 @@ function equipWeapon(weaponToEquip)
 
         -- Remove item from droppedItems...
         Loot.removeDroppedItem(weaponToEquip)
-    end
 end
 
 function updateDroppedItems(dt)
@@ -826,11 +835,12 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
             w.weaponType,
             w.rarity,
             w.baseSpeed,
-            w.fireRate,
+            w.baseFireRate,
             w.projectileClass,
             w.baseDamage,
             w.knockback,
-            w.level
+            w.level,
+            w.id
         )
     end
 
@@ -1066,53 +1076,53 @@ function playing:update(dt)
         -- update droppable loot/items
         updateDroppedItems(dt)
 
-        -- local pickupRange = 40  -- Adjust as needed
-        -- player.canPickUpItem = nil  -- Reset each frame
+        local pickupRange = 40  -- Adjust as needed
+        player.canPickUpItem = nil  -- Reset each frame
 
-        -- for i, item in ipairs(droppedItems) do
-        --     local dx = player.x - item.x
-        --     local dy = player.y - item.y
-        --     if math.sqrt(dx * dx + dy * dy) <= pickupRange then
-        --         player.canPickUpItem = item  -- Store the reference for prompt and pickup
-        --         break  -- Only prompt for the first item in range
+        for i, item in ipairs(droppedItems) do
+            local dx = player.x - item.x
+            local dy = player.y - item.y
 
-            -- if math.sqrt(dx * dx + dy * dy) <= pickupRange then
-            -- -- Determine if this item should be auto-picked up or compared
-            --     if player.weapon and isSameWeaponAndRarity(player.weapon, item) then
-            --         -- Auto pickup logic
-            --         player:addItem(item)
-            --         equipWeapon(item) -- Optional: levelUp logic if needed
-            --         Loot.removeDroppedItem(item)
-            --         player:updateEquipmentInventory()
-            --     else
-            --         -- Set it as a candidate for comparison menu
-            --         player.canPickUpItem = item
-            --         selectedItemToCompare = item
-            --     end
-            --     break
-            -- end
-
-        --     end
-        -- end
-        local comparisonRange = 40
-            local foundNearbyItem = nil
-            for i, item in ipairs(droppedItems) do
-                local dx = player.x - item.x
-                local dy = player.y - item.y
-                if math.sqrt(dx * dx + dy * dy) <= comparisonRange then
-                    foundNearbyItem = item
-                    break
+            if math.sqrt(dx * dx + dy * dy) <= pickupRange then
+            -- Determine if this item should be auto-picked up or compared
+                if player.weapon and Utils.isSameWeaponForLevelUp(player.weapon, item) then
+                    -- Auto pickup logic
+                    --player:addItem(item)
+                    equipWeapon(item) -- Optional: levelUp logic if needed
+                    --Loot.removeDroppedItem(item)
+                    --player:updateEquipmentInventory()
+                else
+                    -- Set it as a candidate for comparison UI menu
+                    player.canPickUpItem = item -- Store the reference for prompt and pickup
+                    selectedItemToCompare = item
                 end
+                break -- Only prompt for the first item in range
             end
+        end
 
-            if foundNearbyItem then
-                if selectedItemToCompare ~= foundNearbyItem then
-                    selectedItemToCompare = foundNearbyItem
-                end
-            else
-                selectedItemToCompare = nil  -- Hide menu when out of range
-            end
-    end
+        if not player.canPickUpItem then
+            selectedItemToCompare = nil
+        end
+
+    --     local comparisonRange = 40
+    --         local foundNearbyItem = nil
+    --         for i, item in ipairs(droppedItems) do
+    --             local dx = player.x - item.x
+    --             local dy = player.y - item.y
+    --             if math.sqrt(dx * dx + dy * dy) <= comparisonRange then
+    --                 foundNearbyItem = item
+    --                 break
+    --             end
+    --         end
+
+    --         if foundNearbyItem then
+    --             if selectedItemToCompare ~= foundNearbyItem then
+    --                 selectedItemToCompare = foundNearbyItem
+    --             end
+    --         else
+    --             selectedItemToCompare = nil  -- Hide menu when out of range
+    --         end
+end
 
     -- update the moving/hovering items particle’s position each frame:
     -- for _, item in ipairs(droppedItems) do
@@ -1482,11 +1492,11 @@ function playing:draw()
         --     end
         -- end
 
-        if player.canPickUpItem then
-            local prompt = "Press E to pick up " .. (player.canPickUpItem.name or "Weapon")
-            love.graphics.setColor(1, 1, 1, 1)
-            love.graphics.print(prompt, player.x - 40, player.y - 50)
-        end
+        -- if player.canPickUpItem then
+        --     local prompt = "Press E to pick up " .. (player.canPickUpItem.name or "Weapon")
+        --     love.graphics.setColor(1, 1, 1, 1)
+        --     love.graphics.print(prompt, player.x - 40, player.y - 50)
+        -- end
 
         -- draw enemies
         for _, enemy in ipairs(enemies) do
@@ -1656,7 +1666,7 @@ function playing:draw()
         love.graphics.print("Rarity: " .. player.weapon.rarity, 20, 460)
         love.graphics.print("Knockback: " .. player.weapon.knockback, 20, 490)
         love.graphics.print("Weapon: " .. player.weapon.name, 20, 520)
-        love.graphics.print("Speed: " .. player.weapon.baseSpeed, 20, 550)
+        love.graphics.print("Speed: " .. player.weapon.speed, 20, 550)
         love.graphics.print("Fire rate: " .. player.weapon.fireRate, 20, 580)
         love.graphics.print("Damage: " .. player.weapon.damage, 20, 610)
         love.graphics.print("Cooldown: " .. string.format("%.2f", player.weapon.cooldown.time), 20, 640)
@@ -1714,11 +1724,12 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
             w.weaponType,
             w.rarity,
             w.baseSpeed,
-            w.fireRate,
+            w.baseFireRate,
             w.projectileClass,
             w.baseDamage,
             w.knockback,
-            w.level
+            w.level,
+            w.id
         )
     end
 

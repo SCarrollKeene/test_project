@@ -6,8 +6,57 @@ local Utils = {}
 -- create and require Utils in ..blob1.health..
 -- maintainability and reduce redundancy
 
-function Utils.isSameWeaponAndRarity(weaponA, weaponB)
-    return weaponA.name == weaponB.name and (weaponA.rarity or "common"):lower() == (weaponB.rarity or "common"):lower()
+-- Weighted rarity definition
+local RARITY_WEIGHTS = {
+  common = 55,
+  uncommon = 25,
+  rare = 12,
+  epic = 5,
+  legendary = 2,
+  exotic = 0.7,
+  mythic = 0.3
+}
+
+-- Optionally make this a field of Utils if you want to change weights at runtime
+Utils.RARITY_WEIGHTS = RARITY_WEIGHTS
+
+function Utils.pickRandomRarity()
+  local total = 0
+  for _, w in pairs(Utils.RARITY_WEIGHTS) do
+    total = total + w
+  end
+  local rnd = math.random() * total
+  local cumulative = 0
+  for k, w in pairs(Utils.RARITY_WEIGHTS) do
+    cumulative = cumulative + w
+    if rnd <= cumulative then return k end
+  end
+  return "common" -- fallback
+end
+
+function Utils.adjustRarityWeightsForLevel(level)
+  -- This simple version boosts rarer tiers after level 10, adjust as needed
+  Utils.RARITY_WEIGHTS.rare = level > 10 and 17 or 12 -- increase spawn chance
+  Utils.RARITY_WEIGHTS.epic = level > 10 and 8 or 5 -- else keep chances low for early game lvls
+  -- You can add other tuning or scaling here for late-game drops if desired
+end
+
+function Utils.isIdenticalWeapon(a, b)
+    return a and b and a.id == b.id
+end
+
+function Utils.isSameWeaponForLevelUp(a, b)
+    return a and b
+       and a.name == b.name
+       and a.weaponType == b.weaponType
+       and (a.rarity or "common"):lower() == (b.rarity or "common"):lower()
+end
+
+function Utils.isSameWeapon(weaponA, weaponB)
+    return weaponA and weaponB 
+    and weaponA.name == weaponB.name
+    and weaponA.weaponType == weaponB.weaponType
+    and (weaponA.rarity or "common"):lower() == (weaponB.rarity or "common"):lower()
 end
 
 -- used to copy rundata, make sure player inventory persists through room transitions

@@ -176,18 +176,19 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
         image = self.weapon.image,
         weaponType = self.weapon.weaponType,
         baseSpeed = self.weapon.baseSpeed,
-        fireRate = self.weapon.fireRate,
+        baseFireRate = self.weapon.baseFireRate,
         projectileClass = self.weapon.projectileClass,
         baseDamage = self.weapon.baseDamage,
         knockback = self.weapon.knockback,
-        level = self.weapon.level
+        level = self.weapon.level,
+        id = self.weapon.id
     })
     end
 
     -- if no weapon in inventory, create a new weapon and insert into inventory, please work
     if not self.weapon then
         -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
-        self.weapon = Weapon:new("Fire crystal", Weapon.image, "Crystal", "common", 200, 2, Projectile, 10, 0, 1)
+        self.weapon = Weapon:new("Fire Crystal", Weapon.image, "Crystal", "common", 200, 2, Projectile, 10, 0, 1)
     end
 
     if #self.inventory == 0 then
@@ -197,11 +198,12 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             weaponType = self.weapon.weaponType,
             rarity = self.weapon.rarity,
             baseSpeed = self.weapon.baseSpeed,
-            fireRate = self.weapon.fireRate,
+            baseFireRate = self.weapon.baseFireRate,
             projectileClass = self.weapon.projectileClass,
             baseDamage = self.weapon.baseDamage,
             knockback = self.weapon.knockback,
-            level = self.weapon.level
+            level = self.weapon.level,
+            id = self.weapon.id,
         })
         self.equippedSlot = 1
     end
