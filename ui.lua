@@ -30,31 +30,39 @@ function UI.drawWeaponComparison(current, candidate)
         love.graphics.setColor(1, 1, 1, 1)
 
         -- Distinguish between actual and base damage
-        local dmgLabel, dmgValue, speedLabel, speedValue, fireRateLabel, fireRateValue
-        if isEquipped then
-            dmgLabel = "Current Dmg: "
-            dmgValue = tostring(weapon.damage)
-            speedLabel = "Current speed: "
-            speedValue = tostring(weapon.speed or "??")
-            fireRateLabel = "Current rate: "
-            fireRateValue = tostring(weapon.fireRate or "??")
-        else
-            -- dmgLabel = "Base Dmg: "
-            -- dmgValue = tostring(weapon.baseDamage)
-            -- speedLabel = "Base speed: "
-            -- speedValue = tostring(weapon.baseSpeed or "??")
-            -- fireRateLabel = "Base rate: "
-            -- fireRateValue = tostring(weapon.baseFireRate )
-            dmgLabel = "Current Dmg: "
-            dmgValue = tostring(weapon.damage)
-            speedLabel = "Current speed: "
-            speedValue = tostring(weapon.speed or "??")
-            fireRateLabel = "Current rate: "
-            fireRateValue = tostring(weapon.fireRate or "??")
-        end
-        love.graphics.print(dmgLabel .. dmgValue, x + 10, y + 66)
-        love.graphics.print(fireRateLabel .. fireRateValue, x + 10, y + 96)
-        love.graphics.print(speedLabel .. speedValue, x + 10, y + 126)
+        -- local dmgLabel, dmgValue, speedLabel, speedValue, fireRateLabel, fireRateValue
+        -- if isEquipped then
+        --     dmgLabel = "Current Dmg: "
+        --     dmgValue = tostring(weapon.damage)
+        --     speedLabel = "Current speed: "
+        --     speedValue = tostring(weapon.speed or "??")
+        --     fireRateLabel = "Current rate: "
+        --     fireRateValue = tostring(weapon.fireRate or "??")
+        -- else
+        --     -- dmgLabel = "Base Dmg: "
+        --     -- dmgValue = tostring(weapon.baseDamage)
+        --     -- speedLabel = "Base speed: "
+        --     -- speedValue = tostring(weapon.baseSpeed or "??")
+        --     -- fireRateLabel = "Base rate: "
+        --     -- fireRateValue = tostring(weapon.baseFireRate )
+        --     dmgLabel = "Current Dmg: "
+        --     dmgValue = tostring(weapon.damage)
+        --     speedLabel = "Current speed: "
+        --     speedValue = tostring(weapon.speed or "??")
+        --     fireRateLabel = "Current rate: "
+        --     fireRateValue = tostring(weapon.fireRate or "??")
+        -- end
+        -- love.graphics.print(dmgLabel .. dmgValue, x + 10, y + 66)
+        -- love.graphics.print(fireRateLabel .. fireRateValue, x + 10, y + 96)
+        -- love.graphics.print(speedLabel .. speedValue, x + 10, y + 126)
+
+        local dmgValue = tostring(weapon.damage)
+        local fireRateValue = tostring(weapon.fireRate)
+        local speedValue = tostring(weapon.speed)
+
+        love.graphics.print("Damage: " .. dmgValue, x + 10, y + 66)
+        love.graphics.print("Fire rate: " .. fireRateValue, x + 10, y + 96)
+        love.graphics.print("Speed: " .. speedValue, x + 10, y + 126)
     end
 
     -- Draw current weapon (left) and candidate (right)

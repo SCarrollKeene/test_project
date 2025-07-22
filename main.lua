@@ -1677,9 +1677,24 @@ function playing:draw()
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)
     love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel - 1), 1100, 700)
 
-    -- weapon compare draw logic
+    -- weapon comparison draw logic
     if selectedItemToCompare then
-        UI.drawWeaponComparison(player.weapon, selectedItemToCompare)
+        -- weapon instance for comparison
+        local candidateWeapon = Weapon:new(
+        selectedItemToCompare.name,
+        selectedItemToCompare.image,
+        selectedItemToCompare.weaponType,
+        selectedItemToCompare.rarity,
+        selectedItemToCompare.baseSpeed,
+        selectedItemToCompare.baseFireRate,
+        selectedItemToCompare.projectileClass,
+        selectedItemToCompare.baseDamage,
+        selectedItemToCompare.knockback,
+        selectedItemToCompare.level,
+        selectedItemToCompare.id
+    )
+
+    UI.drawWeaponComparison(player.weapon, candidateWeapon)
     end
 end
 
