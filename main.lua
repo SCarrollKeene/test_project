@@ -459,7 +459,7 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
     -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
     local newEnemy = Enemy:new(
         world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
-        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, img)
+        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, 0, img)
 
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
@@ -706,11 +706,22 @@ function love.load()
 
     world:setCallbacks(beginContact, nil, nil, nil) -- We only need beginContact for this
 
-    -- Preload 100 enemies into enemy pool
-    for i = 1, 100 do
+    -- declare for enemy pool use
+    local enemyImageCache = enemyImageCache or {} -- Use the provided cache or an empty table
+
+    -- Preload all enemy images
+    for _, blob in ipairs(randomBlobs) do
+        if not enemyImageCache[blob.spritePath] then
+            enemyImageCache[blob.spritePath] = love.graphics.newImage(blob.spritePath)
+        end
+    end
+
+    -- Preload 200 enemies into enemy pool
+    for i = 1, 200 do
         local randomIndex = math.random(1, #randomBlobs) -- Pick a random blob type
         local randomBlob = randomBlobs[randomIndex] -- Get a random blob configuration
-        local e = Enemy:new(world, randomBlob.name, 0, 0, 32, 32, nil, nil, 100, 50, 10, nil)
+        local img = enemyImageCache[randomBlob.spritePath]
+        local e = Enemy:new(world, randomBlob.name, 0, 0, 32, 32, nil, nil, randomBlob.health, randomBlob.speed, randomBlob.baseDamage, 0, img)
         e.isDead = true -- Mark as reusable
         table.insert(enemyPool, e)
     end

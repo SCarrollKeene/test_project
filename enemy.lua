@@ -137,6 +137,7 @@ end
 -- Line of Sight (LOS), navigate around obstacles, check for walls/gaps, example: MP_potential_step (like in Gamemaker) or tile based pathfinding
 
 function Enemy:reset(x, y, blob, img)
+    assert(img, "[ENEMY:RESET] Tried to reset enemy with nil image!")
     self.x = x
     self.y = y
     self.name = blob.name
