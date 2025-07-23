@@ -805,6 +805,10 @@ end
 -- Entering playing gamestate
 function playing:enter(previous_state, world, enemyImageCache, mapCache)
     Debug.debugPrint("[PLAYING:ENTER] Entered playing gamestate")
+
+    -- clear dropped items
+    droppedItems = {}
+
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
@@ -1736,12 +1740,14 @@ end
 
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     Debug.debugPrint("[SAFEROOM:ENTER] entered saferoom gamestate")
+
+    -- clear dropped items
+    droppedItems = {}
+
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
     self.currentMap = currentMap
-
-    Debug.debugPrint("Entering safe room")
 
     -- stop projectile sound while in the saferoom
     if sounds and sounds.blip then
