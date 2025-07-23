@@ -1,3 +1,5 @@
+local Debug = require("game_debug")
+
 local Cooldown = {}
 -- Cooldown.__index = Cooldown 
 
@@ -14,7 +16,7 @@ end
 
 function Cooldown:update(dt)
     self.time = math.max(self.time - dt, 0)
-    print("DEBUG: update time:", self.time)
+    Debug.debugPrint("DEBUG: update time:", self.time)
 end
 
 function Cooldown:isReady()

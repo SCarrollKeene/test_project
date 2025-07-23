@@ -2,6 +2,7 @@ local Weapon = require("weapon")
 local Loot = require("loot")
 local Projectile = require("projectile")
 local Utils = require("utils")
+local Debug = require("game_debug")
 local anim8 = require("libraries/anim8")
 local wf = require("libraries/windfield")
 local flashShader = require("libraries/flashshader")
@@ -69,7 +70,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
         local success, image_or_error = pcall(function() return love.graphics.newImage(sprite_path) end)
         if success then
             self.spriteSheet = image_or_error
-            print("Player spritesheet loaded successfully from:", sprite_path)
+            Debug.debugPrint("Player spritesheet loaded successfully from:", sprite_path)
             
             -- Calculate frame dimensions (like enemy.lua does)
             -- Based on mage-NESW.jpg, it appears to be 3 columns (frames per direction) and 4 rows (directions)
@@ -78,7 +79,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             
             self.width = frameWidth
             self.height = frameHeight
-            print(string.format("Player frame dimensions set: W=%.1f, H=%.1f", self.width, self.height))
+            Debug.debugPrint(string.format("Player frame dimensions set: W=%.1f, H=%.1f", self.width, self.height))
             
             -- Create anim8 grid (following enemy.lua pattern exactly)
             self.grid = anim8.newGrid(frameWidth, frameHeight, 
@@ -94,31 +95,31 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
         -- self.animations.dash = anim8.newAnimation(self.dashGrid('1-6', 1), 0.2, 'pauseAtEnd') -- adjust speed for 6 frames 
 
         -- Add print statements to check if each animation object was created
-        print("Idle animation object:", tostring(self.animations.idle))
-        print("Up animation object:", tostring(self.animations.up))
-        print("Down animation object:", tostring(self.animations.down))
-        print("Left animation object:", tostring(self.animations.left))
-        print("Right animation object:", tostring(self.animations.right))
+        Debug.debugPrint("Idle animation object:", tostring(self.animations.idle))
+        Debug.debugPrint("Up animation object:", tostring(self.animations.up))
+        Debug.debugPrint("Down animation object:", tostring(self.animations.down))
+        Debug.debugPrint("Left animation object:", tostring(self.animations.left))
+        Debug.debugPrint("Right animation object:", tostring(self.animations.right))
         -- etc.
 
         self.currentAnimation = self.animations.idle
             if self.currentAnimation then
-                print("Player animations created. Default animation set to 'idle'.")
+                Debug.debugPrint("Player animations created. Default animation set to 'idle'.")
             else
-                print("Warning: Could not set default animation 'idle'. Check animation definition.")
+                Debug.debugPrint("Warning: Could not set default animation 'idle'. Check animation definition.")
             end
             else
-                print(string.format("ERROR: Failed to load player spritesheet from path '%s'. Error: %s", sprite_path, tostring(image_or_error)))
+                Debug.debugPrint(string.format("ERROR: Failed to load player spritesheet from path '%s'. Error: %s", sprite_path, tostring(image_or_error)))
             end
             else
-                print("DEBUG: No spritesheet path provided for player:", self.name)
+                Debug.debugPrint("DEBUG: No spritesheet path provided for player:", self.name)
     end
      -- Load dash sprite sheet
     if dash_sprite_path then
         local success, image_or_error = pcall(function() return love.graphics.newImage(dash_sprite_path) end)
         if success then
             self.dashSpriteSheet = image_or_error
-            print("Dash spritesheet loaded successfully from:", dash_sprite_path)
+            Debug.debugPrint("Dash spritesheet loaded successfully from:", dash_sprite_path)
             
             -- Set up dash animation (6 frames, 1 row)
             local dashFrameWidth = self.dashSpriteSheet:getWidth() / 6
@@ -128,7 +129,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             self.animations.dash = anim8.newAnimation(self.dashGrid('1-6', 1), 0.08)
             
         else
-            print("ERROR: Failed to load dash spritesheet:", tostring(image_or_error))
+            Debug.debugPrint("ERROR: Failed to load dash spritesheet:", tostring(image_or_error))
         end
     end
     
@@ -137,7 +138,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
         local success, image_or_error = pcall(function() return love.graphics.newImage(death_sprite_path) end)
         if success then
             self.soulsplodeSheet = image_or_error
-            print("Death spritesheet loaded successfully from:", death_sprite_path)
+            Debug.debugPrint("Death spritesheet loaded successfully from:", death_sprite_path)
             
             -- Set up death animation (8 frames, 1 row)
             local deathFrameWidth = self.soulsplodeSheet:getWidth() / 8
@@ -147,7 +148,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             self.animations.death = anim8.newAnimation(self.deathGrid('1-8', 1), 0.08, 'pauseAtEnd')
             
         else
-            print("ERROR: Failed to load death spritesheet:", tostring(image_or_error))
+            Debug.debugPrint("ERROR: Failed to load death spritesheet:", tostring(image_or_error))
         end
     end
 
@@ -252,7 +253,7 @@ function Player:onLevelUp()
         popupManager:add(string.format("+%d Speed (%.1f%%)", speedIncrease, speedPct), px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
         popupManager:add(string.format("+%d DMG (%.1f%%)", damageIncrease, damagePct), px, py - offset, {1, 0.6, 0.2, 1}, 1.0, nil, 0.5)
     else
-        print("[PLAYER LEVEL UP POPUP] PopupManager is nil in Player:onLevepUp()")
+        Debug.debugPrint("[PLAYER LEVEL UP POPUP] PopupManager is nil in Player:onLevepUp()")
     end
 end
 
@@ -282,11 +283,11 @@ function Player:update(dt, mapW, mapH)
         if self.currentAnimation ~= self.animations.dash then
             self.currentAnimation = self.animations.dash
             self.currentAnimation:gotoFrame(1)
-            print("----------SWITCH TO DASH ANIMATION----------")
+            Debug.debugPrint("----------SWITCH TO DASH ANIMATION----------")
         end
     elseif self.currentAnimation == self.animations.dash and not self.isDashing then
         self.currentAnimation = self.animations.idle
-        print("----------SWITCH TO IDLE ANIMATION----------")
+        Debug.debugPrint("----------SWITCH TO IDLE ANIMATION----------")
     end
 
     if self.isDead then
@@ -309,7 +310,7 @@ function Player:update(dt, mapW, mapH)
 
     if self.isInvincible then
         self.invincibleTimer = self.invincibleTimer - dt
-         print(string.format("[INVINCIBLE] Timer: %.2f/%s", 
+         Debug.debugPrint(string.format("[INVINCIBLE] Timer: %.2f/%s", 
             self.invincibleTimer, 
             tostring(self.invincibleDuration)))
         if self.invincibleTimer <= 0 then
@@ -381,7 +382,7 @@ function Player:move(dt)
     if isMoving == true then
         -- probably move entire movement logic in here
         local isMoving = true
-        print('Player is moving.')
+        Debug.debugPrint('Player is moving.')
     end
 
     -- handle the speed up that happens when moving diagnolly, idk if this actually works yet lol 6/1/25
@@ -390,28 +391,28 @@ function Player:move(dt)
         local diagonalMovement = 1 / math.sqrt(2)
         self.xVel = self.xVel * diagonalMovement
         self.yVel = self.yVel * diagonalMovement
-        print('DIAGONAL MOVEMENT: ' .. diagonalMovement) -- it's working, speed is .7071
+        Debug.debugPrint('DIAGONAL MOVEMENT: ' .. diagonalMovement) -- it's working, speed is .7071
     end
 
     -- utilizing velocity on the collider
     if self.collider then
         self.collider:setLinearVelocity(self.xVel, self.yVel)
-        print('Player collider is set!')
+        Debug.debugPrint('Player collider is set!')
     else
-        print('DEBUG: Player collider is NIL in Player:move()!')
+        Debug.debugPrint('DEBUG: Player collider is NIL in Player:move()!')
     end
 
     -- Animation switching (following enemy.lua pattern)
     if isMoving and newAnimation and self.currentAnimation ~= newAnimation then
         self.currentAnimation = newAnimation
-        print("Switched to animation:", newAnimation == self.animations.up and "up" or 
+        Debug.debugPrint("Switched to animation:", newAnimation == self.animations.up and "up" or 
             newAnimation == self.animations.down and "down" or
             newAnimation == self.animations.left and "left" or
             newAnimation == self.animations.right and "right" or "unknown" or
             newAnimation == self.animations.dash and "space" )
     elseif not isMoving and self.animations and self.animations.idle and self.currentAnimation ~= self.animations.idle then
         self.currentAnimation = self.animations.idle
-        print("Player switched to idle.")
+        Debug.debugPrint("Player switched to idle.")
     end
 end
 
@@ -553,7 +554,7 @@ end
 
 -- take damage, deal damage and direction
 function Player:takeDamage(dmg, metaData, playerScore)
-    print("DAMAGE TRIGGERED")
+    Debug.debugPrint("DAMAGE TRIGGERED")
     if self.isDead or self.isInvincible then return end -- no more damage taken if dead
 
     if triggerDamageFlash then triggerDamageFlash() end
@@ -567,8 +568,8 @@ function Player:takeDamage(dmg, metaData, playerScore)
     self.invincibleTimer = self.invincibleDuration
 
     self.health = self.health - dmg
-    print(string.format("%s took %.2f damage. Health is now %.2f", self.name, dmg, self.health))
-    print(string.format("Invincible: %s | Timer: %.2f", tostring(self.invincible), self.invincibleTimer))
+    Debug.debugPrint(string.format("%s took %.2f damage. Health is now %.2f", self.name, dmg, self.health))
+    Debug.debugPrint(string.format("Invincible: %s | Timer: %.2f", tostring(self.invincible), self.invincibleTimer))
     -- Utils.takeDamage(self, dmg)
     if self.health <= 0 then
         self:die(metaData, playerScore)
@@ -608,17 +609,17 @@ function Player:die(metaData, playerScore, killer)
     self.isFlashing = false
 
     Utils.die(self)
-    print("You are dead!/nGame Over.")
+    Debug.debugPrint("You are dead!/nGame Over.")
 
     -- remove from world and/or active enemy table
     if self.collider then
-        print("Attempting to destroy collider for: " .. self.name)
+        Debug.debugPrint("Attempting to destroy collider for: " .. self.name)
         self.collider:setLinearVelocity(0, 0) -- stops collider from moving if player dies while moving
         self.collider:destroy()
         self.collider = nil -- set collider to nil
-        print(self.name .. " collider is destroyed!")
+        Debug.debugPrint(self.name .. " collider is destroyed!")
     else
-        print(self.name .. "had no collider or it was already nil.")
+        Debug.debugPrint(self.name .. "had no collider or it was already nil.")
     end
 
     -- death animation and effects go here
@@ -667,7 +668,7 @@ end
 
 function Player:triggerGameOver()
     -- Transition to game over screen, restart, or respawn, etc
-    print("Game Over! Final Score: " .. playerScore)
+    Debug.debugPrint("Game Over! Final Score: " .. playerScore)
     -- Add in game over logic
 end
 

@@ -116,9 +116,9 @@ end
 function incrementPlayerScore(points)
     if type(points) == "number" then
         playerScore = playerScore + points
-        print("SCORE: Player score increased by", points, ". New score:", playerScore)
+        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", playerScore)
     else
-        print("ERROR: Invalid points value passed to incrementPlayerScore:", points)
+        Debug.debugPrint("ERROR: Invalid points value passed to incrementPlayerScore:", points)
     end
 end
 _G.incrementPlayerScore = incrementPlayerScore -- Make it accessible globally for Utils.lua
@@ -175,7 +175,7 @@ function love.keypressed(key)
     -- fire crystal level up test
     if key == "z" then
         if not player or player.isDead then
-            print("Cannot drop item: player is nil or dead")
+            Debug.debugPrint("Cannot drop item: player is nil or dead")
             return
         end
         Utils.adjustRarityWeightsForLevel(player.level)
@@ -235,11 +235,11 @@ function love.keypressed(key)
     --     local dropX = player.x + math.cos(angle) * offset
     --     local dropY = player.y + math.sin(angle) * offset
     --     local drop = Loot.createWeaponDropFromInstance(player.weapon, dropX, dropY)
-    --     print("Dropped items count:", #droppedItems)
+    --     Debug.debugPrint("Dropped items count:", #droppedItems)
     --     -- local drop = Loot.createWeaponDropFromInstance(player.weapon, player.x, player.y)
     --     table.insert(droppedItems, drop)
     --     player.weapon = nil -- Remove weapon from player
-    --     -- print("Dropping weapon at:", dropX, dropY, "Image:", tostring(player.weapon.image))
+    --     -- Debug.debugPrint("Dropping weapon at:", dropX, dropY, "Image:", tostring(player.weapon.image))
     -- end
 
     if key == "space" and not player.isDead then
@@ -262,7 +262,7 @@ function love.keypressed(key)
     -- Particle debug toggle
     if key == "p" then
         Debug.traceParticles = not Debug.traceParticles
-        print("[PARTICLE TRACE]: ", Debug.traceParticles and "ON" or "OFF")
+        Debug.debugPrint("[PARTICLE TRACE]: ", Debug.traceParticles and "ON" or "OFF")
     end
 
     if key == "f1" then  -- Stress test
@@ -300,28 +300,28 @@ function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, p
     baseY = y,
     hoverTime = 0
   } 
-  print("[SPAWN WEAPON DROP] Name: ".. weaponDrop.name .. " weaponType: " .. weaponDrop.weaponType .."speed: ".. weaponDrop.baseSpeed .. " fire rate: " .. weaponDrop.fireRate .. " base damage: " .. weaponDrop.baseDamage)
-    print("Created item particle:", weaponDrop.particle)
-   --print("itemDropSystems count after insert:", #itemDropSystems)
+  Debug.debugPrint("[SPAWN WEAPON DROP] Name: ".. weaponDrop.name .. " weaponType: " .. weaponDrop.weaponType .."speed: ".. weaponDrop.baseSpeed .. " fire rate: " .. weaponDrop.fireRate .. " base damage: " .. weaponDrop.baseDamage)
+    Debug.debugPrint("Created item particle:", weaponDrop.particle)
+   --Debug.debugPrint("itemDropSystems count after insert:", #itemDropSystems)
 
   --weaponDrop.particle = Particle.itemIndicator()
   weaponDrop.particle = Particle.getItemIndicator(weaponDrop.rarity)
-    -- print("Created item particle:", weaponDrop.particle)
-    -- print("itemDropSystems count after insert:", #itemDropSystems)
+    -- Debug.debugPrint("Created item particle:", weaponDrop.particle)
+    -- Debug.debugPrint("itemDropSystems count after insert:", #itemDropSystems)
     assert(weaponDrop.particle, "[FAILED] to create item indicator particle")
     if weaponDrop.particle then
         weaponDrop.particle:setPosition(weaponDrop.x, weaponDrop.y)
         weaponDrop.particle:start()
-        print("[WEAPONDROP PARTICLE] Started particle at position:", weaponDrop.x, weaponDrop.y)
+        Debug.debugPrint("[WEAPONDROP PARTICLE] Started particle at position:", weaponDrop.x, weaponDrop.y)
         -- table.insert(globalParticleSystems, weaponDrop.particle)
         -- table.insert(itemDropSystems, weaponDrop.particle)
-        print("[WEAPONDROP PARTICLE] Created item particle:", weaponDrop.particle)
+        Debug.debugPrint("[WEAPONDROP PARTICLE] Created item particle:", weaponDrop.particle)
         weaponDrop.particle:emit(10) -- initial burst on drop
         table.insert(globalParticleSystems, { ps = weaponDrop.particle, type = "itemIndicator", radius = 24 } ) -- context-based pooling
 
     end
   table.insert(droppedItems, weaponDrop)
-  print("[Dropped items table] contains: ", #droppedItems .. "items.")
+  Debug.debugPrint("[Dropped items table] contains: ", #droppedItems .. "items.")
   return weaponDrop -- reference to new weapondrop
 end
 
@@ -386,7 +386,7 @@ function updateDroppedItems(dt)
 end
 
 function spawnRandomEnemy(x, y, cache, enemyTypes)
-    print("[FROM SPAWNRANDOMENEMY POOL] Total enemies:", #enemyPool) -- debug preloaded pool status
+    Debug.debugPrint("[FROM SPAWNRANDOMENEMY POOL] Total enemies:", #enemyPool) -- debug preloaded pool status
     local state = Gamestate.current()
 
     -- 6/20/25 no spawning in safe rooms!
@@ -417,7 +417,7 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
 
     -- fall back to all types if filtered list is empty
     if #availableBlobs == 0 then
-        print("[SPAWNRANDOMENEMY] No valid enemy types to spawn, using all random blobs.")
+        Debug.debugPrint("[SPAWNRANDOMENEMY] No valid enemy types to spawn, using all random blobs.")
         availableBlobs = randomBlobs -- Use all blobs if none match the filter
     end
 
@@ -428,7 +428,7 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
     -- Check if the image is already cached
     local img = enemyCache[randomBlob.spritePath]
      if not img then
-        print("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
+        Debug.debugPrint("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
         return -- Exit if image is missing
     end
 
@@ -443,7 +443,7 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
             e.isDead = false
             e.toBeRemoved = false
             table.insert(enemies, e)
-            print("[POOL REUSE] Reactivating as:", randomBlob.name)
+            Debug.debugPrint("[POOL REUSE] Reactivating as:", randomBlob.name)
             return
         end
     end
@@ -470,10 +470,10 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
     table.insert(enemyPool, newEnemy)
 
     newEnemy.spriteIndex = randomIndex -- Store sprite index for rendering
-    print("[NEW ENEMY from Spawn Random Enemy] Created:", randomBlob.name)
+    Debug.debugPrint("[NEW ENEMY from Spawn Random Enemy] Created:", randomBlob.name)
 
     -- debug
-    print(string.format("[SPAWN] Spawned at: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))
+    Debug.debugPrint(string.format("[SPAWN] Spawned at: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))
 
     -- if wave.boss then
     --     spawnBossEnemy()
@@ -490,14 +490,14 @@ function spawnPortal()
     local portalX = mapW / 2
     local portalY = mapH / 2
     portal = Portal:new(world, portalX, portalY)
-    print("A portal has spawned! Traverse to " ..runData.currentRoom.. " room.")
+    Debug.debugPrint("A portal has spawned! Traverse to " ..runData.currentRoom.. " room.")
 end
 
 function roomComplete()
     runData.cleared = true
     pendingPortalSpawn = true
     spawnPortal() -- TODO: maybe, revisit later 6/20/25
-    print("Room " ..runData.currentRoom.. " completed!")
+    Debug.debugPrint("Room " ..runData.currentRoom.. " completed!")
 end
 
 function love.load()
@@ -530,19 +530,19 @@ function love.load()
 
     -- collision classes must load into the world first, per order of operations/how content is loaded, I believe
     world:addCollisionClass('player', {ignores = {}})
-    print("DEBUG: main.lua: Added collision class - " .. 'player')
+    Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'player')
     -- stops enemies from colliding/getting stuck on one another
     world:addCollisionClass('enemy', {ignores = {'enemy'}})
-    print("DEBUG: main.lua: Added collision class - " .. 'enemy')
+    Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'enemy')
     -- ignore enemy/enemy collider when dashing
     world:addCollisionClass('player_dashing', {ignores = {'enemy'}})
-    print("DEBUG: main.lua: Added collision class - " .. 'player_dashing')
+    Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'player_dashing')
     world:addCollisionClass('projectile', {ignores = {'projectile'}})
-    print("DEBUG: main.lua: Added collision class - " .. 'projectile')
+    Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'projectile')
     world:addCollisionClass('wall', {ignores = {}})
-    print("DEBUG: main.lua: Added collision class - " .. 'wall')
+    Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'wall')
     world:addCollisionClass('portal', {ignores = {}})
-    print("DEBUG: main.lua: Added collision class - " .. 'portal')
+    Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'portal')
     -- You can also define interactions here
 
     local mage_spritesheet_path = "sprites/mage-NESW.png"
@@ -552,7 +552,7 @@ function love.load()
     Weapon.loadAssets()
     player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
     local testImage = love.graphics.newImage("sprites/circle-particle.png")
-    print("Test image loaded:", testImage)
+    Debug.debugPrint("Test image loaded:", testImage)
 
     -- In love.load(), after first load:
     player.mage_spritesheet_path = mage_spritesheet_path
@@ -581,7 +581,7 @@ function love.load()
                 return -- exit if not player/enemy collision
             end
     
-            print(string.format("COLLISION: %s vs %s", a.type, b.type))
+            Debug.debugPrint(string.format("COLLISION: %s vs %s", a.type, b.type))
 
             -- Handle Player-Enemy interactions
             if player and not player.isDead then
@@ -651,7 +651,7 @@ function love.load()
             -- update when enemy can also launch projectiles 5/30/25
             if projectile and enemy and projectile.owner ~= enemy then
                 
-                --print(string.format("PLAYER-ENEMY COLLISION: Projectile (owner: %s, damage: %.2f) vs Enemy (%s, health: %.2f)",
+                --Debug.debugPrint(string.format("PLAYER-ENEMY COLLISION: Projectile (owner: %s, damage: %.2f) vs Enemy (%s, health: %.2f)",
                 -- (projectile.owner and projectile.owner.name) or "Unknown", projectile.damage, enemy.name, enemy.health))
                 
                 projectile:onHitEnemy(enemy) -- Projectile handles its collision consequence
@@ -765,7 +765,7 @@ end
 
 -- Entering playing gamestate
 function playing:enter(previous_state, world, enemyImageCache, mapCache)
-    print("[PLAYING:ENTER] Entered playing gamestate")
+    Debug.debugPrint("[PLAYING:ENTER] Entered playing gamestate")
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
@@ -864,14 +864,14 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     -- window coords
     -- player.x = 140
     -- player.y = love.graphics.getHeight() / 3
-    -- print("[Player collider] recreated at:", player.x, player.y)
+    -- Debug.debugPrint("[Player collider] recreated at:", player.x, player.y)
 
     local mapW = currentMap.width * currentMap.tilewidth
     local mapH = currentMap.height * currentMap.tileheight
     -- map coords
     player.x = mapW / 4
     player.y = mapH / 3
-    --print("[Player collider] recreated at map coords:", mapW, mapY)
+    --Debug.debugPrint("[Player collider] recreated at map coords:", mapW, mapY)
 
     if player.collider then
         player.collider:setPosition(player.x, player.y)
@@ -910,7 +910,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     local toDrawIndividually = {} -- Table to hold enemies that need to be drawn individually (flashing or fallback)
 
     local individualCount = #toDrawIndividually
-    print("[DRAW DEBUG]: Individual enemies to draw:", individualCount)
+    Debug.debugPrint("[DRAW DEBUG]: Individual enemies to draw:", individualCount)
 
     for _, enemy in ipairs(enemies) do
         if not enemy.toBeRemoved and enemy.spriteSheet and enemy.currentAnimation then
@@ -953,16 +953,16 @@ end
 
 function playing:leave()
     -- stop music, clear temp tables/objects, destroy portals, etc
-    print("[PLAYING:LEAVE] playing leave called")
+    Debug.debugPrint("[PLAYING:LEAVE] playing leave called")
 
-    print("Walls before cleanup:", #wallColliders)
+    Debug.debugPrint("Walls before cleanup:", #wallColliders)
     for _, collider in ipairs(wallColliders) do
         if not collider:isDestroyed() then
         collider:destroy()
         end
     end
     wallColliders = {}
-    print("Walls after cleanup:", #wallColliders)
+    Debug.debugPrint("Walls after cleanup:", #wallColliders)
 
     -- clear particles
     globalParticleSystems = {}
@@ -984,7 +984,7 @@ function playing:leave()
 
     -- reset flags
     pendingRoomTransition = false
-    print("Leaving playing state, cleaning up resources.")
+    Debug.debugPrint("Leaving playing state, cleaning up resources.")
 
     -- copy current weapon stats to runData
     player:updateEquipmentInventory()
@@ -1006,7 +1006,7 @@ function love.update(dt)
 end
 
 function playing:update(dt)
-    print("playing:update")
+    Debug.debugPrint("playing:update")
     -- frame count
     local frameCount = self.frameCount
     self.frameCount = (self.frameCount or 0) + 1
@@ -1131,7 +1131,7 @@ end
     -- old enemy update loop
     -- for i, enemy in ipairs(enemies) do
     --     enemy:update(dt) -- update handles movement towards its target, the player
-    --    print("DEBUG: SUCCESS, Enemies table size NOW:", #enemies)
+    --    Debug.debugPrint("DEBUG: SUCCESS, Enemies table size NOW:", #enemies)
     -- end
 
     -- >> START OF NEW LOOP ENEMY UPDATE LOGIC 7/1/25 <<
@@ -1177,9 +1177,9 @@ end
 
     if #enemies == 0 and not portal then
         spawnPortal()
-        print("DEBUG: No enemies in table. Attempting to spawn portal.")
+        Debug.debugPrint("DEBUG: No enemies in table. Attempting to spawn portal.")
     else
-        print("DEBUG: Attempting to update:", #enemies, "enemies in table.")
+        Debug.debugPrint("DEBUG: Attempting to update:", #enemies, "enemies in table.")
     end
 
     -- -- if particle systems exists, update it
@@ -1196,7 +1196,7 @@ end
     --         Particle.returnItemIndicator(ps)
     --         Particle.returOnImpactEffect(ps)
     --         Particle.returnOnDeathEffect(ps)
-    --         print("REMOVED INACTIVE PARTICLE SYSTEM")
+    --         Debug.debugPrint("REMOVED INACTIVE PARTICLE SYSTEM")
     --     end
     -- end
 
@@ -1204,7 +1204,7 @@ end
     for i = #globalParticleSystems, 1, -1 do
         local entry = globalParticleSystems[i]
         if type(entry) ~= "table" or not entry.ps then
-            print("[ERROR] Invalid entry in globalParticleSystems at index", i, entry)
+            Debug.debugPrint("[ERROR] Invalid entry in globalParticleSystems at index", i, entry)
             table.remove(globalParticleSystems, i)
         end
     end
@@ -1214,7 +1214,7 @@ end
         local entry = globalParticleSystems[i]   -- entry is a table: { ps = ..., type = ... }
         local ps = entry.ps
         if not entry.ps then
-            print("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
+            Debug.debugPrint("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
             table.remove(globalParticleSystems, i)
         else
             ps:update(dt)
@@ -1238,7 +1238,7 @@ end
         elseif entry.type == "portalGlow" then
             Particle.returnPortalGlow(ps)
         end
-        print("REMOVED INACTIVE PARTICLE SYSTEM")
+        Debug.debugPrint("REMOVED INACTIVE PARTICLE SYSTEM")
     end
 end
 
@@ -1250,7 +1250,7 @@ end
         for i = 1, toRemove do
             table.remove(globalParticleSystems, 1)
         end
-        print("Culled", toRemove, "Particle systems")
+        Debug.debugPrint("Culled", toRemove, "Particle systems")
     end
 
     -- trying to make particle pool management performant
@@ -1277,7 +1277,7 @@ end
         end
 
         if not player.isDead and love.mouse.isDown(1) then
-            print("DEBUG: left mouse click detected")
+            Debug.debugPrint("DEBUG: left mouse click detected")
             local mx, my = cam:worldCoords(love.mouse.getX(), love.mouse.getY())
             local angle = math.atan2(
                 -- love.mouse.getY() - player.y, 
@@ -1285,7 +1285,7 @@ end
                 my - player.y, 
                 mx - player.x
             )
-            print("DEBUG: calculated angle: ", angle)
+            Debug.debugPrint("DEBUG: calculated angle: ", angle)
 
             -- REWRITE TIME FOR THE 3rd TIME, I think..
             -- local weapon = player.weaponSlots[player.equippedSlot]
@@ -1297,27 +1297,27 @@ end
                 -- create projectiles with angle and speed
                 local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player, player.weapon.knockback)
 
-               --print("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
+               --Debug.debugPrint("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
                 if newProjectile then
-                    print("Projectile created at x", newProjectile.x, "y:", newProjectile.y)
+                    Debug.debugPrint("Projectile created at x", newProjectile.x, "y:", newProjectile.y)
                 table.insert(projectiles, newProjectile)
-                    print("DEBUG: SUCCESS, Projectile table size NOW:", #projectiles)
+                    Debug.debugPrint("DEBUG: SUCCESS, Projectile table size NOW:", #projectiles)
                 else
-                    print("DEBUG: FAILED, returned NIL, Cooldown might be active or other issue in shoot.")
+                    Debug.debugPrint("DEBUG: FAILED, returned NIL, Cooldown might be active or other issue in shoot.")
                 end
             end
         end
     end
 
     if #projectiles == 0 then
-        print("DEBUG: No projectiles in table to update.")
+        Debug.debugPrint("DEBUG: No projectiles in table to update.")
     else
-        print("DEBUG: Attempting to update", #projectiles, "projectiles.")
+        Debug.debugPrint("DEBUG: Attempting to update", #projectiles, "projectiles.")
     end
 
     -- Update projectiles so that they move over time, not working bro... 5/25/25 it's working now, logic was not in the right place
     for i = #projectiles, 1, -1 do
-        print("DEBUG: Accessing projectile at index", i, "to call update.")
+        Debug.debugPrint("DEBUG: Accessing projectile at index", i, "to call update.")
                 local p = projectiles[i]
                 p:update(dt) -- proj position update
                 if p.toBeRemoved then
@@ -1331,12 +1331,12 @@ end
                     end
                         table.remove(projectiles, i)
                     elseif p.toBeRemoved then -- Check flag set in beginContact
-                        -- print("DEBUG: Removing projectile index:", i)
+                        -- Debug.debugPrint("DEBUG: Removing projectile index:", i)
                         -- Collider already destroyed in beginContact if it hit something
                         table.remove(projectiles, i)
                     end
                 end
-            print("DEBUG: Projectile at index", i, "is nil or has no update method.")
+            Debug.debugPrint("DEBUG: Projectile at index", i, "is nil or has no update method.")
     end
 
     -- after collision handling
@@ -1346,7 +1346,7 @@ end
         if e and e.toBeRemoved then -- Check the flag set in Enemy:die()
             -- Collider should have been destroyed in Enemy:die()
             table.remove(enemies, i)
-            print("DEBUG: Removed " .. (e.name or "enemy") .. " from table.")
+            Debug.debugPrint("DEBUG: Removed " .. (e.name or "enemy") .. " from table.")
             -- check if room is cleared and turn room cleared flag to true
             if #enemies == 0 and not runData.cleared then
                 roomComplete(runData.currentRoom)
@@ -1382,7 +1382,7 @@ end
 
         if p.isDestroyed then
             table.remove(projectiles, i)
-            print("DEBUG: Removed projectile at index", i, "from projectiles table.")
+            Debug.debugPrint("DEBUG: Removed projectile at index", i, "from projectiles table.")
         end
     end
 
@@ -1419,7 +1419,7 @@ function love.draw()
 end
 
 function playing:draw()
-    print("playing:draw")
+    Debug.debugPrint("playing:draw")
 
     -- Calculate camera offset and scale
     local camX, camY = cam:position()
@@ -1462,7 +1462,7 @@ function playing:draw()
         
         -- draw drop weapon/item particles, not necessary for pool
         -- Particle.drawItemDropParticles()
-        -- print("Drawing item drop particles, count:", #itemDropSystems)
+        -- Debug.debugPrint("Drawing item drop particles, count:", #itemDropSystems)
 
         -- draw droppable loot/items particles
         -- for _, item in ipairs(droppedItems) do
@@ -1510,16 +1510,16 @@ function playing:draw()
 
                 if Utils.isAABBInView(cam, left, top, projW, projH) then
                     self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
-                    -- print("Projectile batched at position:", p.x, p.y)
+                    -- Debug.debugPrint("Projectile batched at position:", p.x, p.y)
                 else
-                    -- print("Projectile culled at position:", p.x, p.y)
+                    -- Debug.debugPrint("Projectile culled at position:", p.x, p.y)
                 end
             else
-                -- print("[WARN] Invalid projectile position", p.x, p.y)
+                -- Debug.debugPrint("[WARN] Invalid projectile position", p.x, p.y)
             end
         end
         love.graphics.draw(self.projectileBatch)
-        -- print("Total projectiles in batch:", self.projectileBatch:getCount())
+        -- Debug.debugPrint("Total projectiles in batch:", self.projectileBatch:getCount())
 
         -- Enemy rendering
         for _, batch in pairs(self.enemyBatches) do
@@ -1542,7 +1542,7 @@ function playing:draw()
                             local quad = enemy.currentAnimation:getFrame()
                             batch:add(quad, enemy.x, enemy.y, 0, 1, 1, enemy.width/2, enemy.height/2)
                         else
-                            print("WARN: Missing animation for", enemy.name)
+                            Debug.debugPrint("WARN: Missing animation for", enemy.name)
                             table.insert(toDrawIndividually, enemy)  -- Fallback to individual draw
                         end
                     else
@@ -1583,7 +1583,7 @@ function playing:draw()
         for i = #globalParticleSystems, 1, -1 do
             local entry = globalParticleSystems[i]
             if type(entry) ~= "table" or not entry.ps then
-                print("[CLEANUP] Removing invalid entry from globalParticleSystems at index", i)
+                Debug.debugPrint("[CLEANUP] Removing invalid entry from globalParticleSystems at index", i)
                 table.remove(globalParticleSystems, i)
             end
         end
@@ -1603,10 +1603,10 @@ function playing:draw()
                 ) then
                     love.graphics.draw(ps) -- context-based pooling
                 else
-                    print(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
+                    Debug.debugPrint(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
                 end
             else
-                print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
+                Debug.debugPrint("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
             end
         end
         love.graphics.setBlendMode("alpha") -- reset to normal
@@ -1691,13 +1691,13 @@ function playing:draw()
 end
 
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
-    print("[SAFEROOM:ENTER] entered saferoom gamestate")
+    Debug.debugPrint("[SAFEROOM:ENTER] entered saferoom gamestate")
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
     self.currentMap = currentMap
 
-    print("Entering safe room")
+    Debug.debugPrint("Entering safe room")
 
     -- stop projectile sound while in the saferoom
     if sounds and sounds.blip then
@@ -1750,7 +1750,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     -- Reset player position and state
     -- player.x = 140
     -- player.y = love.graphics.getHeight() / 3
-    -- print("[Player collider] recreated at:", player.x, player.y)
+    -- Debug.debugPrint("[Player collider] recreated at:", player.x, player.y)
 
     local mapW = currentMap.width * currentMap.tilewidth
     local mapH = currentMap.height * currentMap.tileheight
@@ -1802,7 +1802,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     if not portal then
         --portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
         portal = Portal:new(world, mapW / 2, mapH / 2)
-        print("[SAFEROOM portal] created at", portal.x, portal.y)
+        Debug.debugPrint("[SAFEROOM portal] created at", portal.x, portal.y)
     end
 
     -- prepare to load next level
@@ -1811,7 +1811,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 end
 
 function safeRoom:leave()
-    print("[SAFEROOM:LEAVE] saferoom leave called")
+    Debug.debugPrint("[SAFEROOM:LEAVE] saferoom leave called")
     -- stop music, clear temp tables/objects, destroy portals, etc
      -- Add wall cleanup:
     for _, collider in ipairs(wallColliders) do
@@ -1837,7 +1837,7 @@ function safeRoom:leave()
 
     -- reset flags
     pendingRoomTransition = false
-    print("Leaving safeRoom state, cleaning up resources.")
+    Debug.debugPrint("Leaving safeRoom state, cleaning up resources.")
 
     -- copy current weapon stats to runData
     player:updateEquipmentInventory()
@@ -1875,7 +1875,7 @@ function safeRoom:update(dt)
     for i = #globalParticleSystems, 1, -1 do
         local entry = globalParticleSystems[i]
         if type(entry) ~= "table" or not entry.ps then
-            print("[ERROR] Invalid entry in globalParticleSystems at index", i, entry)
+            Debug.debugPrint("[ERROR] Invalid entry in globalParticleSystems at index", i, entry)
             table.remove(globalParticleSystems, i)
         end
     end
@@ -1885,7 +1885,7 @@ function safeRoom:update(dt)
         local entry = globalParticleSystems[i]   -- entry is a table: { ps = ..., type = ... }
         local ps = entry.ps
         if not entry.ps then
-            print("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
+            Debug.debugPrint("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
             table.remove(globalParticleSystems, i)
         else
             ps:update(dt)
@@ -1909,7 +1909,7 @@ function safeRoom:update(dt)
             elseif entry.type == "portalGlow" then
                 Particle.returnPortalGlow(ps)
             end
-            print("REMOVED INACTIVE PARTICLE SYSTEM")
+            Debug.debugPrint("REMOVED INACTIVE PARTICLE SYSTEM")
         end
     end
 
@@ -1986,7 +1986,7 @@ function safeRoom:update(dt)
 end
 
 function safeRoom:draw()
-    print("safeRoom:draw")
+    Debug.debugPrint("safeRoom:draw")
 
         -- Draw safe room background
         --if currentMap then currentMap:draw() end
@@ -2039,7 +2039,7 @@ function safeRoom:draw()
     for i = #globalParticleSystems, 1, -1 do
         local entry = globalParticleSystems[i]
         if type(entry) ~= "table" or not entry.ps then
-            print("[CLEANUP] Removing invalid entry from globalParticleSystems at index", i)
+            Debug.debugPrint("[CLEANUP] Removing invalid entry from globalParticleSystems at index", i)
             table.remove(globalParticleSystems, i)
         end
     end
@@ -2059,10 +2059,10 @@ function safeRoom:draw()
             ) then
                 love.graphics.draw(ps) -- context-based pooling
             else
-                    print(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
+                    Debug.debugPrint(string.format("[CULL] Particle system at (%.1f, %.1f) not drawn.", x, y))
             end
         else
-            print("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
+            Debug.debugPrint("[DRAW ERROR] Skipping nil ps in globalParticleSystems", entry)
         end
     end
     love.graphics.setBlendMode("alpha") -- reset to normal

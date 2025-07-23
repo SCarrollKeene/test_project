@@ -1,4 +1,5 @@
 local Utils = require("utils")
+local Debug = require("game_debug")
 local anim8 = require("libraries/anim8")
 local wf = require "libraries/windfield"
 local flashShader = require("libraries/flashshader")
@@ -50,7 +51,7 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         knockbackTimer = 0
     }
 
-    print("DEBUG: Enemy:new - Instance name:", instance.name, " Health:", instance.health, "Speed:", instance.speed, "Type of speed:", type(instance.speed), 
+    Debug.debugPrint("DEBUG: Enemy:new - Instance name:", instance.name, " Health:", instance.health, "Speed:", instance.speed, "Type of speed:", type(instance.speed), 
     "Damage:", instance.baseDamage)
     setmetatable(instance, {__index = Enemy}) -- Enemy methods and fields/data will get looked up
 
@@ -58,14 +59,14 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
     --     local success, image_or_error = pcall(function() return love.graphics.newImage(sprite) end)
     --     if success then
     --         instance.spriteSheet = image_or_error -- This is your first line: self.spriteSheet = ...
-    --         print("Enemy spritesheet loaded successfully from:", sprite)
+    --         Debug.debugPrint("Enemy spritesheet loaded successfully from:", sprite)
 
     --         local frameWidth = instance.spriteSheet:getWidth() / 3  -- Width of one animation frame
     --         local frameHeight = instance.spriteSheet:getHeight() / 4 -- Height of one animation frame
 
     --         instance.width = frameWidth
     --         instance.height = frameHeight
-    --         print(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
+    --         Debug.debugPrint(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
 
     --         local grid = anim8.newGrid(frameWidth, frameHeight, 
     --                                    instance.spriteSheet:getWidth(), instance.spriteSheet:getHeight())
@@ -81,17 +82,17 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
     --         -- Set the initial animation to play
     --         instance.currentAnimation = instance.animations.idle 
     --         if instance.currentAnimation then
-    --             print("Enemy animations created. Default animation set to 'idle'.")
+    --             Debug.debugPrint("Enemy animations created. Default animation set to 'idle'.")
     --         else
-    --             print("Warning: Could not set default animation 'idle'. Check animation definition.")
+    --             Debug.debugPrint("Warning: Could not set default animation 'idle'. Check animation definition.")
     --         end
 
     --         else
-    --             print(string.format("ERROR: Failed to load enemy spritesheet from path '%s'. Error: %s", sprite, tostring(image_or_error)))
+    --             Debug.debugPrint(string.format("ERROR: Failed to load enemy spritesheet from path '%s'. Error: %s", sprite, tostring(image_or_error)))
     --         end
 
     --         else
-    --             print("DEBUG: No spritesheet path provided for enemy:", instance.name)
+    --             Debug.debugPrint("DEBUG: No spritesheet path provided for enemy:", instance.name)
     -- end
 
     if instance.spriteSheet then
@@ -100,7 +101,7 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
 
         instance.width = frameWidth
         instance.height = frameHeight
-        print(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
+        Debug.debugPrint(string.format("Enemy frame dimensions set: W=%.1f, H=%.1f", instance.width, instance.height))
 
         local grid = anim8.newGrid(frameWidth, frameHeight,
         instance.spriteSheet:getWidth(), instance.spriteSheet:getHeight())
@@ -116,9 +117,9 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         -- Set the initial animation to play
         instance.currentAnimation = instance.animations.idle
         if instance.currentAnimation then
-            print("Enemy animations created. Default animation set to 'idle'.")
+            Debug.debugPrint("Enemy animations created. Default animation set to 'idle'.")
         else
-            print("Warning: Could not set default animation 'idle'. Check animation definition.")
+            Debug.debugPrint("Warning: Could not set default animation 'idle'. Check animation definition.")
         end
     end
 
@@ -170,7 +171,7 @@ function Enemy:reset(x, y, blob, img)
         self.currentAnimation = self.animations.idle
         -- call new animations start at frame 1
     else
-        -- print("[ENEMY:RESET] No image provided for: " .. self.name)
+        -- Debug.debugPrint("[ENEMY:RESET] No image provided for: " .. self.name)
         self.animations = {}
         self.currentAnimation = nil
     end
@@ -216,7 +217,7 @@ function Enemy:load()
     )
     self.collider:setFixedRotation(true)
     self.collider:setUserData(self) -- associate enemy obj w/ collider
-    print("DEBUG: ENEMY collider created with W: "..self.width.."and H: "..self.height)
+    Debug.debugPrint("DEBUG: ENEMY collider created with W: "..self.width.."and H: "..self.height)
     self.collider:setCollisionClass('enemy')
     -- self.collider:setMask('player', 'wall') -- Enemies collide with player, walls
     self.collider:setObject(self)
@@ -283,7 +284,7 @@ function Enemy:update(dt, frameCount)
 
     -- frame count/slicing
     if not self.enemyID then
-        print("[ERROR] enemyID is nil for", tostring(self.name))
+        Debug.debugPrint("[ERROR] enemyID is nil for", tostring(self.name))
         return
     end
 
@@ -325,7 +326,7 @@ function Enemy:update(dt, frameCount)
     end
 
     if not self.collider then 
-        print("UPDATE_NO_COLLIDER: self is", tostring(self), "name:", (self and self.name or "N/A"))
+        Debug.debugPrint("UPDATE_NO_COLLIDER: self is", tostring(self), "name:", (self and self.name or "N/A"))
         return 
     end -- If collider somehow got removed early
 
@@ -334,7 +335,7 @@ function Enemy:update(dt, frameCount)
         self.currentAnimation:update(dt)
     end
 
-    print("DEBUG: Enemy:update: " .. "Name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
+    Debug.debugPrint("DEBUG: Enemy:update: " .. "Name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
 
         -- Switch animation based on state
         if self.isMoving and self.animations and self.animations.walk and self.currentAnimation ~= self.animations.walk then
@@ -412,8 +413,8 @@ function Enemy:takeDamage(dmg, killer)
 
     -- Utils.takeDamage(self, dmg)
     self.health = self.health - dmg
-    print(self.name .. " was hit! Flash on hit activated")
-    print(string.format("%s took %.2f damage. Health is now %.2f", self.name, dmg, self.health))
+    Debug.debugPrint(self.name .. " was hit! Flash on hit activated")
+    Debug.debugPrint(string.format("%s took %.2f damage. Health is now %.2f", self.name, dmg, self.health))
     if self.health <= 0 then
         self:die(killer)
     end
@@ -432,18 +433,18 @@ end
 function Enemy:die(killer)
     if self.isDead then return end
 
-    print(self.name .. " almost dead, preparing to call Utils.die()!")
+    Debug.debugPrint(self.name .. " almost dead, preparing to call Utils.die()!")
     self.isDead = true
 
     Utils.die(self, killer)
 
     if self.collider then
-        print("Attempting to destroy collider for: " .. self.name)
+        Debug.debugPrint("Attempting to destroy collider for: " .. self.name)
         self.collider:destroy()
         self.collider = nil -- set collider to nil
-        print(self.name .. " collider is destroyed!")
+        Debug.debugPrint(self.name .. " collider is destroyed!")
     else
-        print(self.name .. "had no collider or it was already nil.")
+        Debug.debugPrint(self.name .. "had no collider or it was already nil.")
     end
     -- death animation and effects go here
     if self.animations and self.animations.death then
@@ -452,7 +453,7 @@ function Enemy:die(killer)
     end
 
     self.toBeRemoved = true -- flag for removal from 'enemies' table in main.lua
-    print(self.name .. " flagged for removal!")
+    Debug.debugPrint(self.name .. " flagged for removal!")
     -- remove from world and/or active enemy table
 end
 
@@ -461,7 +462,7 @@ function Enemy:getName()
 end
 
 function Enemy:Taunt()
-    print("I am the enemy!")
+    Debug.debugPrint("I am the enemy!")
 end
 
 return Enemy
