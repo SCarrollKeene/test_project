@@ -1680,16 +1680,18 @@ function playing:draw()
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
     
-    love.graphics.print("Health: " .. player.health, 20, 20)
-    love.graphics.print("Level: " .. player.level or 1, 20, 50)
+    UI.drawEquippedWeaponOne(20, 20, player, 44)
+    UI.drawShardCounter(80, 20, metaData)
+    love.graphics.print("Health: " .. player.health, 20, 80)
+    love.graphics.print("Level: " .. player.level or 1, 20, 110)
 
     local xpNext = player:getXPToNextLevelUp()
-    love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 80)
+    love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 140)
 
     local percent = math.floor((player.experience / xpNext) * 100)
-    love.graphics.print("Level Progress: " .. percent .. "%", 20, 110)
-    love.graphics.print("Score: " .. playerScore, 20, 140)
-    UI.drawShardCounter(20, 170, metaData)
+    love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
+    love.graphics.print("Score: " .. playerScore, 20, 200)
+    
     -- love.graphics.print("Equipped Slot: " .. (player.equippedSlot or "None"), 20, 170)
 
     if player.weapon then
@@ -2125,14 +2127,17 @@ function safeRoom:draw()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
     
-    love.graphics.print("Health: " .. player.health, 20, 20)
-    love.graphics.print("Level: " .. player.level or 1, 20, 50)
+    UI.drawEquippedWeaponOne(20, 20, player, 44)
+    UI.drawShardCounter(80, 20, metaData)
+    love.graphics.print("Health: " .. player.health, 20, 80)
+    love.graphics.print("Level: " .. player.level or 1, 20, 110)
+
     local xpNext = player:getXPToNextLevelUp()
-    love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 80)
+    love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 140)
+
     local percent = math.floor((player.experience / xpNext) * 100)
-    love.graphics.print("Level Progress: " .. percent .. "%", 20, 110)
-    love.graphics.print("Score: " .. playerScore, 20, 140)
-    UI.drawShardCounter(20, 170, metaData)
+    love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
+    love.graphics.print("Score: " .. playerScore, 20, 200)
 
     love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)

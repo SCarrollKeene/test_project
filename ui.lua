@@ -13,6 +13,38 @@ function UI.drawShardCounter(x, y, metaData)
     love.graphics.printf("x " .. tostring(metaData.shards or 0), x + 40, y + 8, 100, "left")
 end
 
+function UI.drawEquippedWeaponOne(x, y, player, size)
+    local weapon = player.weapon
+    if not weapon or not weapon.image then return end
+
+    -- Configurable visual design
+    local bgColor = {0.13, 0.13, 0.13, 0.92}     -- background
+    local borderColor = {0.8, 0.58, 0.16, 1.0}   -- border
+    local borderWidth = 2
+    size = size or 52                            -- slightly larger for weapons if desired
+
+    -- Background (rounded rectangle)
+    love.graphics.setColor(bgColor)
+    love.graphics.rectangle("fill", x, y, size, size, size/3, size/3)
+
+    -- Border
+    love.graphics.setLineWidth(borderWidth)
+    love.graphics.setColor(borderColor)
+    love.graphics.rectangle("line", x, y, size, size, size/3, size/3)
+
+    -- Draw weapon icon centered in badge
+    love.graphics.setColor(1, 1, 1, 1)
+    local padding = size * 0.20
+    love.graphics.draw(
+        weapon.image,
+        x + padding,
+        y + padding,
+        0,
+        (size - 2 * padding) / weapon.image:getWidth(),
+        (size - 2 * padding) / weapon.image:getHeight()
+    )
+end
+
 function UI.drawWeaponComparison(current, candidate)
     local startX, startY, pad = 400, 200, 22
     local panelW, panelH, panelSpacing = 260, 180, 40
