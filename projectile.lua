@@ -157,7 +157,7 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level,
 end
 
 function Projectile.loadAssets()
-    local success, img = pcall(love.graphics.newImage, "sprites/orb_red.png")
+    local success, img = pcall(love.graphics.newImage, "sprites/fireball.png")
     if success then
         Projectile.image = img
         print("PROJECTILE image loaded successfully from:", img)

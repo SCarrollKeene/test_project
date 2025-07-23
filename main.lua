@@ -19,6 +19,7 @@ local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
 local Camera = require("libraries/hump/camera")
+local Moonshine = require("libraries.moonshine")
 -- local camera = require("camera")
 local Utils = require("utils")
 local SaveSystem = require("save_game_data")
@@ -1006,6 +1007,10 @@ end
 
 function playing:update(dt)
     print("playing:update")
+    -- frame count
+    local frameCount = self.frameCount
+    self.frameCount = (self.frameCount or 0) + 1
+    
     -- After player:update(dt, mapW, mapH) or player:update(dt)
     local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
     local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
@@ -1163,7 +1168,7 @@ end
             if checkX >= 1 and checkX <= self.gridWidth and checkY >= 1 and checkY <= self.gridHeight then
                 -- This is a "hot" cell, so update every enemy inside it
                 for _, enemy in ipairs(self.spatialGrid[checkX][checkY]) do
-                    enemy:update(dt) -- This is the expensive AI update call
+                    enemy:update(dt, self.frameCount) -- This is the expensive AI update call
                 end
             end
         end
@@ -1432,8 +1437,7 @@ function playing:draw()
         currentMap:draw(-tx, -ty, scale, scale)
     end
 
-    cam:attach()
-            
+    cam:attach()   
         if not player.isDead then
             player:draw()
         end
@@ -1455,7 +1459,7 @@ function playing:draw()
                 end
             end
         end
-
+        
         -- draw drop weapon/item particles, not necessary for pool
         -- Particle.drawItemDropParticles()
         -- print("Drawing item drop particles, count:", #itemDropSystems)
@@ -1562,7 +1566,7 @@ function playing:draw()
         if portal then
             portal:draw()
         end
-
+        
         Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, Projectile.getPoolSize)
         Debug.drawEnemyTracking(enemies, player)
         Debug.drawCollisions(world)
@@ -1574,7 +1578,7 @@ function playing:draw()
         -- for _, ps in ipairs(globalParticleSystems) do
         --     love.graphics.draw(ps)
         -- end
-
+        
         -- clean up sweep defensive nil check to make sure ps != nil or a raw nil is the result
         for i = #globalParticleSystems, 1, -1 do
             local entry = globalParticleSystems[i]
@@ -1616,16 +1620,19 @@ function playing:draw()
         popupManager:draw()
     cam:detach()
 
-    -- Draw damage flash in corners
+    -- Draw damage flash in bottom corners
     if damageFlashTimer > 0 then
+        local screenW, screenH = love.graphics.getWidth(), love.graphics.getHeight()
+        local radius = 0
+        local rectW, rectH = 140, 90
         local alpha = damageFlashTimer / DAMAGE_FLASH_DURATION
         love.graphics.setColor(1, 0.1, 0.1, 0.5 * alpha) -- Red
-        love.graphics.rectangle("fill", 0, love.graphics.getHeight() - 90, 140, 90, 0, 0)
+        love.graphics.rectangle("fill", 0, screenH - rectH, rectW, rectH, radius, radius)
         love.graphics.setColor(1, 0.1, 0.1, 0.5 * alpha) -- Red
-        love.graphics.rectangle("fill", love.graphics.getWidth() - 140, love.graphics.getHeight() - 90, 140, 90, 0, 0)
+        love.graphics.rectangle("fill", screenW - 140, screenH - rectH, rectW, rectH, radius, radius)
         love.graphics.setColor(1, 1, 1, 1)
     end
-    
+
      -- Display player score
      -- debate change to an event system or callback function later when enemy dies or check for when the enemy is dead
     if scoreFont then

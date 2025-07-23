@@ -6,7 +6,10 @@ local flashShader = require("libraries/flashshader")
 local Enemy = {}
 Enemy.__index = Enemy
 
+local enemyIDCounter = 0
+
 function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, xpAmount, spriteImage)
+    enemyIDCounter = enemyIDCounter + 1
     local instance = {
         name = name or "Enemy",
         x = x or 0,
@@ -19,6 +22,8 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         speed = speed or 40,
         baseDamage = baseDamage or 5,
         xpAmount = xpAmount or 10,
+        
+        enemyID = enemyIDCounter,
 
         spriteSheet = spriteImage, -- add sprite later on, possibly in main.lua find a test sprite to use
         animations = {},
@@ -270,7 +275,25 @@ function Enemy:AILogic(dt)
     -- self.xvel = (self.speed * 0.25) * dt
 end
 
-function Enemy:update(dt)
+function Enemy:update(dt, frameCount) 
+    -- update animations even on skipped frames
+    if self.currentAnimation then
+        self.currentAnimation:update(dt)
+    end
+
+    -- frame count/slicing
+    if not self.enemyID then
+        print("[ERROR] enemyID is nil for", tostring(self.name))
+        return
+    end
+
+    -- throttle enemy AI logic
+    local id = self.enemyID or 1
+    local throttle = 2
+    if math.fmod(id, throttle) ~= math.fmod(frameCount, throttle) then
+        return
+    end
+
     -- self:move(dt)
     if self.isKnockedBack then
         self.knockbackTimer = self.knockbackTimer - dt
