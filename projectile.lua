@@ -246,8 +246,7 @@ end
 
 function Projectile:update(dt)
     if self.isDestroyed then return end  -- Critical safety check if marked for removal
-
-    print(string.format("Projectile: angle=%.2f, speed=%.2f", self.angle, self.speed))
+    -- print(string.format("Projectile: angle=%.2f, speed=%.2f", self.angle, self.speed))
     if not self.collider then
         self.toBeRemoved = true -- handle collider being destroyed
         print("Projectile:update - Collider is nil for this projectile. Skipping further update.")

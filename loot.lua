@@ -1,5 +1,14 @@
 local Particle = require("particle")
 
+function createShardDrop(x, y)
+    return {
+        type = "shard",
+        image = love.graphics.newImage("sprites/magicite-shard.png"),
+        x = x, y = y
+        -- TODO: add bounce and particles
+    }
+end
+
 -- Remove dropped item
 function removeDroppedItem(item)
     if not item then return end -- defensive nil check
@@ -62,5 +71,6 @@ end
 
 return {
   createWeaponDropFromInstance = createWeaponDropFromInstance,
-  removeDroppedItem = removeDroppedItem
+  removeDroppedItem = removeDroppedItem,
+  createShardDrop = createShardDrop
 }

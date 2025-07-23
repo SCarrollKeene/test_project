@@ -1,7 +1,17 @@
+local Assets = require("assets")
 local Particle = require("particle")
 local RARITY_COLORS = Particle.RARITY_COLORS
 
 local UI = {}
+
+function UI.drawShardCounter(x, y, metaData)
+    local icon = Assets.images.shard
+    if not icon then return end
+
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(icon, x, y, 0, 1.5, 1.5)  -- Adjust scale for visibility (1.5x)
+    love.graphics.printf("x " .. tostring(metaData.shards or 0), x + 40, y + 8, 100, "left")
+end
 
 function UI.drawWeaponComparison(current, candidate)
     local startX, startY, pad = 400, 200, 22

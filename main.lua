@@ -10,6 +10,7 @@ local MapLoader = require("maploader")
 local LevelManager = require("levelmanager")
 local WaveManager = require("wavemanager")
 local Loading = require("loading")
+local Assets = require("assets")
 local PopupManager = require("popupmanager")
 local UI = require("ui")
 local sti = require("libraries/sti")
@@ -54,7 +55,8 @@ local runData = {
 local metaData = {
     unlockedCharacters = {},
     permanentUpgrades = {},
-    highScore = 0
+    highScore = 0,
+    shards = 0
 }
 
 popupManager = PopupManager:new() 
@@ -385,6 +387,31 @@ function updateDroppedItems(dt)
     end
 end
 
+function checkPlayerPickups()
+    local pickupRadius = 12
+
+    for i = #droppedItems, 1, -1 do
+        local item = droppedItems[i]
+        if item and item.x and item.y then
+            local dx = player.x - item.x
+            local dy = player.y - item.y
+            local distSq = dx * dx + dy * dy
+            if distSq <= pickupRadius * pickupRadius then
+                if item.type == "shard" then
+                    metaData.shards = (metaData.shards or 0) + 1
+                    Debug.debugPrint("[SHARD PICKUP] Total shards: " .. tostring(metaData.shards))
+                    Loot.removeDroppedItem(item)
+                    SaveSystem.saveGame(runData, metaData)
+                    -- TODO: sounds, +1 pickup from popup manager
+                elseif item.type == "weapon" then
+                    player.canPickUpItem = item
+                    selectedItemToCompare = item
+                end
+            end
+        end
+    end
+end
+
 function spawnRandomEnemy(x, y, cache, enemyTypes)
     Debug.debugPrint("[FROM SPAWNRANDOMENEMY POOL] Total enemies:", #enemyPool) -- debug preloaded pool status
     local state = Gamestate.current()
@@ -550,6 +577,7 @@ function love.load()
     local death_spritesheet_path = "sprites/soulsplode.png"
     Projectile.loadAssets()
     Weapon.loadAssets()
+    Assets.load()
     player:load(world, mage_spritesheet_path, dash_spritesheet_path, death_spritesheet_path)
     local testImage = love.graphics.newImage("sprites/circle-particle.png")
     Debug.debugPrint("Test image loaded:", testImage)
@@ -1104,8 +1132,9 @@ function playing:update(dt)
 
         -- update droppable loot/items
         updateDroppedItems(dt)
+        checkPlayerPickups()
 
-        local pickupRange = 40  -- Adjust as needed
+        local pickupRange = 24  -- Adjust as needed
         player.canPickUpItem = nil  -- Reset each frame
 
         for i, item in ipairs(droppedItems) do
@@ -1660,7 +1689,9 @@ function playing:draw()
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 110)
     love.graphics.print("Score: " .. playerScore, 20, 140)
-    
+    UI.drawShardCounter(20, 170, metaData)
+    -- love.graphics.print("Equipped Slot: " .. (player.equippedSlot or "None"), 20, 170)
+
     if player.weapon then
     if player.canPickUpItem then
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
@@ -1681,7 +1712,7 @@ function playing:draw()
     love.graphics.print("ROOM " .. tostring(LevelManager.currentLevel - 1), 1100, 700)
 
     -- weapon comparison draw logic
-    if selectedItemToCompare then
+    if selectedItemToCompare and selectedItemToCompare.type == "weapon" then
         -- weapon instance for comparison
         local candidateWeapon = Weapon:new(
         selectedItemToCompare.name,
@@ -2101,7 +2132,7 @@ function safeRoom:draw()
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 110)
     love.graphics.print("Score: " .. playerScore, 20, 140)
-    -- love.graphics.print("Particles alive:", ps:getCount(), 20, 170)
+    UI.drawShardCounter(20, 170, metaData)
 
     love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)

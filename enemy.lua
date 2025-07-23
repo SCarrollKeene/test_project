@@ -3,11 +3,13 @@ local Debug = require("game_debug")
 local anim8 = require("libraries/anim8")
 local wf = require "libraries/windfield"
 local flashShader = require("libraries/flashshader")
+local Loot = require("loot")
 
 local Enemy = {}
 Enemy.__index = Enemy
 
 local enemyIDCounter = 0
+local defaultDropChance = 0.5
 
 function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, xpAmount, spriteImage)
     enemyIDCounter = enemyIDCounter + 1
@@ -438,6 +440,10 @@ function Enemy:die(killer)
     self.isDead = true
 
     Utils.die(self, killer)
+
+    if math.random() < (self.shardDropChance or defaultDropChance) then
+        table.insert(droppedItems, Loot.createShardDrop(self.x, self.y))
+    end
 
     if self.collider then
         Debug.debugPrint("Attempting to destroy collider for: " .. self.name)
