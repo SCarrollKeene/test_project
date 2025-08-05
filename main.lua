@@ -486,7 +486,7 @@ function spawnRandomEnemy(x, y, cache, enemyTypes)
     -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
     local newEnemy = Enemy:new(
         world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
-        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, 0, img)
+        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, randomBlob.xpAmount, img)
 
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
@@ -1686,6 +1686,10 @@ function playing:draw()
     
     UI.drawEquippedWeaponOne(20, 20, player, 44)
     UI.drawShardCounter(80, 20, metaData)
+    if self.waveManager then
+        UI.drawWaveCounter(self.waveManager.currentWave, #self.waveManager.waves, love.graphics.getWidth() / 2, 20)
+        UI.drawWaveTimer(self.waveManager.waveTimeLeft or 0, love.graphics.getWidth() / 2, 50)
+    end
     love.graphics.print("Health: " .. player.health, 20, 80)
     love.graphics.print("Level: " .. player.level or 1, 20, 110)
 

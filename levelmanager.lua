@@ -1,5 +1,42 @@
 local MapLoader = require("maploader")
 
+local function buildCombatWaves(includeBoss)
+    local waves = {}
+    local baseEnemyCount = 3
+    local baseDuration = 30
+    local maxDuration = 90
+
+    for i = 1, 5 do
+        -- Progressive enemy count and staggered interval
+        local enemyCount = baseEnemyCount + (i - 1) * 2  -- e.g., 3, 5, 7, 9, 11
+        local spawnInterval = math.max(0.6 - (i - 1) * 0.08, 0.15)  -- Faster spawns later
+        local duration = (i == 5) and maxDuration or (baseDuration + math.random(0, 30))
+
+        table.insert(waves, {
+            enemyCount = enemyCount,
+            delay = 1.2,
+            spawnInterval = spawnInterval,
+            enemyTypes = nil,  -- All types; set if you want restrictions per wave
+            boss = false,
+            duration = duration,
+        })
+    end
+
+    -- Optionally add a boss wave
+    if includeBoss then
+        table.insert(waves, {
+            enemyCount = 1,
+            delay = 3.0,
+            spawnInterval = 1.2,
+            enemyTypes = {"Boss"},  -- Only boss type
+            boss = true,
+            duration = maxDuration + 30,
+        })
+    end
+
+    return waves
+end
+
 local LevelManager = {
     currentLevel = 1,
     levels = {
@@ -14,13 +51,14 @@ local LevelManager = {
             --waves = {},
             -- enemies = 3, 
             -- boss = false,
-            waves = {
-                { enemyCount = 3, delay = 1.0, spawnInterval = 0.2, enemyTypes = {"Black Blob"}, boss = false },
+            waves = buildCombatWaves(false), -- No boss here
+            --{
+                -- { enemyCount = 3, delay = 1.0, spawnInterval = 0.2, enemyTypes = {"Black Blob"}, boss = false },
                 -- { enemyCount = 6, delay = 2.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
                 -- { enemyCount = 9, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
                 -- { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
                 -- { enemyCount = 10, delay = 3.0, spawnInterval = 0.2, enemyTypes = nil, boss = false },
-            },
+            -- },
             spawns = {
                 -- defining fixed positions for enemy spawn
                 { x = 800, y = 200 },
@@ -30,7 +68,7 @@ local LevelManager = {
         },
         { 
             map = "room1", 
-            waves = {},
+            waves = buildCombatWaves(false),
             enemies = 3, 
             boss = false,
             spawns = {
@@ -42,7 +80,7 @@ local LevelManager = {
         },
         { 
             map = "room2",
-            waves = {}, 
+            waves = buildCombatWaves(false), 
             enemies = 3, 
             boss = false,
             spawns = {
@@ -55,14 +93,14 @@ local LevelManager = {
         },
         { 
             map = "room3",
-            waves = {}, 
+            waves = buildCombatWaves(false), 
             enemies = 3, 
             boss = false,
             spawns = {} 
         },
         { 
             map = "room4",
-            waves = {}, 
+            waves = buildCombatWaves(false), 
             enemies = 3, 
             boss = false,
             spawns = {

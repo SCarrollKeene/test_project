@@ -4,6 +4,23 @@ local RARITY_COLORS = Particle.RARITY_COLORS
 
 local UI = {}
 
+function UI.drawWaveCounter(waveNum, totalWaves, x, y)
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.setFont(love.graphics.newFont(22))
+    local text = "Wave: " .. waveNum
+    love.graphics.printf(text, x, y, 200, "left")
+end
+
+function UI.drawWaveTimer(timeLeft, x, y)
+    love.graphics.setFont(love.graphics.newFont(22))
+    love.graphics.setColor(1,1,1,1)
+    local t = math.max(0, math.floor(timeLeft))
+    local min = math.floor(t/60)
+    local sec = t % 60
+    local text = string.format("Time: %02d:%02d", min, sec)
+    love.graphics.printf(text, x, y, 180, "left")
+end
+
 function UI.drawShardCounter(x, y, metaData)
     local icon = Assets.images.shard
     if not icon then return end

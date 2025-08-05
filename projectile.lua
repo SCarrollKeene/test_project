@@ -207,7 +207,7 @@ function Projectile:onHitEnemy(enemy)
         Utils.dealDamage(self.owner, enemy, self.damage, self.owner) -- self.owner, 1. owner 2. who gets credit for the kill
     -- Direct damage fallback if owner not set
     elseif enemy and enemy.takeDamage then
-        enemy:takeDamage(self.damage)
+        enemy:takeDamage(self.damage, self.owner)
     end
 
     -- check for and apply knockback

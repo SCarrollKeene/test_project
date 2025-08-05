@@ -130,7 +130,7 @@ function Utils.die(target, killer)
 
     -- Additional death logic here
 
-     -- grant XP on enemy death
+    -- grant XP on enemy death
     if target.type == "enemy" and killer and killer.addExperience then
         killer:addExperience(target.xpAmount or 10)
     end

@@ -146,6 +146,7 @@ function Enemy:reset(x, y, blob, img)
     self.health = blob.health
     self.speed = blob.speed
     self.baseDamage = blob.baseDamage
+    self.xpAmount = blob.xpAmount
     self.spriteSheet = img
     self.isDead = false
     self.toBeRemoved = false
