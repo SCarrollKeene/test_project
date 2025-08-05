@@ -1219,12 +1219,12 @@ end
     end
 -- >> END OF NEW LOOP 7/1/25 <<
 
-    if #enemies == 0 and not portal then
-        spawnPortal()
-        Debug.debugPrint("DEBUG: No enemies in table. Attempting to spawn portal.")
-    else
-        Debug.debugPrint("DEBUG: Attempting to update:", #enemies, "enemies in table.")
-    end
+    -- if #enemies == 0 and not portal then
+    --     spawnPortal()
+    --     Debug.debugPrint("DEBUG: No enemies in table. Attempting to spawn portal.")
+    -- else
+    --     Debug.debugPrint("DEBUG: Attempting to update:", #enemies, "enemies in table.")
+    -- end
 
     -- -- if particle systems exists, update it
     -- for i = #globalParticleSystems, 1, -1 do
@@ -1392,9 +1392,9 @@ end
             table.remove(enemies, i)
             Debug.debugPrint("DEBUG: Removed " .. (e.name or "enemy") .. " from table.")
             -- check if room is cleared and turn room cleared flag to true
-            if #enemies == 0 and not runData.cleared then
-                roomComplete(runData.currentRoom)
-            end
+            -- if #enemies == 0 and not runData.cleared then
+            --     roomComplete(runData.currentRoom)
+            -- end
         end
     end
 
@@ -1430,14 +1430,16 @@ end
         end
     end
 
-    if self.waveManager then
+    if self.waveManager and self.waveManager.active then
         self.waveManager:update(dt, function(enemyTypes)
             -- Pass enemyTypes to spawner
             LevelManager:spawnRandomInZone(self.enemyImageCache, enemyTypes)
         end)
         
         -- Wave completion check
-        if self.waveManager.active and #enemies == 0 and not portal then
+        if self.waveManager and self.waveManager.isFinished and not runData.cleared then
+            Utils.clearAllEnemies()
+            Utils.collectAllShards(metaData, player)
             roomComplete()
         end
     end

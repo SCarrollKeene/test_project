@@ -171,6 +171,38 @@ function Utils.die(target, killer)
     end
 end
 
+function Utils.clearAllEnemies()
+    -- Remove from enemies table
+    for i = #enemies, 1, -1 do
+        local e = enemies[i]
+        e.isDead = true         -- Mark as dead for pooling
+        e.toBeRemoved = true    -- Just in case your removal elsewhere uses this
+        table.remove(enemies, i)
+    end
+
+    -- Deactivate pooled enemies
+    if enemyPool then
+        for i, e in ipairs(enemyPool) do
+            e.isDead = true
+            e.toBeRemoved = true
+        end
+    end
+end
+
+function Utils.collectAllShards(metaData, player)
+    for i = #droppedItems, 1, -1 do
+        local item = droppedItems[i]
+        if item.type == "shard" then
+            metaData.shards = (metaData.shards or 0) + 1
+            -- TODO: make this popup work 8/5/25
+            if popupManager and player then
+                popupManager:add("+1 shard!", player.x, player.y - 32, {1,1,1,1}, 1.1, -25, 0)
+            end
+            table.remove(droppedItems, i)
+        end
+    end
+end
+
 function checkCircularCollision(obj1, obj2)
   if not obj1 or not obj2 or not obj1.radius or not obj2.radius then return false end
   local dx = obj1.x - obj2.x

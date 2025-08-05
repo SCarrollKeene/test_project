@@ -3,14 +3,14 @@ local MapLoader = require("maploader")
 local function buildCombatWaves(includeBoss)
     local waves = {}
     local baseEnemyCount = 3
-    local baseDuration = 30
-    local maxDuration = 90
+    local baseDuration = 20
+    local maxDuration = 60
 
     for i = 1, 5 do
         -- Progressive enemy count and staggered interval
         local enemyCount = baseEnemyCount + (i - 1) * 2  -- e.g., 3, 5, 7, 9, 11
         local spawnInterval = math.max(0.6 - (i - 1) * 0.08, 0.15)  -- Faster spawns later
-        local duration = (i == 5) and maxDuration or (baseDuration + math.random(0, 30))
+        local duration = (i == 5) and maxDuration or (baseDuration + math.random(0, 20))
 
         table.insert(waves, {
             enemyCount = enemyCount,
@@ -69,8 +69,8 @@ local LevelManager = {
         { 
             map = "room1", 
             waves = buildCombatWaves(false),
-            enemies = 3, 
-            boss = false,
+            -- enemies = 3, 
+            -- boss = false,
             spawns = {
                 -- defining fixed positions for enemy spawn
                 { x = 800, y = 200 },
@@ -81,8 +81,8 @@ local LevelManager = {
         { 
             map = "room2",
             waves = buildCombatWaves(false), 
-            enemies = 3, 
-            boss = false,
+            --enemies = 3, 
+            --boss = false,
             spawns = {
                 { x = 800, y = 200 },
                 { x = 750, y = 250 },
@@ -94,15 +94,15 @@ local LevelManager = {
         { 
             map = "room3",
             waves = buildCombatWaves(false), 
-            enemies = 3, 
-            boss = false,
+            --enemies = 3, 
+            --boss = false,
             spawns = {} 
         },
         { 
             map = "room4",
             waves = buildCombatWaves(false), 
-            enemies = 3, 
-            boss = false,
+            --enemies = 3, 
+            --boss = false,
             spawns = {
                 { x = 800, y = 200 },
                 { x = 750, y = 250 },
