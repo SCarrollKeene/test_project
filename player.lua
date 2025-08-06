@@ -190,7 +190,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
     -- if no weapon in inventory, create a new weapon and insert into inventory, please work
     if not self.weapon then
         -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
-        self.weapon = Weapon:new("Fire Crystal", Weapon.image, "Crystal", "common", 200, 2, Projectile, 10, 0, 200, 1)
+        self.weapon = Weapon:new("Fire Crystal", Weapon.image, "Crystal", "common", 200, 2, Projectile, 10, 0, 200, 1, "weapon")
     end
 
     if #self.inventory == 0 then
@@ -207,8 +207,10 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             baseRange = self.weapon.baseRange,
             level = self.weapon.level,
             id = self.weapon.id,
+            type = self.weapon.type
         })
         self.equippedSlot = 1
+        -- TODO: revisit to make the second equippedSlot, will need UI for it and refactor weapon reconstruction as well 8/6/25
     end
 end
 

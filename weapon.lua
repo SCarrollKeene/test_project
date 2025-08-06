@@ -27,7 +27,7 @@ Weapon.image = nil
 -- saving/loaidng for persisten weapon levels
 -- need to build an inventory screen or at least a UI for weapons held
 
-function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, projectileClass, baseDamage, knockback, baseRange, level, id)
+function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, projectileClass, baseDamage, knockback, baseRange, level, id, type)
 
     local self = {
         name = name or "Fire Crystal",
@@ -46,7 +46,8 @@ function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, pr
         level = level or 1, -- scale stats based on level
         id = id or love.math.random(1, 99999999) .. "-" .. tostring(os.time()), -- use a UUID lib later
         range = nil,
-        baseRange = 200
+        baseRange = 200,
+        type = "weapon"
     }
 
     setmetatable(self, {__index = Weapon}) -- point back at weapon table, Weapon methods and fields/data will get looked up

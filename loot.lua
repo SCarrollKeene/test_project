@@ -62,10 +62,12 @@ function createWeaponDropFromInstance(weapon, x, y)
     projectileClass = weapon.projectileClass,
     baseDamage = weapon.baseDamage,
     knockback = weapon.knockback,
+    baseRange = weapon.baseRange,
     level = weapon.level or 1,
     id = weapon.id,
     x = x,
-    y = y
+    y = y,
+    type = weapon.type --  or "weapon"
   }
 end
 

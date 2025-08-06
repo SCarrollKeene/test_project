@@ -189,7 +189,7 @@ function love.keypressed(key)
         -- Define Fire Crystal properties
         local fireCrystalName = "Fire Crystal"
         local fireCrystalImage = Weapon.image -- Make sure Weapon.loadAssets() is called at startup
-        local fireCrystalType = "Crystal"
+        local fireCrystalWeaponType = "Crystal"
         local fireCrystalRarity = Weapon.pickRandomRarity(Utils.RARITY_WEIGHTS)
         local fireCrystalBaseSpeed = 200
         local fireCrystalBaseFireRate = 2
@@ -199,6 +199,7 @@ function love.keypressed(key)
         local fireCrystalBaseRange = 200
         local fireCrystalLevel = 1
         local fireCrystalID = (love.math.random(1, 99999999) .. "-" .. tostring(os.time()))
+        local fireCrystalType = "weapon"
 
         local offset = 20
         local angle = player.facingAngle or 0
@@ -221,7 +222,7 @@ function love.keypressed(key)
         local fireCrystal = spawnWeaponDrop(
             fireCrystalName,
             fireCrystalImage,
-            fireCrystalType,
+            fireCrystalWeaponType,
             fireCrystalRarity,
             fireCrystalBaseSpeed,
             fireCrystalBaseFireRate,
@@ -232,7 +233,8 @@ function love.keypressed(key)
             dropX,
             dropY,
             fireCrystalLevel,
-            fireCrystalID
+            fireCrystalID,
+            fireCrystalType
         )
     end
     -- KEEP THIS, ILL NEED IT LATER
@@ -290,7 +292,7 @@ function love.keypressed(key)
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, baseRange, x, y, level, id)
+function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, baseRange, x, y, level, id, type)
   local weaponDrop = {
     name = name,
     image = image,
@@ -307,7 +309,8 @@ function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, p
     level = level or 1,
     id = id or (love.math.random(1, 99999999) .. "-" .. tostring(os.time())),
     baseY = y,
-    hoverTime = 0
+    hoverTime = 0,
+    type = type
   } 
   Debug.debugPrint("[SPAWN WEAPON DROP] Name: ".. weaponDrop.name .. " weaponType: " .. weaponDrop.weaponType .."speed: ".. weaponDrop.baseSpeed .. " fire rate: " .. weaponDrop.fireRate .. " base damage: " .. weaponDrop.baseDamage)
     Debug.debugPrint("Created item particle:", weaponDrop.particle)
@@ -924,7 +927,8 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
             w.knockback,
             w.baseRange,
             w.level,
-            w.id
+            w.id,
+            w.type
         )
     end
 
@@ -1778,7 +1782,7 @@ function playing:draw()
         selectedItemToCompare.projectileClass,
         selectedItemToCompare.baseDamage,
         selectedItemToCompare.knockback,
-        selectedItemToCompare.range,
+        selectedItemToCompare.baseRange,
         selectedItemToCompare.level,
         selectedItemToCompare.id
     )
@@ -1836,7 +1840,8 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
             w.knockback,
             w.baseRange,
             w.level,
-            w.id
+            w.id,
+            w.type
         )
     end
 

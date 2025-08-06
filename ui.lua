@@ -63,6 +63,10 @@ function UI.drawEquippedWeaponOne(x, y, player, size)
 end
 
 function UI.drawWeaponComparison(current, candidate)
+    if not current or current.type ~= "weapon" or not candidate or candidate.type ~= "weapon" then
+        return
+    end
+
     local startX, startY, pad = 400, 200, 22
     local panelW, panelH, panelSpacing = 260, 180, 40
     local borderW = 4
@@ -105,10 +109,12 @@ function UI.drawWeaponComparison(current, candidate)
         local dmgValue = tostring(weapon.damage)
         local fireRateValue = tostring(weapon.fireRate)
         local speedValue = tostring(weapon.speed)
+        local rangeValue = tostring(weapon.range)
 
         love.graphics.print("Damage: " .. dmgValue, x + 10, y + 76)
         love.graphics.print("Fire rate: " .. fireRateValue, x + 10, y + 106)
         love.graphics.print("Speed: " .. speedValue, x + 10, y + 136)
+        love.graphics.print("Range: " .. rangeValue, x + 10, y + 166)
     end
 
     -- Draw current weapon (left) and candidate (right)
