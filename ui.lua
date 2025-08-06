@@ -68,7 +68,7 @@ function UI.drawWeaponComparison(current, candidate)
     end
 
     local startX, startY, pad = 400, 200, 22
-    local panelW, panelH, panelSpacing = 260, 180, 40
+    local panelW, panelH, panelSpacing = 260, 220, 40
     local borderW = 4
 
     -- Helper to draw weapon panel (used for both current and candidate)
