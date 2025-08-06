@@ -189,16 +189,30 @@ function Utils.clearAllEnemies()
     end
 end
 
+-- function Utils.collectAllShards(metaData, player)
+--     for i = #droppedItems, 1, -1 do
+--         local item = droppedItems[i]
+--         if item.type == "shard" then
+--             metaData.shards = (metaData.shards or 0) + 1
+--             local offset = (player.height or 32) / 2 + 18
+--             -- TODO: make this popup work 8/5/25
+--             if popupManager and player then
+--                 popupManager:add("+1 shard!", player.x or 0, player.y or 0 - offset, {1,1,1,1}, 1.1, -25, 0)
+--             end
+--             table.remove(droppedItems, i)
+--         end
+--     end
+-- end
 function Utils.collectAllShards(metaData, player)
     for i = #droppedItems, 1, -1 do
         local item = droppedItems[i]
-        if item.type == "shard" then
-            metaData.shards = (metaData.shards or 0) + 1
-            -- TODO: make this popup work 8/5/25
-            if popupManager and player then
-                popupManager:add("+1 shard!", player.x, player.y - 32, {1,1,1,1}, 1.1, -25, 0)
-            end
-            table.remove(droppedItems, i)
+        if item.type == "shard" and not item.animating then
+            item.animating = true
+            item.target = player
+            item.startX = item.x
+            item.startY = item.y
+            item.collectDuration = 0.6  -- how long (seconds) until reaches player
+            item.collectTimer = 0
         end
     end
 end

@@ -70,7 +70,7 @@ function WaveManager:nextWave()
 
     -- TODO: make this popup work 8/5/25
     if popupManager and player and nextWave then
-        popupManager:add("Wave " .. self.currentWave .. " Begins!", player.x, player.y - offset, {1,1,1,1}, 1.25, -30, 0.25)
+        popupManager:add("Wave " .. self.currentWave .. " Begins!", player.x or 0, player.y or 0 - offset, {1,1,1,1}, 1.25, -30, 0.25)
     end
 
      if not self.active then

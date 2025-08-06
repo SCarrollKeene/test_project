@@ -373,15 +373,37 @@ function equipWeapon(weaponToEquip)
 end
 
 function updateDroppedItems(dt)
-    for _, item in ipairs(droppedItems) do
-        if item.baseY then
-        item.hoverTime = (item.hoverTime or 0) + dt
-        local amplitude = 5
-        local speed = 2 * math.pi
-        item.y = item.baseY + amplitude * math.sin(speed * item.hoverTime)
-            if item.particle then
-                item.particle:setPosition(item.x, item.y)
-                item.particle:update(dt)
+    for i = #droppedItems, 1, -1 do
+        local item = droppedItems[i]
+        -- Animate shards "flying" to player
+        if item.type == "shard" and item.animating then
+            item.collectTimer = item.collectTimer + dt
+            local t = math.min(item.collectTimer / item.collectDuration, 1)
+            -- Smoothstep for acceleration
+            local t2 = t * t * (3 - 2 * t)
+            item.x = item.startX + (player.x - item.startX) * t2
+            item.y = item.startY + (player.y - item.startY) * t2
+            -- Optionally fade/scale/etc here for visuals
+            if t >= 1 then
+                -- Shard reached player
+                metaData.shards = (metaData.shards or 0) + 1
+                local offset = (player.height or 32) / 2 + 18
+                if popupManager and player then
+                    popupManager:add("+1 shard!", player.x, player.y - offset, {1,1,1,1}, 1.1, -25, 0)
+                end
+                table.remove(droppedItems, i)
+            end
+        else
+            -- Idle hover animation for non-collecting drops (or non-animating shards)
+            if item.baseY then
+                item.hoverTime = (item.hoverTime or 0) + dt
+                local amplitude = 5
+                local speed = 2 * math.pi
+                item.y = item.baseY + amplitude * math.sin(speed * item.hoverTime)
+                if item.particle then
+                    item.particle:setPosition(item.x, item.y)
+                    item.particle:update(dt)
+                end
             end
         end
     end
