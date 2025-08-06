@@ -173,10 +173,16 @@ end
 
 function Utils.clearAllEnemies()
     -- Remove from enemies table
+    -- TODO: Test in debug mode for enemy colliders still dealing damage to player at wave end 8/6/25
+    -- TODO: update, need to destroy enemy colliders here, they cause damage to player
     for i = #enemies, 1, -1 do
         local e = enemies[i]
         e.isDead = true         -- Mark as dead for pooling
         e.toBeRemoved = true    -- Just in case your removal elsewhere uses this
+        if e.collider then
+            e.collider:destroy()
+            e.collider = nil
+        end
         table.remove(enemies, i)
     end
 
@@ -185,6 +191,10 @@ function Utils.clearAllEnemies()
         for i, e in ipairs(enemyPool) do
             e.isDead = true
             e.toBeRemoved = true
+            if e.collider then
+                e.collider:destroy()
+                e.collider = nil
+            end
         end
     end
 end
@@ -206,8 +216,8 @@ end
 function Utils.collectAllShards(metaData, player)
     for i = #droppedItems, 1, -1 do
         local item = droppedItems[i]
-        if item.type == "shard" and not item.animating then
-            item.animating = true
+        if item.type == "shard" and not item.isAnimating then
+            item.isAnimating = true
             item.target = player
             item.startX = item.x
             item.startY = item.y

@@ -174,6 +174,10 @@ function love.keypressed(key)
     --     selectedItemToCompare = nil -- Cancel/skip weapon swap
     -- end
 
+    if key == "t" then
+        popupManager:add("Test Popup!", player.x, player.y - 32, {1,1,1,1}, 1.25, -30, 0.25)
+    end
+
     -- fire crystal level up test
     if key == "z" then
         if not player or player.isDead then
@@ -376,7 +380,7 @@ function updateDroppedItems(dt)
     for i = #droppedItems, 1, -1 do
         local item = droppedItems[i]
         -- Animate shards "flying" to player
-        if item.type == "shard" and item.animating then
+        if item.type == "shard" and item.isAnimating then
             item.collectTimer = item.collectTimer + dt
             local t = math.min(item.collectTimer / item.collectDuration, 1)
             -- Smoothstep for acceleration
@@ -387,14 +391,15 @@ function updateDroppedItems(dt)
             if t >= 1 then
                 -- Shard reached player
                 metaData.shards = (metaData.shards or 0) + 1
-                local offset = (player.height or 32) / 2 + 18
-                if popupManager and player then
-                    popupManager:add("+1 shard!", player.x, player.y - offset, {1,1,1,1}, 1.1, -25, 0)
+                local offset = (item.target.height or 32) / 2 + 18
+                if popupManager and item.target then
+                    print("Adding ther friggin shard popup at", item.target.x, item.target.y, "time:", love.timer.getTime())
+                    popupManager:add("+1 shard!", item.target.x, item.target.y - offset, {1,1,1,1}, 1.1, -25, 0)
                 end
                 table.remove(droppedItems, i)
             end
         else
-            -- Idle hover animation for non-collecting drops (or non-animating shards)
+            -- Idle hover animation
             if item.baseY then
                 item.hoverTime = (item.hoverTime or 0) + dt
                 local amplitude = 5
@@ -1459,10 +1464,19 @@ end
         end)
         
         -- Wave completion check
-        if self.waveManager and self.waveManager.isFinished and not runData.cleared then
+        if self.waveManager and self.waveManager.isFinished and not runData.cleared and not self.shardPopupDelay then
             Utils.clearAllEnemies()
             Utils.collectAllShards(metaData, player)
-            roomComplete()
+            self.shardPopupDelay = 0.7
+            --roomComplete()
+        end
+
+        if self.shardPopupDelay then
+            self.shardPopupDelay = self.shardPopupDelay - dt
+            if self.shardPopupDelay <= 0 then
+                roomComplete()
+                self.shardPopupDelay = nil
+            end
         end
     end
 
