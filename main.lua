@@ -196,6 +196,7 @@ function love.keypressed(key)
         local fireCrystalProjectileClass = Projectile
         local fireCrystalBaseDamage = 10
         local fireCrystalKnockback = 0
+        local fireCrystalBaseRange = 200
         local fireCrystalLevel = 1
         local fireCrystalID = (love.math.random(1, 99999999) .. "-" .. tostring(os.time()))
 
@@ -227,6 +228,7 @@ function love.keypressed(key)
             fireCrystalProjectileClass,
             fireCrystalBaseDamage,
             fireCrystalKnockback,
+            fireCrystalBaseRange,
             dropX,
             dropY,
             fireCrystalLevel,
@@ -288,7 +290,7 @@ function love.keypressed(key)
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, x, y, level, id)
+function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, baseRange, x, y, level, id)
   local weaponDrop = {
     name = name,
     image = image,
@@ -299,6 +301,7 @@ function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, p
     projectileClass = projectileClass,
     baseDamage = baseDamage,
     knockback = knockback,
+    baseRange = baseRange,
     x = x,
     y = y,
     level = level or 1,
@@ -363,6 +366,7 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.projectileClass,
             weaponToEquip.baseDamage,
             weaponToEquip.knockback,
+            weaponToEquip.baseRange,
             weaponToEquip.level,
             weaponToEquip.id
         )
@@ -392,6 +396,7 @@ function updateDroppedItems(dt)
                 -- Shard reached player
                 metaData.shards = (metaData.shards or 0) + 1
                 local offset = (item.target.height or 32) / 2 + 18
+                -- TODO: this popup isn't working, need to debug more 8/6/25
                 if popupManager and item.target then
                     print("Adding ther friggin shard popup at", item.target.x, item.target.y, "time:", love.timer.getTime())
                     popupManager:add("+1 shard!", item.target.x, item.target.y - offset, {1,1,1,1}, 1.1, -25, 0)
@@ -904,8 +909,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     player.baseDamage = runData.playerBaseDamage or 1
     player.speed = runData.playerSpeed or 300
 
-
-    -- reconstruct equipped weapon from player inventory
+    -- reconstruct equipped weapon from player inventory table
     if player.equippedSlot and player.inventory[player.equippedSlot] then
         local w = player.inventory[player.equippedSlot]
         player.weapon = Weapon:new(
@@ -918,6 +922,7 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
             w.projectileClass,
             w.baseDamage,
             w.knockback,
+            w.baseRange,
             w.level,
             w.id
         )
@@ -1366,7 +1371,7 @@ end
                 local damage = weapon:getDamage() or 10
                 local speed = weapon:getProjectileSpeed() or 200
                 -- create projectiles with angle and speed
-                local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player, player.weapon.knockback)
+                local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player, player.weapon.knockback, player.weapon.range)
 
                --Debug.debugPrint("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
                 if newProjectile then
@@ -1744,6 +1749,7 @@ function playing:draw()
     if player.canPickUpItem then
         love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
     end
+        love.graphics.print("Range: " .. player.weapon.range, 20, 400)
         love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 430)
         love.graphics.print("Rarity: " .. player.weapon.rarity, 20, 460)
         love.graphics.print("Knockback: " .. player.weapon.knockback, 20, 490)
@@ -1772,6 +1778,7 @@ function playing:draw()
         selectedItemToCompare.projectileClass,
         selectedItemToCompare.baseDamage,
         selectedItemToCompare.knockback,
+        selectedItemToCompare.range,
         selectedItemToCompare.level,
         selectedItemToCompare.id
     )
@@ -1814,7 +1821,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     player.baseDamage = runData.playerBaseDamage or 1
     player.speed = runData.playerSpeed or 300
 
-    -- reconstruct equipped weapon from player inventory table data
+    -- reconstruct equipped weapon from player inventory table
     if player.equippedSlot and player.inventory[player.equippedSlot] then
         local w = player.inventory[player.equippedSlot]
         player.weapon = Weapon:new(
@@ -1827,6 +1834,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
             w.projectileClass,
             w.baseDamage,
             w.knockback,
+            w.baseRange,
             w.level,
             w.id
         )

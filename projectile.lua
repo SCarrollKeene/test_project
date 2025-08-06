@@ -97,7 +97,7 @@ function Projectile:initializeTrailPosition(offset)
 end
 
 -- constructor function, if you wanted to create multiple projectiles with different methods/data
-function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level, knockback)
+function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level, knockback, maxRange)
     local self = {
         level = level or 1,
         newCreateCount = newCreateCount + 1,
@@ -111,6 +111,8 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level,
         height = 20,
         damage = damage or 10, -- store damage
         knockback = knockback or 0,
+        maxRange = maxRange or 600,
+        distanceTravled = 0,
         world = world,
         owner = owner, --store the owner of the shot projectile, in this case, the player
         ignoreTarget = owner,
@@ -259,7 +261,22 @@ function Projectile:update(dt)
     -- self.y = self.by
     self.x, self.y = self.collider:getPosition()
 
+    -- Track distance traveled
+    local dx = self.x - (self.prevX or self.x)
+    local dy = self.y - (self.prevY or self.y)
+    local dist = math.sqrt(dx * dx + dy * dy)
+    self.distanceTraveled = (self.distanceTraveled or 0) + dist
+    self.prevX = self.x
+    self.prevY = self.y
+
+    if self.distanceTraveled >= (self.maxRange or 600) then
+        print("[PROJECTILE RANGE EXCEEDED] Destroying projectile.")
+        self:destroySelf()
+        return
+    end
+
     -- Check if projectile is off-screen
+    -- TODO: I don't think this actually works after I redid a lot of the projectile methods, retest 8/6/25
      if self.x + self.radius < 0 or self.x - self.radius > love.graphics.getWidth() or
        self.y + self.radius < 0 or self.y - self.radius > love.graphics.getHeight() then
         print(string.format("[OFF SCREEN] Projectile (owner: %s) off-screen, destroying", (self.owner and self.owner.name) or "Unknown"))
@@ -305,20 +322,20 @@ function Projectile:draw()
     end 
 end
 
-function Projectile.getProjectile(world, x, y, angle, speed, damage, owner, knockback)
+function Projectile.getProjectile(world, x, y, angle, speed, damage, owner, knockback, maxRange)
     for _, p in ipairs(pool) do
         if not p.active then -- skip destroyed projectiles
             print("[REUSE] Reusing inactive projectile, was destroyed:", p.isDestroyed)
-            p:reactivate(world, x, y, angle, speed, damage, owner, knockback)
+            p:reactivate(world, x, y, angle, speed, damage, owner, knockback, maxRange)
             return p
         end
     end
      print("[EXPAND POOL] Creating new projectile")
 
      -- Fallback: Expand pool if needed
-    local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner, knockback)
+    local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner, knockback, maxRange)
     newProj.active = true
-    newProj:reactivate(world, x, y, angle, speed, damage, owner, knockback)
+    newProj:reactivate(world, x, y, angle, speed, damage, owner, knockback, maxRange)
     table.insert(pool, newProj)
     return newProj
 end
@@ -337,7 +354,7 @@ function Projectile.getStats()
   return active, inactive
 end
 
-function Projectile:reactivate(world, x, y, angle, speed, damage, owner, knockback)
+function Projectile:reactivate(world, x, y, angle, speed, damage, owner, knockback, maxRange)
     -- to turn this baby back on, its essentially just the collider table with its collider props set again
     print("[REACTIVATE] Reactivating projectiles and particles state:", self)
     self.world = world
@@ -348,11 +365,14 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner, knockba
     self.speed = speed
     self.damage = damage
     self.knockback = knockback or 0
+    self.maxRange = maxRange or self.maxRange or 600
+    self.distanceTraveled = 0
+    self.prevX = x
+    self.prevY = y
     self.owner = owner
     self.isDestroyed = false -- reset destroyed state
     self.toBeRemoved = false -- reset removal flag
     self.active = true -- set active flag to true
-
 
      -- Remove invalid collider reference
     if self.collider and self.collider:isDestroyed() then

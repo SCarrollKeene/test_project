@@ -8,13 +8,13 @@ Weapon.RARITY_ORDER = {
 
 -- TODO: consider unique passive effects or weapon mods in addition to stat boosts (e.g., burn, freeze, shockwaves, lifesteal, or on-hit explosions)
 Weapon.RARITY_STAT_MULTIPLIERS = {
-  common    = { damage = 1.00, speed = 1.00, fireRate = 1.00 },
-  uncommon  = { damage = 1.15, speed = 1.05, fireRate = 1.07 },
-  rare      = { damage = 1.30, speed = 1.10, fireRate = 1.15 },
-  epic      = { damage = 1.50, speed = 1.16, fireRate = 1.24 },
-  legendary = { damage = 1.75, speed = 1.23, fireRate = 1.33 },
-  exotic    = { damage = 2.05, speed = 1.31, fireRate = 1.43 },
-  mythic    = { damage = 2.40, speed = 1.40, fireRate = 1.55 }
+  common    = { damage = 1.00, speed = 1.00, fireRate = 1.00, range = 1.00 },
+  uncommon  = { damage = 1.15, speed = 1.05, fireRate = 1.07, range = 1.10 },
+  rare      = { damage = 1.30, speed = 1.10, fireRate = 1.15, range = 1.20 },
+  epic      = { damage = 1.50, speed = 1.16, fireRate = 1.24, range = 1.32 },
+  legendary = { damage = 1.75, speed = 1.23, fireRate = 1.33, range = 1.45 },
+  exotic    = { damage = 2.05, speed = 1.31, fireRate = 1.43, range = 1.60 },
+  mythic    = { damage = 2.40, speed = 1.40, fireRate = 1.55, range = 1.75 }
 }
 
 Weapon.image = nil
@@ -27,7 +27,7 @@ Weapon.image = nil
 -- saving/loaidng for persisten weapon levels
 -- need to build an inventory screen or at least a UI for weapons held
 
-function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, projectileClass, baseDamage, knockback, level, id)
+function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, projectileClass, baseDamage, knockback, baseRange, level, id)
 
     local self = {
         name = name or "Fire Crystal",
@@ -44,7 +44,9 @@ function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, pr
         projectileClass = projectileClass, -- projectileClass to spawn, return to this
         --projectileSpeedBonus = 1
         level = level or 1, -- scale stats based on level
-        id = id or love.math.random(1, 99999999) .. "-" .. tostring(os.time()) -- use a UUID lib later
+        id = id or love.math.random(1, 99999999) .. "-" .. tostring(os.time()), -- use a UUID lib later
+        range = nil,
+        baseRange = 200
     }
 
     setmetatable(self, {__index = Weapon}) -- point back at weapon table, Weapon methods and fields/data will get looked up
@@ -60,6 +62,7 @@ function Weapon:levelUp(player)
     local oldDamage = self.damage or 0
     local oldFireRate = self.fireRate or 0
     local oldSpeed = self.speed or 0
+    local oldRange = self.range or 0
 
     -- Auto-level up
     self.level = self.level + 1
@@ -70,10 +73,12 @@ function Weapon:levelUp(player)
     local dmgIncrease = self.damage - oldDamage
     local fireRateIncrease = self.fireRate - oldFireRate
     local speedIncrease = self.speed - oldSpeed
+    local rangeIncrease = self.range - oldRange
 
     local dmgPct = oldDamage > 0 and (dmgIncrease / oldDamage) * 100 or 0
     local fireRatePct = oldFireRate > 0 and (fireRateIncrease / oldFireRate) * 100 or 0
     local speedPct = oldSpeed > 0 and (speedIncrease / oldSpeed) * 100 or 0
+    local rangePct = oldRange > 0 and (rangeIncrease / oldRange) * 100 or 0
 
     local px, py = player.x or 0, player.y or 0
     local offset = (player.height or 32) / 2 + 18
@@ -83,6 +88,7 @@ function Weapon:levelUp(player)
         popupManager:add(string.format("+%.1f%% Damage", dmgPct), px, py - offset, {1, 0.6, 0.2, 1}, 1.0, nil, 0.5)
         popupManager:add(string.format("+%.1f%% Fire rate", fireRatePct), px, py - offset, {0.2, 1, 0.2, 1}, 1.0, nil, 0.25)
         popupManager:add(string.format("+%.1f%% Speed", speedPct), px, py - offset, {0.4, 0.8, 1, 1}, 1.0, nil, 0.75)
+        popupManager:add(string.format("+%.1f%% Range", rangePct), px, py - offset, {0.54, 0.37, 1, 1}, 1.0, nil, 1.0)
     else
         print("[WEAPON LEVEL UP POPUP] PopupManager is nil in Weapon:levelUp()")
     end
@@ -97,6 +103,7 @@ function Weapon:recalculateStats()
     self.fireRate = (self.baseFireRate + (self.level - 1) * 0.05) * (multipliers.fireRate or 1)
     self.cooldown = Cooldown:new(1 / self.fireRate)
     self.projectileSpeedBonus = (1 + 0.1 * (self.level - 1)) * (multipliers.speed or 1)
+    self.range = (self.baseRange or 200) + (self.level - 1) * 75
 
     -- special/status effects
     if self.level < 5 then
@@ -158,12 +165,13 @@ function Weapon:shoot(world, x, y, angle, speed, owner)
         local proj_radius = self.radius or 10
         local proj_speed = self:getProjectileSpeed()
         local proj_knockback = self.knockback
+        local proj_range = self.range or 200
 
         if not self.projectileClass or not self.projectileClass.new then
             error("Weapon's projectileClass is not set or has no :new() method!")
         end
 
-        return self.projectileClass:new(world, x, y, angle, proj_speed, proj_radius, proj_dmg, owner, proj_knockback)
+        return self.projectileClass:new(world, x, y, angle, proj_speed, proj_radius, proj_dmg, owner, proj_knockback, proj_range)
     end
     return nil -- return nil if cooldown isn't ready
 end
