@@ -97,6 +97,8 @@ globalParticleSystems = {}
 local pendingRoomTransition = false
 local recycleFocusedItem = nil
 local recycleHoldTime = 0
+local recycleThreshold = 1.0
+local recycleProgress = 0
 
 -- fade variables for room transitions
 local fadeAlpha = 0         -- 0 = fully transparent, 1 = fully opaque
@@ -1089,7 +1091,7 @@ function love.update(dt)
         end
 
         recycleHoldTime = (recycleHoldTime or 0) + dt
-        if recycleHoldTime >= 1 and recycleFocusedItem then
+        if recycleHoldTime >= recycleThreshold and recycleFocusedItem then
             -- possibly change to coins later 8/7/25
             Loot.recycleWeaponDrop(recycleFocusedItem, metaData, player)
             selectedItemToCompare = nil -- Skip
@@ -1105,6 +1107,13 @@ function love.update(dt)
     else
         recycleFocusedItem = nil
         recycleHoldTime = 0
+    end
+
+    -- progress bar for recycle time
+    if recycleHoldTime and recycleFocusedItem then
+        recycleProgress = math.min(recycleHoldTime / recycleThreshold, 1)
+    else
+        recycleProgress = 0
     end
 end
 
@@ -1811,7 +1820,7 @@ function playing:draw()
         selectedItemToCompare.id
     )
 
-    UI.drawWeaponComparison(player.weapon, candidateWeapon)
+    UI.drawWeaponComparison(player.weapon, candidateWeapon, recycleProgress)
     end
 end
 

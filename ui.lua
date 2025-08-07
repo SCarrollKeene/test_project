@@ -80,7 +80,7 @@ function UI.drawEquippedWeaponOne(x, y, player, size)
     )
 end
 
-function UI.drawWeaponComparison(current, candidate)
+function UI.drawWeaponComparison(current, candidate, recycleProgress)
     if not current or current.type ~= "weapon" or not candidate or candidate.type ~= "weapon" then
         return
     end
@@ -88,6 +88,13 @@ function UI.drawWeaponComparison(current, candidate)
     local startX, startY, pad = 400, 200, 22
     local panelW, panelH, panelSpacing = 260, 220, 40
     local borderW = 4
+
+    local rightCardX = startX + panelW + panelSpacing
+    local rightCardY = startY
+
+    local barWidth = panelW - 2
+    local barHeight = 16
+    local barY = rightCardY + panelH - 20
 
     -- Helper to draw weapon panel (used for both current and candidate)
     local function drawWeaponPanel(weapon, x, y, label, isEquipped)
@@ -135,9 +142,21 @@ function UI.drawWeaponComparison(current, candidate)
         love.graphics.print("Range: " .. rangeValue, x + 10, y + 166)
     end
 
-    -- Draw current weapon (left) and candidate (right)
+    local function drawProgressBar(x, y, width, height, progress)
+        progress = math.min(math.max(progress, 0), 1)
+        -- Outline
+        love.graphics.setColor(1, 1, 1, 0.4) -- faint white outline
+        love.graphics.rectangle("line", x, y, width, height, 8, 8)
+        -- Fill
+        love.graphics.setColor(1, 1, 1, 1) -- solid white
+        love.graphics.rectangle("fill", x, y, width * progress, height, 8, 8)
+        love.graphics.setColor(1, 1, 1, 1) -- reset color
+    end
+
+    -- Draw current weapon (left) and candidate (right) and recycle progress bar
     drawWeaponPanel(current, startX, startY, current.name or "????", true)
     drawWeaponPanel(candidate, startX + panelW + panelSpacing, startY, candidate.name or "????", false)
+    drawProgressBar(rightCardX, barY, barWidth, barHeight, recycleProgress or 0)
 
     -- Draw instructions below
     love.graphics.setColor(1, 1, 1, 1)
