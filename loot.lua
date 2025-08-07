@@ -71,8 +71,37 @@ function createWeaponDropFromInstance(weapon, x, y)
   }
 end
 
+function recycleWeaponDrop(item, metaData, player)
+  print("[DEBUG] recycleWeaponDrop called", item and item.name, item and item.type)
+    if not item or item.type ~= "weapon" then return end
+
+    -- Calculate payout
+    local rarityBaseValue = {
+        common = 100, uncommon = 200, rare = 400, epic = 800,
+        legendary = 1500, exotic = 3000, mythic = 5000
+    }
+    local recyclePercent = 0.10 -- 10%
+    local rarity = item.rarity or "common"
+    local level = item.level or 1
+
+    local baseValue = rarityBaseValue[rarity] or 100
+    local payout = math.floor(baseValue * recyclePercent * level)
+
+    -- Add payout to metaData
+    metaData.shards = (metaData.shards or 0) + payout
+
+    -- Feedback: add a progress bar, popup, particles, animation later 8/7/25
+    if popupManager and player then
+        popupManager:add("+" .. payout .. " shards!", player.x, player.y - 34, {1, 1, 1, 1}, 1.1, -25, 0)
+    end
+
+    -- Remove from droppedItems
+    removeDroppedItem(item)
+end
+
 return {
   createWeaponDropFromInstance = createWeaponDropFromInstance,
   removeDroppedItem = removeDroppedItem,
-  createShardDrop = createShardDrop
+  createShardDrop = createShardDrop,
+  recycleWeaponDrop = recycleWeaponDrop
 }

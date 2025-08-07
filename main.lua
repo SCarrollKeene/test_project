@@ -95,6 +95,8 @@ local scoreFont = 0
 globalParticleSystems = {}
 
 local pendingRoomTransition = false
+local recycleFocusedItem = nil
+local recycleHoldTime = 0
 
 -- fade variables for room transitions
 local fadeAlpha = 0         -- 0 = fully transparent, 1 = fully opaque
@@ -163,11 +165,6 @@ function love.keypressed(key)
         selectedItemToCompare = nil
         player.canPickUpItem = nil
         player:updateEquipmentInventory()
-    end
-
-    if key == "q" and selectedItemToCompare then
-        selectedItemToCompare = nil -- Skip
-        player.canPickUpItem = nil
     end
 
     -- if key == "q" and selectedItemToCompare then
@@ -435,9 +432,12 @@ function checkPlayerPickups()
                 if item.type == "shard" then
                     metaData.shards = (metaData.shards or 0) + 1
                     Debug.debugPrint("[SHARD PICKUP] Total shards: " .. tostring(metaData.shards))
+                    if popupManager and player then
+                        popupManager:add("+1 shard!", player.x, player.y - 34, {1,1,1,1}, 1.1, -25, 0)
+                    end
                     Loot.removeDroppedItem(item)
                     SaveSystem.saveGame(runData, metaData)
-                    -- TODO: sounds, +1 pickup from popup manager
+                    -- TODO: sounds for shard pickups
                 elseif item.type == "weapon" then
                     player.canPickUpItem = item
                     selectedItemToCompare = item
@@ -1082,6 +1082,30 @@ end
 
 function love.update(dt)
     -- moved all logic into func playing:update(dt) because I'm utilizing hump.gamestate
+    if love.keyboard.isDown("q") and selectedItemToCompare then
+        if not recycleFocusedItem then
+            recycleFocusedItem = selectedItemToCompare
+            recycleHoldTime = 0
+        end
+
+        recycleHoldTime = (recycleHoldTime or 0) + dt
+        if recycleHoldTime >= 1 and recycleFocusedItem then
+            -- possibly change to coins later 8/7/25
+            Loot.recycleWeaponDrop(recycleFocusedItem, metaData, player)
+            selectedItemToCompare = nil -- Skip
+            player.canPickUpItem = nil
+            recycleFocusedItem = nil
+            recycleHoldTime = 0
+            -- TODO: recycle logic for shards/coins here 8/7/25
+            -- On recycling, add shards to player's total
+            -- remove the item
+            -- particle effect for recycling
+            -- progress bar for recycle
+        end
+    else
+        recycleFocusedItem = nil
+        recycleHoldTime = 0
+    end
 end
 
 function playing:update(dt)

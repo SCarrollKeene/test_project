@@ -123,7 +123,11 @@ function UI.drawWeaponComparison(current, candidate)
 
     -- Draw instructions below
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("Press [E] to Equip   [Q] to Skip", startX, startY + panelH + 32)
+    local rightCardX = startX + panelW + panelSpacing
+    local messageWidth = love.graphics.getFont():getWidth("Press [E] to Equip Hold [Q] to Recycle")
+    local messageX = rightCardX + (panelW - messageWidth) / 2
+    love.graphics.print("Press [E] to Equip Hold [Q] to Recycle", messageX, startY + panelH + 32)
+
 end
 
 return UI
