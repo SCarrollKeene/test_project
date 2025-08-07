@@ -4,6 +4,24 @@ local RARITY_COLORS = Particle.RARITY_COLORS
 
 local UI = {}
 
+local function printOutlined(text, x, y, outlineColor, textColor)
+    local oc = outlineColor or {0,0,0,1}
+    local tc = textColor or {1,1,1,1}
+    -- Outline (draw in 8 directions)
+    love.graphics.setColor(oc)
+    love.graphics.print(text, x-1, y-1)
+    love.graphics.print(text, x+1, y-1)
+    love.graphics.print(text, x-1, y+1)
+    love.graphics.print(text, x+1, y+1)
+    love.graphics.print(text, x-1, y)
+    love.graphics.print(text, x+1, y)
+    love.graphics.print(text, x, y-1)
+    love.graphics.print(text, x, y+1)
+    -- Main text
+    love.graphics.setColor(tc)
+    love.graphics.print(text, x, y)
+end
+
 function UI.drawWaveCounter(waveNum, totalWaves, x, y)
     love.graphics.setColor(1,1,1,1)
     love.graphics.setFont(love.graphics.newFont(22))
@@ -123,10 +141,12 @@ function UI.drawWeaponComparison(current, candidate)
 
     -- Draw instructions below
     love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(love.graphics.newFont(16))
     local rightCardX = startX + panelW + panelSpacing
     local messageWidth = love.graphics.getFont():getWidth("Press [E] to Equip Hold [Q] to Recycle")
     local messageX = rightCardX + (panelW - messageWidth) / 2
-    love.graphics.print("Press [E] to Equip Hold [Q] to Recycle", messageX, startY + panelH + 32)
+    local paddingBottom = 16
+    printOutlined("Press [E] to Equip Hold [Q] to Recycle", rightCardX, startY + panelH + paddingBottom)
 
 end
 

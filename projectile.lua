@@ -271,7 +271,7 @@ function Projectile:update(dt)
 
     if self.distanceTraveled >= (self.maxRange or 600) then
         print("[PROJECTILE RANGE EXCEEDED] Destroying projectile.")
-        -- TODO: destry or remove particle effect so it isn't happening after the projectile is gone 8/6/25
+        -- TODO: destroy or remove particle effect so it isn't happening after the projectile is gone 8/6/25
         self:destroySelf()
         return
     end
