@@ -19,6 +19,7 @@ local Cooldown = require("cooldown")
 local Projectile = require("projectile")
 local wf = require("libraries/windfield")
 local Gamestate = require("libraries/hump/gamestate")
+local pause_menu = require("states/pause_menu")
 local Camera = require("libraries/hump/camera")
 local Moonshine = require("libraries.moonshine")
 -- local camera = require("camera")
@@ -1032,6 +1033,12 @@ function playing:enter(previous_state, world, enemyImageCache, mapCache)
     end
 end
 
+function playing:keypressed(key)
+    if key == "p" then
+        Gamestate.push(pause_menu)
+    end
+end
+
 function playing:leave()
     -- stop music, clear temp tables/objects, destroy portals, etc
     Debug.debugPrint("[PLAYING:LEAVE] playing leave called")
@@ -1946,6 +1953,12 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     -- prepare to load next level
     LevelManager.currentLevel = LevelManager.currentLevel
 
+end
+
+function safeRoom:keypressed(key)
+    if key == "p" then
+        Gamestate.push(pause_menu)
+    end
 end
 
 function safeRoom:leave()
