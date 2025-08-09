@@ -1,5 +1,7 @@
 local Assets = require("assets")
 local Particle = require("particle")
+local data_store = require("data_store")
+
 local RARITY_COLORS = Particle.RARITY_COLORS
 
 local UI = {}
@@ -39,13 +41,13 @@ function UI.drawWaveTimer(timeLeft, x, y)
     love.graphics.printf(text, x, y, 180, "left")
 end
 
-function UI.drawShardCounter(x, y, metaData)
+function UI.drawShardCounter(x, y)
     local icon = Assets.images.shard
     if not icon then return end
 
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.draw(icon, x, y, 0, 1.5, 1.5)  -- Adjust scale for visibility (1.5x)
-    love.graphics.printf("x " .. tostring(metaData.shards or 0), x + 40, y + 8, 100, "left")
+    love.graphics.printf("x " .. tostring(data_store.metaData.shards or 0), x + 40, y + 8, 100, "left")
 end
 
 function UI.drawEquippedWeaponOne(x, y, player, size)

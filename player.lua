@@ -7,6 +7,7 @@ local anim8 = require("libraries/anim8")
 local wf = require("libraries/windfield")
 local flashShader = require("libraries/flashshader")
 local SaveSystem = require("save_game_data")
+local data_store = require("data_store")
 
 local Player = {} -- one global player object based on current singleton setup, but local to the module making it not global in use
 Player.__index = Player -- reference for methods from instances
@@ -167,7 +168,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
 
     -- eventually replace self.weapon with a table that has multiple weapon slots
     -- self.weaponSlots = {[1] = weaponSlotA, [2] = weaponSlotB } -- TODO: how many active slots do I want? 7/16/25
-    -- don't forget to add to all runData logic to make sure this persists later throughout main and the save game data resetRun func
+    -- don't forget to add to all data_store.runData logic to make sure this persists later throughout main and the save game data resetRun func
     -- use an integar variable in equippedSlot refactor
 
     -- data only snapshot of weapon in player inventory
@@ -557,9 +558,11 @@ function Player:dash()
 end
 
 -- take damage, deal damage and direction
-function Player:takeDamage(dmg, metaData, playerScore)
+function Player:takeDamage(dmg, playerScore)
     Debug.debugPrint("DAMAGE TRIGGERED")
     if self.isDead or self.isInvincible then return end -- no more damage taken if dead
+
+    local metaData = data_store.metaData
 
     if triggerDamageFlash then triggerDamageFlash() end
 
@@ -576,7 +579,7 @@ function Player:takeDamage(dmg, metaData, playerScore)
     Debug.debugPrint(string.format("Invincible: %s | Timer: %.2f", tostring(self.invincible), self.invincibleTimer))
     -- Utils.takeDamage(self, dmg)
     if self.health <= 0 then
-        self:die(metaData, playerScore)
+        self:die(playerScore)
     end
 end
 
@@ -585,11 +588,12 @@ function Player:dealDamage(target, dmg)
     Utils.dealDamage(self, target, dmg)
 end
 
-function Player:die(metaData, playerScore, killer)
-    metaData.highScore = math.max(metaData.highScore, playerScore)
+function Player:die(playerScore, killer)
+    local metaData = data_store.metaData
+    data_store.metaData.highScore = math.max(data_store.metaData.highScore, playerScore)
 
-    SaveSystem.highScore = math.max(metaData.highScore, playerScore)
-    SaveSystem.resetRun(runData, metaData)  -- Reset current run
+    SaveSystem.highScore = math.max(data_store.metaData.highScore, playerScore)
+    SaveSystem.resetRun(data_store.runData, data_store.metaData)  -- Reset current run
     -- Gamestate.switch(gameOver) -- TODO: implement gameOver gamestate
 
     -- Drop all items in inventory on death
@@ -676,6 +680,7 @@ function Player:triggerGameOver()
     -- Add in game over logic
 end
 
+local player = setmetatable({}, Player)
 return Player
 
 -- The player/enemy might have other attributes (like strength, skill levels, buffs, debuffs) that modify the base damage from the weapon or projectile.

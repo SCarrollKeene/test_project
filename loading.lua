@@ -1,4 +1,5 @@
 local Gamestate = require("libraries/hump/gamestate")
+local MapLoader = require("maploader")
 
 local Loading = {}
 
@@ -13,9 +14,11 @@ local assets = {
         "sprites/slime_violet.png",
     },
     maps = {
+        "maps/room0.lua",
         "maps/room1.lua",
         "maps/room2.lua",
         "maps/room3.lua",
+        "maps/room4.lua",
         "maps/saferoommap.lua"
     },
     sounds = {
@@ -36,10 +39,10 @@ function Loading:enter(previous_state, world, playing_state, randomBlobs)
     self.playing_state = playing_state
     self.randomBlobs = randomBlobs
     self.loaded = 0
-    self.total = self.calculateTotalAssets() or #assets
-    for _, category in pairs(assets) do
-        self.total = self.total + #category
-    end
+    self.total = self.calculateTotalAssets()
+    -- for _, category in pairs(assets) do
+    --     self.total = self.total + #category
+    -- end
 
     -- initialize cache
     self.enemyImageCache = self.enemyImageCache or {}
@@ -64,23 +67,27 @@ function Loading:enter(previous_state, world, playing_state, randomBlobs)
                 self.enemyImageCache[blob.spritePath] = love.graphics.newImage(placeholder)
                 print("[LOADING] Using placeholder for:", blob.spritePath)
             end
+            -- Add to the loaded counter
+            self.loaded = self.loaded + 1
+            -- Add to the total counter
+            self.total = self.total + 1
         end
     end
 end
 
 function Loading:calculateTotalAssets()
     local count = 0
-    -- for _, category in pairs(assets) do
-    --     count = count + #category
-    -- end
-    -- return count
+    for _, category in pairs(assets) do
+        count = count + #category
+    end
+    return count
 end
 
 function Loading:update(dt)
   if self.loaded < self.total then
         self:loadNextAsset()
     else
-        Gamestate.switch(self.playing_state, self.world, self.enemyImageCache, self.mapCache)
+        Gamestate.switch(self.playing_state, self.world, self.enemyImageCache, self.mapCache, self.randomBlobs)
     end
 end
 
@@ -113,11 +120,12 @@ function Loading:loadNextAsset()
         self.soundsLoaded = true
 
     -- load maps
-    else
-        for _, map in ipairs(assets.maps) do
-            self.mapCache[map] = require(map:gsub("%.lua$", ""))
+    elseif not self.mapsLoaded then
+        for _, mapFile in ipairs(assets.maps) do
+            self.mapCache[mapFile] = MapLoader.load(mapFile:gsub("maps/", ""):gsub("%.lua$", ""), self.world)
         end
         self.loaded = self.loaded + #assets.maps
+        self.mapsLoaded = true
     end
     print("[LOADING] loading asset: ", assets)
 end

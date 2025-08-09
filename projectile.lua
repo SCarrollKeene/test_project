@@ -1,6 +1,5 @@
 local Utils = require("utils")
 local wf = require("libraries/windfield")
-local cam = require("camera")
 local Timer = require("libraries/hump/timer")
 local Particle = require("particle")
 

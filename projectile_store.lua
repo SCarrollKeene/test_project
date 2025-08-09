@@ -1,0 +1,3 @@
+local projectiles = {}
+
+return projectiles

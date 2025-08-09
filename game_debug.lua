@@ -1,4 +1,4 @@
-local cam = require("camera")
+local CamManager = require("cam_manager")
 local Projectile = require("projectile")  -- Assuming you have a Projectile module
 -- move to a utilities folder later
 
@@ -110,7 +110,7 @@ end
 function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
     if not Debug.mode then return end
 
-    cam:attach()
+    CamManager:attach()
     love.graphics.setColor(1, 1, 0, 0.3) -- Yellow, semi-transparent
 
     for x = 1, gridWidth do
@@ -128,7 +128,7 @@ function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
     end
 
     love.graphics.setColor(1, 1, 1, 1) -- Reset color
-    cam:detach()
+    CamManager:detach()
 end
 
 return Debug

@@ -1,4 +1,5 @@
 local MapLoader = require("maploader")
+local projectiles = require("projectile_store")
 
 local function buildCombatWaves(includeBoss)
     local waves = {}
@@ -119,7 +120,7 @@ local LevelManager = {
     }
 }
 
-function LevelManager:loadLevel(index, enemyImageCache, projectiles)
+function LevelManager:loadLevel(index, enemyImageCache)
     -- each level recieves an index
     self.currentLevel = index
     local level = self.levels[index]

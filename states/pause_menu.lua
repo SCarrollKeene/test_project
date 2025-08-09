@@ -24,6 +24,7 @@ function pause_menu:draw()
 end
 
 function pause_menu:keypressed(key)
+    -- TODO: when I implement controller support, update this to handle respective input 8/8/25
     if key == "p" then
         Gamestate.pop() -- return to gameplay
     end

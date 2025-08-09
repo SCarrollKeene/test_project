@@ -1,13 +1,14 @@
+local data_store = require("data_store")
 local Serpent = require("libraries/serpent")
 serpent = Serpent
 
 local SaveSystem = {}
 
-function SaveSystem.saveGame(runData, metaData)
+function SaveSystem.saveGame()
     -- serialize with serpent, then save data
     local data = {
-        run = runData,
-        meta = metaData
+        run = data_store.runData,
+        meta = data_store.metaData
     }
     -- utilize serpent for serialization
     local serialized = serpent.block(data)
@@ -47,7 +48,10 @@ end
 function SaveSystem.loadGame()
     if love.filesystem.getInfo("save.dat") then
         local data = love.filesystem.read("save.dat")
-        return serprent.load(data) --deserialize data using serpent
+        local loaded = serprent.load(data) --deserialize data using serpent
+        data_store.runData = loaded.run or {}
+        data_store.metaData = loaded.meta or {}
+        return loaded
     end
     return nil
 end
@@ -55,7 +59,7 @@ end
 -- revisit later on how to clean this up to only reset current run data, but not entire game save
 function SaveSystem.resetRun()
     -- Reset run-specific data only
-    runData = {
+    data_store.runData = {
         currentRoom = 1,
         cleared = false,
         clearedRooms = {},
@@ -69,7 +73,7 @@ function SaveSystem.resetRun()
     }
 
     -- Save reset state immediately
-    SaveSystem.saveGame(runData, metaData)
+    SaveSystem.saveGame()
 end
 
 return SaveSystem
