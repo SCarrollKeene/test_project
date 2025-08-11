@@ -1,17 +1,3 @@
--- to be deleted 8/10/25
-local player = require("player")
-local Enemy = require("enemy")
-local Weapon = require("weapon")
-local Projectile = require("projectile")
-local Walls = require("walls")
-local LevelManager = require("levelmanager")
-local UI = require("ui")
-local sti = require("libraries/sti")
-local Camera = require("libraries/hump/camera")
-local Moonshine = require("libraries.moonshine")
-local Debug = require("game_debug")
-
--- keep for sure
 local wf = require("libraries/windfield")
 local Assets = require("assets")
 local Collision = require("collision")
@@ -24,6 +10,7 @@ local safeRoom = require("states/safeRoom")
 local pause_menu = require("states/pause_menu")
 local data_store = require("data_store")
 local SaveSystem = require("save_game_data")
+local Debug = require("game_debug")
 
 -- virtual resolution
 local VIRTUAL_WIDTH = 1280
@@ -32,27 +19,13 @@ local VIRTUAL_HEIGHT = 768
 local gameCanvas -- off-screen drawing surface
 local scaleX, scaleY, offsetX, offsetY -- variables for scaling and positioning 
 
--- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
--- Particle.preloadImages()
+globalParticleSystems = {}
 
--- for testing purposes, loading the safe room map after entering portal
-local saferoomMap
+local scoreFont = 0
+_G.incrementPlayerScore = incrementPlayerScore -- Make it accessible globally for Utils.lua
 
 -- game state definitions
 local gameOver = {}
-
-droppedItems = droppedItem or {} -- global table to manage dropped items, such as weapons
-local selectedItemToCompare = nil
-
-local enemies = {} -- enemies table to house all active enemies
-
-local portal = nil -- set portal to nil initially, won't exist until round is won by player
-local playerScore = 0
-local scoreFont = 0
-
-globalParticleSystems = {}
-
-_G.incrementPlayerScore = incrementPlayerScore -- Make it accessible globally for Utils.lua
 
 -- Debug to test table loading and enemy functions for taking damage, dying and score increment
 function love.keypressed(key)
@@ -97,17 +70,6 @@ function love.load()
     -- initialize first
     wallColliders = {}
 
-    -- load player save data
-    -- TODO: implement save game and load game logic later on 6/20/25
-    -- local save = SaveSystem.loadGame()
-    -- if save then
-    --     data_store.runData = save.run
-    --     data_store.metaData = save.meta
-    -- else
-    --     data_store.runData = createNewRun()
-    --     data_store.metaData = loadDefaultMeta()
-    -- end
-
     -- collision classes must load into the world first, per order of operations/how content is loaded, I believe
     world:addCollisionClass('player', {ignores = {}})
     Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'player')
@@ -125,6 +87,8 @@ function love.load()
     Debug.debugPrint("DEBUG: main.lua: Added collision class - " .. 'portal')
     -- You can also define interactions here
 
+    -- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
+    -- Particle.preloadImages()
     Projectile.loadAssets()
     Weapon.loadAssets()
     Assets.load()
@@ -144,12 +108,6 @@ function love.load()
     -- Call love.resize to set up initial scaling
     love.resize(love.graphics.getWidth(), love.graphics.getHeight())
 
-    -- TODO: register gamestate events and start game in playing state
-    -- Gamestate.registerEvents({
-    --     leave = function()
-    --         globalParticleSystems = {}
-    --     end
-    -- })
     Gamestate.registerEvents()
     Gamestate.switch(Loading, world, playing, projectiles)
 end

@@ -2,6 +2,7 @@ local Gamestate = require("libraries/hump/gamestate")
 local MapLoader = require("maploader")
 local Enemy = require("enemy")
 local enemyTypes = require("enemytypes")
+local Particle = require("particle")
 
 local Loading = {}
 
@@ -37,6 +38,24 @@ local assets = {
 }
 
 function Loading:enter(previous_state, world, playing_state)
+
+    -- load player save data
+    -- TODO: implement save game and load game logic later on 6/20/25
+    -- TODO: add a main menu, move this to a “Continue” or “New Game” selector
+    -- local save = SaveSystem.loadGame()
+    -- if save then
+    --     data_store.runData = save.run
+    --     data_store.metaData = save.meta
+    -- print("LOADING SAVE 1 loaded")
+    -- else
+    --     data_store.runData = createNewRun()
+    --     data_store.metaData = loadDefaultMeta()
+    -- print("LOADING NEW run/meta data created")
+    -- end
+
+    -- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
+    -- Particle.preloadImages()
+
     self.world = world
     self.playing_state = playing_state
 

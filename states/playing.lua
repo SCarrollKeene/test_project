@@ -9,6 +9,7 @@ local enemyTypes = require("enemytypes")
 local PlayerRespawn = require("playerrespawn")
 local projectiles = require("projectile_store")
 local UI = require("ui")
+local Moonshine = require("libraries.moonshine")
 local PopupManager = require("popupmanager")
 local Loot = require("loot")
 local Portal = require("portal")
@@ -26,7 +27,15 @@ local enemies = {} -- enemies table to house all active enemies
 
 popupManager = PopupManager:new()
 
+droppedItems = droppedItem or {} -- global table to manage dropped items, such as weapons
+local selectedItemToCompare = nil
+
+local enemies = {} -- enemies table to house all active enemies
+
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
+
+-- for testing purposes, loading the safe room map after entering portal
+local saferoomMap
 
 local pendingRoomTransition = false
 local recycleFocusedItem = nil
