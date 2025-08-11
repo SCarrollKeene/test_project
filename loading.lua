@@ -150,8 +150,8 @@ function Loading:loadNextAsset()
     -- load map and walls
     elseif not self.mapsLoaded then
         for _, mapFile in ipairs(assets.maps) do
-            local map, walls = MapLoader.load(mapFile:gsub("maps/", ""):gsub("%.lua$", ""), self.world)
-            self.mapCache[mapFile] = {map = map, walls = walls}
+            local map, wallData = MapLoader.parse(mapFile:gsub("maps/", ""):gsub("%.lua$", ""))
+            self.mapCache[mapFile] = { map = map, wallData = wallData }
         end
         self.loaded = self.loaded + #assets.maps
         self.mapsLoaded = true

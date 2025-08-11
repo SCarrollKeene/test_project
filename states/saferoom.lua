@@ -401,6 +401,16 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         sounds.blip:stop()
     end
 
+    -- Destroy old physics colliders
+    for _, collider in ipairs(wallColliders) do
+        if collider.destroy and not collider:isDestroyed() then
+            collider:destroy()
+        end
+    end
+
+    -- Clear old wall colliders table
+    wallColliders = {}
+
     -- passing in its map and walls, which is world, because of colliders
     -- its not a combat level so this is how safe rooms and other rooms will handle
     -- being loaded 6/22/25
@@ -410,14 +420,25 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     if not cachedMap or not cachedMap.map then
         error("[CRITICAL] saferoom Map missing in cache")
     end
-    if not cachedMap.walls then
+    if not cachedMap.wallData then
         error("[CRITICAL] saferoom Walls missing in cache")
     end
 
     currentMap = cachedMap.map
-    currentWalls = cachedMap.walls
-    -- Clear old wall colliders table
-    wallColliders = {}
+    currentWalls = MapLoader.instantiateWalls(world, cachedMap.wallData)
+
+    -- Populate wall colliders from the newly loaded/current walls
+    for _, wall in ipairs(currentWalls) do
+        table.insert(wallColliders, wall)
+    end
+
+    print("[DEBUG] Entered play state, room:", level.map, "#walls:", #wallColliders)
+    for i, wall in ipairs(wallColliders) do
+        if wall.getBoundingBox then
+            local x, y, w, h = wall:getBoundingBox()
+            print(string.format(" wall %d: x=%.1f y=%.1f w=%.1f h=%.1f", i, x, y, w, h))
+        end
+    end
 
     if not currentMap.width or not currentMap.tilewidth then
         error("[CRITICAL] SafeRoom map dimensions missing!")
@@ -855,6 +876,7 @@ function safeRoom:draw()
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
     Debug.drawCollisions(world)
     Debug.drawColliders(wallColliders, player, portal)
+    Debug.drawAllPhysicsFixtures(world)
 
     popupManager:draw()
     CamManager.camera:detach()

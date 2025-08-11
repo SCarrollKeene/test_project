@@ -137,4 +137,24 @@ function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
     CamManager.camera:detach()
 end
 
+function Debug.drawAllPhysicsFixtures(world)
+    if not Debug.mode then return end
+
+    for _, body in ipairs(world:getBodies()) do
+        for _, fixture in ipairs(body:getFixtures()) do
+            local shape = fixture:getShape()
+            if shape:typeOf("PolygonShape") then
+                local points = {body:getWorldPoints(shape:getPoints())}
+                love.graphics.setColor(1, 0, 1, 0.3) -- Magenta for visibility
+                love.graphics.polygon("line", points)
+            elseif shape:typeOf("CircleShape") then
+                local x, y = body:getWorldPoints(shape:getPoint())
+                love.graphics.setColor(1, 0, 1, 0.3)
+                love.graphics.circle("line", x, y, shape:getRadius())
+            end
+        end
+    end
+    love.graphics.setColor(1, 1, 1, 1)
+end
+
 return Debug

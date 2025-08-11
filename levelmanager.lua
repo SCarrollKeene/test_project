@@ -121,28 +121,27 @@ local LevelManager = {
     }
 }
 
-function LevelManager:loadLevel(index, playingState)
+function LevelManager:loadLevel(index, mapCache, playingState)
     -- each level recieves an index
     self.currentLevel = index
     local level = self.levels[index]
-
-    -- Destroy previous walls first
-    for _, collider in ipairs(wallColliders) do
-        -- if not collider:isDestroyed() then
-            collider:destroy()
-        -- end
-    end
+    local cached = mapCache["maps/" .. level.map .. ".lua"]
+    -- load map AND walls, associate global world to map
+    currentMap = cached.map
+    currentWalls = MapLoader.instantiateWalls(world, cached.wallData)
 
     -- Reset global wall collider tracker
     wallColliders = {}
+
+    -- Add new walls to tracker
+    for _, wall in ipairs(currentWalls) do
+        table.insert(wallColliders, wall)
+    end
 
     -- clear existing enemies, good practice
     enemies = {}
     
      -- Load new map
-    currentMap, currentWalls = MapLoader.load(level.map, world)
-
-    -- load map AND walls, associate global world to map
     -- currentMap, currentWalls = MapLoader.load(level.map, world)
 
     -- load all new enemy instances into one table
@@ -156,11 +155,6 @@ function LevelManager:loadLevel(index, playingState)
     --     table.insert(enemies, enemy)
     --     print("DEBUG:".."Added enemy " .. i .. " (" .. (enemy.name or "enemy") .. ") to table. Target set!")
     -- end
-
-    -- Add new walls to tracker
-    for _, wall in ipairs(currentWalls) do
-        table.insert(wallColliders, wall)
-    end
 
     self.spawnZones = {} -- Reset enemy spawn zones for the new level
     if currentMap.layers["EnemySpawns"] then
