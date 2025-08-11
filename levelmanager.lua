@@ -1,5 +1,6 @@
 local MapLoader = require("maploader")
 local projectiles = require("projectile_store")
+local enemyTypes = require("enemytypes")
 
 local function buildCombatWaves(includeBoss)
     local waves = {}
@@ -120,7 +121,7 @@ local LevelManager = {
     }
 }
 
-function LevelManager:loadLevel(index, enemyImageCache)
+function LevelManager:loadLevel(index, playingState)
     -- each level recieves an index
     self.currentLevel = index
     local level = self.levels[index]
@@ -180,21 +181,21 @@ function LevelManager:loadLevel(index, enemyImageCache)
     if level.waves then
         -- Spawn enemies using level-specific positions
         for _, spawnPos in ipairs(spawns) do
-            spawnRandomEnemy(spawnPos.x, spawnPos.y, enemyImageCache) -- Fixed positions
+            playingState:spawnRandomEnemy(spawnPos.x, spawnPos.y) -- Fixed positions
         end
     else
         -- Spawn enemies using level-specific positions
         for _, spawnPos in ipairs(spawns) do
-            spawnRandomEnemy(spawnPos.x, spawnPos.y, enemyImageCache) -- Fixed positions
+            playingState:spawnRandomEnemy(spawnPos.x, spawnPos.y) -- Fixed positions
         end
 
         local remaining = level.enemies - #spawns
         for i = 1, remaining do
-            spawnRandomEnemy() -- Random positions
+            playingState:spawnRandomEnemy() -- Random positions
         end
         
         if level.boss then
-            spawnBossEnemy() -- Spawn boss if defined in level
+            playingState:spawnBossEnemy() -- Spawn boss if defined in level
         end
     end
     
@@ -228,14 +229,14 @@ function LevelManager:loadLevel(index, enemyImageCache)
     end
 end
 
-function LevelManager:spawnRandomInZone(enemyImageCache, enemyTypes)
+function LevelManager:spawnRandomInZone(playingState, enemyTypes)
     if #self.spawnZones == 0 then return end
 
     local zone = self.spawnZones[love.math.random(#self.spawnZones)]
     local x = zone.x + love.math.random(0, zone.w)
     local y = zone.y + love.math.random(0, zone.h)
 
-    spawnRandomEnemy(x, y, enemyImageCache, enemyTypes)
+    playingState:spawnRandomEnemy(x, y, enemyTypes)
 end
 
 return LevelManager

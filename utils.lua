@@ -80,6 +80,7 @@ end
 
 -- bounding box test between entity's AABB and current cam viewport
 function Utils.isAABBInView(cam, x, y, w, h)
+    assert(cam and cam.position, "[Utils] isAABBInView: first argument must be camera instance with :position()")
     local camX, camY = cam:position()
     local viewW, viewH = love.graphics.getWidth() / cam.scale, love.graphics.getHeight() / cam.scale
     local left, right = camX - viewW / 2, camX + viewW / 2

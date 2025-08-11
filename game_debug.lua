@@ -5,6 +5,7 @@ local Projectile = require("projectile")  -- Assuming you have a Projectile modu
 local Debug = {}
 
 Debug.mode = false  -- Global debug mode flag
+Debug.showWalls = false  -- Flag to show wall colliders
 Debug.traceParticles = false
 
 function Debug.keypressed(key)
@@ -20,15 +21,17 @@ function Debug.debugPrint(...)
     end
 end
 
-function Debug.draw(projectiles, enemies, globalParticleSystems, projectileBatch)
+function Debug.draw(projectiles, enemies, globalParticleSystems, projectileBatch, enemyPool)
     if not Debug.mode then return end
+
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print("Active projectiles: " .. #projectiles, 20, 170)
     love.graphics.print("Projectile pool size: " .. Projectile.getPoolSize(), 20, 200)
     love.graphics.print("New proj creation: " .. Projectile.getNewCreateCount(), 20, 230)
     love.graphics.print("Particle Systems: " .. #globalParticleSystems, 20, 260)
     love.graphics.print("Enemies: " .. #enemies, 20, 290)
-    love.graphics.print("Enemy pool size: " .. #enemyPool, 20, 320)
+    local poolSize = type(enemyPool) == "table" and #enemyPool or 0
+    love.graphics.print("Enemy pool size: " .. poolSize, 20, 320)
     love.graphics.print(string.format("Next cleanup in: %.1f", math.max(0, 10 - Projectile.getCleanUpTimer())), 20, 350)
     -- Projectile batch info
     local batchActive = projectileBatch and "YES" or "NO"
@@ -51,8 +54,10 @@ function Debug.draw(projectiles, enemies, globalParticleSystems, projectileBatch
 
      -- Show reuse stats
     local deadCount = 0
-    for _, e in ipairs(enemyPool) do
-        if e.isDead then deadCount = deadCount + 1 end
+    if type(enemyPool) == "table" then
+        for _, e in ipairs(enemyPool) do
+            if e.isDead then deadCount = deadCount + 1 end
+        end
     end
     love.graphics.print("Reusable enemies: " .. deadCount, 20, 380)
 end
@@ -66,6 +71,7 @@ end
 -- color code colliders
 function Debug.drawColliders(wallColliders, player, portal)
     if not Debug.mode then return end
+    if not Debug.showWalls then return end
 
     -- Draw wall colliders as red rectangles
     love.graphics.setColor(1, 0, 0, 0.5)
@@ -110,7 +116,7 @@ end
 function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
     if not Debug.mode then return end
 
-    CamManager:attach()
+    CamManager.camera:attach()
     love.graphics.setColor(1, 1, 0, 0.3) -- Yellow, semi-transparent
 
     for x = 1, gridWidth do
@@ -128,7 +134,7 @@ function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
     end
 
     love.graphics.setColor(1, 1, 1, 1) -- Reset color
-    CamManager:detach()
+    CamManager.camera:detach()
 end
 
 return Debug

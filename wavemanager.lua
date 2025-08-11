@@ -1,3 +1,5 @@
+local enemyTypes = require("enemytypes")
+
 local WaveManager = {}
 WaveManager.__index = WaveManager
 

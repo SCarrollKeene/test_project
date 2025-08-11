@@ -1,5 +1,7 @@
 local Gamestate = require("libraries/hump/gamestate")
 local MapLoader = require("maploader")
+local Enemy = require("enemy")
+local enemyTypes = require("enemytypes")
 
 local Loading = {}
 
@@ -34,24 +36,32 @@ local assets = {
     }
 }
 
-function Loading:enter(previous_state, world, playing_state, randomBlobs)
+function Loading:enter(previous_state, world, playing_state)
     self.world = world
     self.playing_state = playing_state
-    self.randomBlobs = randomBlobs
+
     self.loaded = 0
     self.total = self.calculateTotalAssets()
     -- for _, category in pairs(assets) do
     --     self.total = self.total + #category
     -- end
 
-    -- initialize cache
-    self.enemyImageCache = self.enemyImageCache or {}
+    -- declare cache for enemy pool use
+    self.enemyImageCache = self.enemyImageCache or {} -- Use the provided cache or an empty table 
+    self.enemyPool = {}
     self.mapCache = self.mapCache or {}
+
+    -- TODO: Preload all enemy images, from main love.load, old, may not be needed anymore 8/10/25
+    -- for _, blob in ipairs(enemyTypes) do
+    --     if not enemyImageCache[blob.spritePath] then
+    --         enemyImageCache[blob.spritePath] = love.graphics.newImage(blob.spritePath)
+    --     end
+    -- end
 
     -- only preload enemies if enemy cache is empty
     if not next(self.enemyImageCache) then
         -- preload enemy images
-        for _, blob in ipairs(self.randomBlobs) do
+        for _, blob in ipairs(enemyTypes) do
             print("[LOADING] Loading enemy sprite:", blob.spritePath)
             local success, img = pcall(love.graphics.newImage, blob.spritePath)
             if success and img:getWidth() > 0 and img:getHeight() > 0 then
@@ -73,6 +83,24 @@ function Loading:enter(previous_state, world, playing_state, randomBlobs)
             self.total = self.total + 1
         end
     end
+
+    -- Preload 200 enemies into enemy pool
+    for i = 1, 200 do
+        local randomIndex = math.random(1, #enemyTypes) -- Pick a random blob type
+        local randomBlob = enemyTypes[randomIndex] -- Get a random blob configuration
+        local img = self.enemyImageCache[randomBlob.spritePath]
+        local e = Enemy:new(world, randomBlob.name, 0, 0, 32, 32, nil, nil, randomBlob.health, randomBlob.speed, randomBlob.baseDamage, 0, img)
+        e.isDead = true -- Mark as reusable
+        table.insert(self.enemyPool, e)
+    end
+
+    -- Preload 100 projectiles into the correct pool
+    -- for i = 1, 100 do
+    --     local proj = Projectile:new(world, 0, 0, 0, 0, 0, nil)
+    --     proj.active = true -- make preloaded projectiles active
+    --     proj.collider:setActive(false)
+    -- table.insert(Projectile.pool, proj)
+    -- end
 end
 
 function Loading:calculateTotalAssets()
@@ -87,7 +115,7 @@ function Loading:update(dt)
   if self.loaded < self.total then
         self:loadNextAsset()
     else
-        Gamestate.switch(self.playing_state, self.world, self.enemyImageCache, self.mapCache, self.randomBlobs)
+        Gamestate.switch(self.playing_state, self.world, self.enemyPool, self.enemyImageCache, self.mapCache)
     end
 end
 
@@ -119,10 +147,11 @@ function Loading:loadNextAsset()
         self.loaded = self.loaded + #assets.sounds
         self.soundsLoaded = true
 
-    -- load maps
+    -- load map and walls
     elseif not self.mapsLoaded then
         for _, mapFile in ipairs(assets.maps) do
-            self.mapCache[mapFile] = MapLoader.load(mapFile:gsub("maps/", ""):gsub("%.lua$", ""), self.world)
+            local map, walls = MapLoader.load(mapFile:gsub("maps/", ""):gsub("%.lua$", ""), self.world)
+            self.mapCache[mapFile] = {map = map, walls = walls}
         end
         self.loaded = self.loaded + #assets.maps
         self.mapsLoaded = true
