@@ -3,6 +3,7 @@ local Particle = require("particle")
 local Gamestate = require("libraries/hump/gamestate")
 local LevelManager = require("levelmanager")
 local enemyTypes = require("enemytypes")
+local data_store = require("data_store")
 
 local Collision = {}
 
@@ -33,7 +34,7 @@ function Collision.beginContact(a, b, coll, ctx)
             -- Handle Player-Enemy interactions
             if player and not player.isDead then
                 if not player.isInvincible then
-                    player:takeDamage(enemy.baseDamage, ctx.playerScore)
+                    player:takeDamage(enemy.baseDamage, data_store.runData.score)
                 end
             end
         end
@@ -50,7 +51,11 @@ function Collision.beginContact(a, b, coll, ctx)
             if ctx.portal and ctx.portal.cooldownActive then
                 ctx.sounds.ghost:play() -- portal
 
-                if Gamestate.current() == ctx.playing then
+                print("Gamestate.current() is", tostring(Gamestate.current()))
+                print("ctx.playingState is", tostring(ctx.playingState))
+                print("ctx.safeRoomState is", tostring(ctx.safeRoomState))
+
+                if Gamestate.current() == ctx.playingState then
                     ctx.nextState = ctx.safeRoomState
                     ctx.nextStateParams = {ctx.world, ctx.enemyImageCache, ctx.mapCache} -- pass saferooms cache
                 elseif Gamestate.current() == ctx.safeRoomState then

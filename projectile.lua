@@ -277,6 +277,7 @@ function Projectile:update(dt)
 
     -- Check if projectile is off-screen
     -- TODO: I don't think this actually works after I redid a lot of the projectile methods, retest 8/6/25
+    -- UPDATE: It works if the projectile is beyond the map walls, works when walls don't exist or are broken 8/12/25
      if self.x + self.radius < 0 or self.x - self.radius > love.graphics.getWidth() or
        self.y + self.radius < 0 or self.y - self.radius > love.graphics.getHeight() then
         print(string.format("[OFF SCREEN] Projectile (owner: %s) off-screen, destroying", (self.owner and self.owner.name) or "Unknown"))

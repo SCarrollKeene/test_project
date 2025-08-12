@@ -1,5 +1,6 @@
 local Collision = require("collision")
 local Gamestate = require("libraries/hump/gamestate")
+local safeRoom = require("states/saferoom")
 local LevelManager = require("levelmanager")
 local MapLoader = require("maploader")
 local WaveManager = require("wavemanager")
@@ -22,6 +23,8 @@ local CamManager = require("cam_manager")
 local data_store = require("data_store")
 local SaveSystem = require("save_game_data")
 
+scoreFont = love.graphics.newFont(20)
+
 local playing = {}
 local enemies = {} -- enemies table to house all active enemies
 
@@ -33,11 +36,11 @@ local selectedItemToCompare = nil
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
 local pendingPortalSpawn = false
 
+local pendingRoomTransition = false
 
 -- for testing purposes, loading the safe room map after entering portal
 local saferoomMap
 
-local pendingRoomTransition = false
 local recycleFocusedItem = nil
 local recycleHoldTime = 0
 local recycleThreshold = 1.0
@@ -53,12 +56,11 @@ local fadeHoldTimer = 0
 local fadeTimer = 0
 local nextState = nil       -- The state to switch to after fade
 
-local playerScore = 0
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
-        playerScore = playerScore + points
-        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", playerScore)
+        data_store.runData.score = data_store.runData.score + points
+        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", data_store.runData.score)
     else
         Debug.debugPrint("ERROR: Invalid points value passed to incrementPlayerScore:", points)
     end
@@ -237,7 +239,7 @@ function playing:spawnRandomEnemy(x, y, AvailableEnemyTypes)
     local state = Gamestate.current()
 
     -- 6/20/25 no spawning in safe rooms!
-    if state == safeRoom then return end
+    if state == safeRoomState then return end
 
     local enemyCache = self.enemyImageCache or {} -- Use the current state's enemy image cache, not global
 
@@ -502,23 +504,30 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
 
     -- build the context table for collision.lua
     self.stateContext = {
-        playerScore = playerScore,
         portal = portal,
         enemyImageCache = enemyImageCache,
         mapCache = mapCache,
-        pendingRoomTransition = pendingRoomTransition,
-        fading = fading,
-        fadeDirection = fadeDirection,
-        fadeTimer = fadeTimer,
-        nextState = nextState,
-        nextStateParams = nextStateParams,
+
+        pendingRoomTransition = false,
+        fading = false,
+        fadeDirection = 1,
+        fadeHoldTimer = 0,
+        fadeDuration = 0.5,
+        fadeHoldDuration = 0.5,
+        fadeTimer = 0,
+        fadeAlpha = 0,
+        nextState = nil,
+        nextStateParams = nil,
+
         world = world,
         globalParticleSystems = globalParticleSystems,
         sounds = sounds,
 
         playingState = self,
         safeRoomState = safeRoom,
-        loadingState = Loading
+        loadingState = Loading,
+
+        incrementPlayerScore = incrementPlayerScore
     }
 
     -- set callbaks for collision detection
@@ -896,49 +905,50 @@ function playing:update(dt)
         damageFlashTimer = damageFlashTimer - dt
     end
 
-    if fading then
+    if self.stateContext.fading then
         -- SUPPOSED to clear particles when starting fade out
-        if fadeDirection == 1 and nextState == playing then
+        if self.stateContext.fadeDirection == 1 and self.stateContext.nextState == playingState then
             globalParticleSystems = {}
         end
 
-        if fadeDirection == 1 then
+        if self.stateContext.fadeDirection == 1 then
             -- Fade out (to black)
-            fadeTimer = fadeTimer + dt
-            fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
-            if fadeAlpha >= 1 then
+            self.stateContext.fadeTimer = self.stateContext.fadeTimer + dt
+            self.stateContext.fadeAlpha = math.min(self.stateContext.fadeTimer / self.stateContext.fadeDuration, 1)
+            if self.stateContext.fadeAlpha >= 1 then
                 -- Fade out complete, start hold
-                fadeHoldTimer = 0
-                fadeDirection = 0    -- 0 indicates hold phase
+                self.stateContext.fadeHoldTimer = 0
+                self.stateContext.fadeDirection = 0    -- 0 indicates hold phase
             end
-        elseif fadeDirection == 0 then
+        elseif self.stateContext.fadeDirection == 0 then
             -- Hold phase (fully black)
-            fadeHoldTimer = fadeHoldTimer + dt
-            fadeAlpha = 1
-            if fadeHoldTimer >= fadeHoldDuration then
+            self.stateContext.fadeHoldTimer = self.stateContext.fadeHoldTimer + dt
+            self.stateContext.fadeAlpha = 1
+            if self.stateContext.fadeHoldTimer >= self.stateContext.fadeHoldDuration then
                 -- Hold complete, switch state and start fade in
-                Gamestate.switch(nextState, unpack(nextStateParams))
-                fadeDirection = -1
-                fadeTimer = 0
+                print("Next state:", tostring(self.stateContext.nextState))
+                Gamestate.switch(self.stateContext.nextState, unpack(self.stateContext.nextStateParams))
+                self.stateContext.fadeDirection = -1
+                self.stateContext.fadeTimer = 0
             end
-        elseif fadeDirection == -1 then
+        elseif self.stateContext.fadeDirection == -1 then
             -- Fade in (from black)
-            fadeTimer = fadeTimer + dt
-            fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
-            if fadeAlpha <= 0 then
-                fading = false
-                fadeAlpha = 0
+            self.stateContext.fadeTimer = self.stateContext.fadeTimer + dt
+            self.stateContext.fadeAlpha = 1 - math.min(self.stateContext.fadeTimer / self.stateContext.fadeDuration, 1)
+            if self.stateContext.fadeAlpha <= 0 then
+                self.stateContext.fading = false
+                self.stateContext.fadeAlpha = 0
             end
         end
         return -- halt other updates during fade
     end
 
-    if pendingRoomTransition then
-        fading = true
-        fadeDirection = 1
-        fadeTimer = 0
-        nextState = safeRoom
-        pendingRoomTransition = false
+    if self.stateContext.pendingRoomTransition then
+        self.stateContext.fading = true
+        self.stateContext.fadeDirection = 1
+        self.stateContext.fadeTimer = 0
+        -- nextState = safeRoom
+        self.stateContext.pendingRoomTransition = false
         return
     end
 
@@ -1160,7 +1170,7 @@ end
     -- Handle shooting
     -- feels like a global action, maybe move this into main? or a sound file, hmm 5/29/25
     function love.mousepressed(x, y, button, istouch, presses)
-        if Gamestate.current() ~= safeRoom and not player.isDead and button == 1 then
+        if Gamestate.current() ~= safeRoomState and not player.isDead and button == 1 then
             sounds.blip:play() -- play projectile blip on mouse click
         end
 
@@ -1544,7 +1554,7 @@ function playing:draw()
 
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
-    love.graphics.print("Score: " .. playerScore, 20, 200)
+    love.graphics.print("Score: " .. data_store.runData.score, 20, 200)
     
     -- love.graphics.print("Equipped Slot: " .. (player.equippedSlot or "None"), 20, 170)
 

@@ -20,6 +20,8 @@ local CamManager = require("cam_manager")
 local data_store = require("data_store")
 local SaveSystem = require("save_game_data")
 
+scoreFont = love.graphics.newFont(20)
+
 local safeRoom = {}
 
 popupManager = PopupManager:new()
@@ -45,12 +47,11 @@ local fadeHoldTimer = 0
 local fadeTimer = 0
 local nextState = nil       -- The state to switch to after fade
 
-local playerScore = 0
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
-        playerScore = playerScore + points
-        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", playerScore)
+        data_store.runData.score = data_store.runData.score + points
+        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", data_store.runData.score)
     else
         Debug.debugPrint("ERROR: Invalid points value passed to incrementPlayerScore:", points)
     end
@@ -225,7 +226,7 @@ function checkPlayerPickups()
 end
 
 -- based on [Player collider] recreated at map coords:
-function safeRoom:spawnPortal()
+function spawnPortal()
     -- local portalX = love.graphics.getWidth() / 2
     local mapW = currentMap.width * currentMap.tilewidth
     -- local portalY = love.graphics.getHeight() / 2
@@ -240,7 +241,7 @@ end
 function safeRoom:roomComplete()
     data_store.runData.cleared = true
     pendingPortalSpawn = true
-    self:spawnPortal() -- TODO: maybe, revisit later 6/20/25
+    spawnPortal() -- TODO: maybe, revisit later 6/20/25
     Debug.debugPrint("Room " ..data_store.runData.currentRoom.. " completed!")
 end
 
@@ -372,6 +373,9 @@ end
 function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     Debug.debugPrint("[SAFEROOM:ENTER] entered saferoom gamestate")
 
+    -- stateless, clean approach without needing g variables
+    local stateContext = {}
+
     self.world = world
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
@@ -379,23 +383,30 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
 
     -- build the context table for collision.lua
     self.stateContext = {
-        playerScore = playerScore,
         portal = portal,
         enemyImageCache = enemyImageCache,
         mapCache = mapCache,
-        pendingRoomTransition = pendingRoomTransition,
-        fading = fading,
-        fadeDirection = fadeDirection,
-        fadeTimer = fadeTimer,
-        nextState = nextState,
-        nextStateParams = nextStateParams,
+
+        pendingRoomTransition = false,
+        fading = false,
+        fadeDirection = 1,
+        fadeHoldTimer = 0,
+        fadeDuration = 0.5,
+        fadeHoldDuration = 0.5,
+        fadeTimer = 0,
+        fadeAlpha = 0,
+        nextState = nil,
+        nextStateParams = nil,
+
         world = world,
         globalParticleSystems = globalParticleSystems,
         sounds = sounds,
 
         playingState = playing,
         safeRoomState = self,
-        loadingState = Loading
+        loadingState = Loading,
+
+        incrementPlayerScore = incrementPlayerScore
     }
 
     -- set callbaks for collision detection
@@ -425,6 +436,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     -- passing in its map and walls, which is world, because of colliders
     -- its not a combat level so this is how safe rooms and other rooms will handle
     -- being loaded 6/22/25
+
     local cachedMap = self.mapCache["maps/saferoommap.lua"]
 
     -- Defensive check for bad cache load
@@ -443,7 +455,6 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         table.insert(wallColliders, wall)
     end
 
-    print("[DEBUG] Entered play state, room:", level.map, "#walls:", #wallColliders)
     for i, wall in ipairs(wallColliders) do
         if wall.getBoundingBox then
             local x, y, w, h = wall:getBoundingBox()
@@ -580,6 +591,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     if not portal then
         --portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
         portal = Portal:new(world, mapW / 2, mapH / 2)
+        self.stateContext.portal = portal
         Debug.debugPrint("[SAFEROOM portal] created at", portal.x, portal.y)
     end
 
@@ -729,50 +741,50 @@ function safeRoom:update(dt)
     -- update physics world AFTER all positions are set
     if world then world:update(dt) end
 
-    if fading then
+    if self.stateContext.fading then
         -- SUPPOSED to clear particles when starting fade out
         -- globalParticleSystems = {}
-        if fadeDirection == 1 and nextState == playing then
+        if self.stateContext.fadeDirection == 1 and self.stateContext.nextState == playingState then
         end
 
-        if fadeDirection == 1 then
+        if self.stateContext.fadeDirection == 1 then
             -- Fade out (to black)
-            fadeTimer = fadeTimer + dt
-            fadeAlpha = math.min(fadeTimer / fadeDuration, 1)
-            if fadeAlpha >= 1 then
+            self.stateContext.fadeTimer = fadeTimer + dt
+            self.stateContext.fadeAlpha = math.min(self.stateContext.fadeTimer / self.stateContext.fadeDuration, 1)
+            if self.stateContext.fadeAlpha >= 1 then
                 -- Fade out complete, start hold
-                fadeHoldTimer = 0
-                fadeDirection = 0    -- 0 indicates hold phase
+                self.stateContext.fadeHoldTimer = 0
+                self.stateContext.fadeDirection = 0    -- 0 indicates hold phase
             end
-        elseif fadeDirection == 0 then
+        elseif self.stateContext.fadeDirection == 0 then
             -- Hold phase (fully black)
-            fadeHoldTimer = fadeHoldTimer + dt
-            fadeAlpha = 1
-            if fadeHoldTimer >= fadeHoldDuration then
+            self.stateContext.fadeHoldTimer = self.stateContext.fadeHoldTimer + dt
+            self.stateContext.fadeAlpha = 1
+            if self.stateContext.fadeHoldTimer >= self.stateContext.fadeHoldDuration then
                 -- Hold complete, switch state and start fade in
-                Gamestate.switch(nextState, unpack(nextStateParams))
+                Gamestate.switch(self.stateContext.nextState, unpack(self.stateContext.nextStateParams))
                 globalParticleSystems = {} -- testing for now
-                fadeDirection = -1
-                fadeTimer = 0
+                self.stateContext.fadeDirection = -1
+                self.stateContext.fadeTimer = 0
             end
-        elseif fadeDirection == -1 then
+        elseif self.stateContext.fadeDirection == -1 then
             -- Fade in (from black)
-            fadeTimer = fadeTimer + dt
-            fadeAlpha = 1 - math.min(fadeTimer / fadeDuration, 1)
-            if fadeAlpha <= 0 then
-                fading = false
-                fadeAlpha = 0
+            self.stateContext.fadeTimer = self.stateContext.fadeTimer + dt
+            self.stateContext.fadeAlpha = 1 - math.min(self.stateContext.fadeTimer / self.stateContext.fadeDuration, 1)
+            if self.stateContext.fadeAlpha <= 0 then
+                self.stateContext.fading = false
+                self.stateContext.fadeAlpha = 0
             end
         end
         return -- halt other updates during fade
     end
 
-    if pendingRoomTransition then
-        fading = true
-        fadeDirection = 1
-        fadeTimer = 0
-        nextState = safeRoom
-        pendingRoomTransition = false
+    if self.stateContext.pendingRoomTransition then
+        self.stateContext.fading = true
+        self.stateContext.fadeDirection = 1
+        self.stateContext.fadeTimer = 0
+        -- nextState = safeRoom
+        self.stateContext.pendingRoomTransition = false
         return
     end
 
@@ -905,7 +917,7 @@ function safeRoom:draw()
 
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
-    love.graphics.print("Score: " .. playerScore, 20, 200)
+    love.graphics.print("Score: " .. data_store.runData.score, 20, 200)
 
     love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)

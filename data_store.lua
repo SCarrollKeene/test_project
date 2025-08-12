@@ -1,8 +1,9 @@
-local M = {} -- M == Module, Lua convention for modules apparently
+local Data_Store = {} -- M == Module, Lua convention for modules apparently
 
 -- current run data and persistent game data
 -- upgrades, modifiers, enemy stats, dropped items in rooms
-M.runData = {
+Data_Store.runData = {
+  score = 0,
   currentRoom = 1,
   cleared = false,
   clearedRooms = {},
@@ -16,11 +17,11 @@ M.runData = {
 }
 
 -- high scores, best runs, achievements and milestones
-M.metaData = {
+Data_Store.metaData = {
   unlockedCharacters = {},
   permanentUpgrades = {},
   highScore = 0,
   shards = 0,
 }
 
-return M
+return Data_Store
