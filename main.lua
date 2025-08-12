@@ -12,6 +12,16 @@ local data_store = require("data_store")
 local SaveSystem = require("save_game_data")
 local Debug = require("game_debug")
 
+local Projectile = require("projectile")
+local Weapon = require("weapon")
+local player = require("player")
+local Enemy = require("enemy")
+local Walls = require("walls")
+local LevelManager = require("levelmanager")
+local UI = require("ui")
+local sti = require("libraries/sti")
+local Camera = require("libraries/hump/camera")
+
 -- virtual resolution
 local VIRTUAL_WIDTH = 1280
 local VIRTUAL_HEIGHT = 768

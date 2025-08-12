@@ -225,7 +225,7 @@ function checkPlayerPickups()
 end
 
 -- based on [Player collider] recreated at map coords:
-function spawnPortal()
+function safeRoom:spawnPortal()
     -- local portalX = love.graphics.getWidth() / 2
     local mapW = currentMap.width * currentMap.tilewidth
     -- local portalY = love.graphics.getHeight() / 2
@@ -233,13 +233,14 @@ function spawnPortal()
     local portalX = mapW / 2
     local portalY = mapH / 2
     portal = Portal:new(world, portalX, portalY)
+    self.stateContext.portal = portal
     Debug.debugPrint("A portal has spawned! Traverse to " ..data_store.runData.currentRoom.. " room.")
 end
 
-function roomComplete()
+function safeRoom:roomComplete()
     data_store.runData.cleared = true
     pendingPortalSpawn = true
-    spawnPortal() -- TODO: maybe, revisit later 6/20/25
+    self:spawnPortal() -- TODO: maybe, revisit later 6/20/25
     Debug.debugPrint("Room " ..data_store.runData.currentRoom.. " completed!")
 end
 
@@ -377,7 +378,7 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
     self.currentMap = currentMap
 
     -- build the context table for collision.lua
-    local stateContext = {
+    self.stateContext = {
         playerScore = playerScore,
         portal = portal,
         enemyImageCache = enemyImageCache,
@@ -390,13 +391,17 @@ function safeRoom:enter(previous_state, world, enemyImageCache, mapCache)
         nextStateParams = nextStateParams,
         world = world,
         globalParticleSystems = globalParticleSystems,
-        sounds = sounds
+        sounds = sounds,
+
+        playingState = playing,
+        safeRoomState = self,
+        loadingState = Loading
     }
 
     -- set callbaks for collision detection
     -- world:setCallbacks(Collision.beginContact, nil, nil, nil)
     world:setCallbacks(function(a, b, coll)
-        Collision.beginContact(a, b, coll, stateContext)
+        Collision.beginContact(a, b, coll, self.stateContext)
     end)
 
     -- clear dropped items

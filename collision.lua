@@ -50,14 +50,14 @@ function Collision.beginContact(a, b, coll, ctx)
             if ctx.portal and ctx.portal.cooldownActive then
                 ctx.sounds.ghost:play() -- portal
 
-                if Gamestate.current() == playing then
-                    ctx.nextState = safeRoom
+                if Gamestate.current() == ctx.playing then
+                    ctx.nextState = ctx.safeRoomState
                     ctx.nextStateParams = {ctx.world, ctx.enemyImageCache, ctx.mapCache} -- pass saferooms cache
-                elseif Gamestate.current() == safeRoom then
+                elseif Gamestate.current() == ctx.safeRoomState then
                     -- LevelManager:loadLevel(LevelManager.currentLevel + 1)
                     LevelManager.currentLevel = LevelManager.currentLevel + 1
-                    ctx.nextState = Loading -- switch to loading screen before loading next level
-                    ctx.nextStateParams = {ctx.world, playing, ctx.enemyTypes}
+                    ctx.nextState = ctx.loadingState -- switch to loading screen before loading next level
+                    ctx.nextStateParams = {ctx.world, ctx.playingState, ctx.enemyImageCache, ctx.enemyTypes, ctx.mapCache}
                 end
 
                 ctx.pendingRoomTransition = true
@@ -114,25 +114,27 @@ function Collision.beginContact(a, b, coll, ctx)
 
         -- Check for Projectile-Wall collision
         if (dataA and dataA.type == "wall" and dataB and dataB.type == "projectile") then
+            local proj = dataB.reference or dataB
             -- impact projectile effect
             local particleImpact = Particle.getOnImpactEffect()
-            if particleImpact then
-                particleImpact:setPosition(dataB.x, dataB.y)
+            if particleImpact and proj then
+                particleImpact:setPosition(proj.x, proj.y)
                 particleImpact:emit(8)
                 -- table.insert(globalParticleSystems, particleImpact)
                 table.insert(ctx.globalParticleSystems, { ps = particleImpact, type = "impactEffect", radius = 32 } ) -- Context-based pooling
             end
-            dataB:destroySelf() -- destroy projectile on wall collision
+            proj:destroySelf() -- destroy projectile on wall collision
         elseif (dataB and dataB.type == "wall" and dataA and dataA.type == "projectile") then
+            local proj = dataA.reference or dataA
             -- impact projectile effect
             local particleImpact = Particle.getOnImpactEffect()
-            if particleImpact then
-                particleImpact:setPosition(dataA.x, dataA.y)
+            if particleImpact and proj then
+                particleImpact:setPosition(proj.x, proj.y)
                 particleImpact:emit(8)
                 -- table.insert(globalParticleSystems, particleImpact)
                 table.insert(ctx.globalParticleSystems, { ps = particleImpact, type = "impactEffect", radius = 32 } ) -- Context-based pooling
             end
-            dataA:destroySelf() -- destroy projectile on wall collision
+            proj:destroySelf() -- destroy projectile on wall collision
             -- One is wall, one is projectile
             -- local projectile = dataA.type and dataA or dataB
              -- projectile:destroySelf()  -- destroy projectile on wall collision

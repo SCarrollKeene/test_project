@@ -172,7 +172,7 @@ function Utils.die(target, killer)
     end
 end
 
-function Utils.clearAllEnemies()
+function Utils.clearAllEnemies(enemies, enemyPool)
     -- Remove from enemies table
     -- TODO: Test in debug mode for enemy colliders still dealing damage to player at wave end 8/6/25
     -- TODO: update, need to destroy enemy colliders here, they cause damage to player

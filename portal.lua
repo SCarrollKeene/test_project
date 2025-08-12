@@ -64,9 +64,9 @@ function Portal:load()
 end
 
 function Portal:update(dt)
-    self.ps:moveTo(self.x, self.y)
-
+    
     if self.ps then
+        self.ps:moveTo(self.x, self.y)
         self.ps:setPosition(self.x, self.y)
         self.ps:update(dt)
     end

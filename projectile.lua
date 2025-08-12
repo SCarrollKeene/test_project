@@ -370,6 +370,7 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner, knockba
     self.prevX = x
     self.prevY = y
     self.owner = owner
+    self.type = "projectile"
     self.isDestroyed = false -- reset destroyed state
     self.toBeRemoved = false -- reset removal flag
     self.active = true -- set active flag to true

@@ -30,9 +30,9 @@ popupManager = PopupManager:new()
 droppedItems = droppedItem or {} -- global table to manage dropped items, such as weapons
 local selectedItemToCompare = nil
 
-local enemies = {} -- enemies table to house all active enemies
-
 local portal = nil -- set portal to nil initially, won't exist until round is won by player
+local pendingPortalSpawn = false
+
 
 -- for testing purposes, loading the safe room map after entering portal
 local saferoomMap
@@ -329,7 +329,7 @@ function playing:spawnRandomEnemy(x, y, AvailableEnemyTypes)
 end
 
 -- based on [Player collider] recreated at map coords:
-function spawnPortal()
+function playing:spawnPortal()
     -- local portalX = love.graphics.getWidth() / 2
     local mapW = currentMap.width * currentMap.tilewidth
     -- local portalY = love.graphics.getHeight() / 2
@@ -337,13 +337,14 @@ function spawnPortal()
     local portalX = mapW / 2
     local portalY = mapH / 2
     portal = Portal:new(world, portalX, portalY)
+    self.stateContext.portal = portal
     Debug.debugPrint("A portal has spawned! Traverse to " ..data_store.runData.currentRoom.. " room.")
 end
 
-function roomComplete()
+function playing:roomComplete()
     data_store.runData.cleared = true
     pendingPortalSpawn = true
-    spawnPortal() -- TODO: maybe, revisit later 6/20/25
+    self:spawnPortal() -- TODO: maybe, revisit later 6/20/25
     Debug.debugPrint("Room " ..data_store.runData.currentRoom.. " completed!")
 end
 
@@ -492,8 +493,15 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
 
+    -- print("[PLAYING:ENTER] Pool received. #self.enemyPool = " .. tostring(#self.enemyPool))
+    -- local dead, alive = 0, 0
+    -- for _, e in ipairs(self.enemyPool) do
+    --     if e.isDead then dead = dead + 1 else alive = alive + 1 end
+    -- end
+    -- print(string.format("EnemyPool status: %d dead = reusable, %d alive (pre-spawn)", dead, alive))
+
     -- build the context table for collision.lua
-    local stateContext = {
+    self.stateContext = {
         playerScore = playerScore,
         portal = portal,
         enemyImageCache = enemyImageCache,
@@ -506,13 +514,17 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
         nextStateParams = nextStateParams,
         world = world,
         globalParticleSystems = globalParticleSystems,
-        sounds = sounds
+        sounds = sounds,
+
+        playingState = self,
+        safeRoomState = safeRoom,
+        loadingState = Loading
     }
 
     -- set callbaks for collision detection
     -- world:setCallbacks(Collision.beginContact, nil, nil, nil)
     world:setCallbacks(function(a, b, coll)
-        Collision.beginContact(a, b, coll, stateContext)
+        Collision.beginContact(a, b, coll, self.stateContext)
     end)
 
     -- clear dropped items
@@ -1028,6 +1040,29 @@ end
     end
 -- >> END OF NEW LOOP 7/1/25 <<
 
+    -- Debug: List alive/active enemies
+    -- print("[DEBUG] Alive enemies:", #enemies)
+    -- for i, e in ipairs(enemies) do
+    --     if not e.isDead and not e.toBeRemoved then
+    --         print(string.format(
+    --             "  #%d - Name: %s | HP: %s | Pos: (%.1f, %.1f)",
+    --             i,
+    --             tostring(e.name),
+    --             tostring(e.health),
+    --             e.x or -1,
+    --             e.y or -1
+    --         ))
+    --     else
+    --         print(string.format(
+    --             "  #%d - Name: %s isDead=%s toBeRemoved=%s",
+    --             i,
+    --             tostring(e.name),
+    --             tostring(e.isDead),
+    --             tostring(e.toBeRemoved)
+    --         ))
+    --     end
+    -- end
+
     -- if #enemies == 0 and not portal then
     --     spawnPortal()
     --     Debug.debugPrint("DEBUG: No enemies in table. Attempting to spawn portal.")
@@ -1199,10 +1234,10 @@ end
         if e and e.toBeRemoved then -- Check the flag set in Enemy:die()
             -- Collider should have been destroyed in Enemy:die()
             table.remove(enemies, i)
-            Debug.debugPrint("DEBUG: Removed " .. (e.name or "enemy") .. " from table.")
+            print("[PLAYING UPDATE]: Removed " .. (e.name or "enemy") .. " from table.")
             -- check if room is cleared and turn room cleared flag to true
-            -- if #enemies == 0 and not data_store.runData.cleared then
-            --     roomComplete(data_store.runData.currentRoom)
+            -- if #enemies == 0 and not data_store.runData.cleared then -- Moved to Utils as part of the clearAllEnemies function
+            --     roomComplete()
             -- end
         end
     end
@@ -1244,19 +1279,24 @@ end
             -- Pass enemyTypes to spawner
             LevelManager:spawnRandomInZone(self, enemyTypes)
         end)
+
+        -- after per-enemy removal loop, potential baackup check for room completion
+        if (not self.waveManager or not self.waveManager.active) 
+        and #enemies == 0 and not data_store.runData.cleared then
+            self:roomComplete()
+        end
         
         -- Wave completion check
         if self.waveManager and self.waveManager.isFinished and not data_store.runData.cleared and not self.shardPopupDelay then
-            Utils.clearAllEnemies()
+            Utils.clearAllEnemies(enemies, self.enemyPool)
             Utils.collectAllShards(data_store.metaData, player)
             self.shardPopupDelay = 0.7
-            --roomComplete()
         end
 
         if self.shardPopupDelay then
             self.shardPopupDelay = self.shardPopupDelay - dt
             if self.shardPopupDelay <= 0 then
-                roomComplete()
+                self:roomComplete()
                 self.shardPopupDelay = nil
             end
         end

@@ -113,6 +113,15 @@ function Loading:enter(previous_state, world, playing_state)
         table.insert(self.enemyPool, e)
     end
 
+    -- print("[LOADING] Enemy pool preloaded. Total enemies in pool: " .. tostring(#self.enemyPool))
+    -- for i, e in ipairs(self.enemyPool) do
+    --     print(string.format(" [Pool #%d] Name: %s, IsDead = reusable: %s", i, e.name, tostring(e.isDead)))
+    --     if i >= 5 then
+    --         print(" ... (only showing first 5 of " .. #self.enemyPool .. ")")
+    --         break
+    --     end
+    -- end
+
     -- Preload 100 projectiles into the correct pool
     -- for i = 1, 100 do
     --     local proj = Projectile:new(world, 0, 0, 0, 0, 0, nil)

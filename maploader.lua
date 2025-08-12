@@ -41,10 +41,11 @@ end
 function MapLoader.instantiateWalls(world, wallData)
     local colliders = {}
     for _, w in ipairs(wallData) do
-        local col = world:newRectangleCollider(w.x, w.y, w.width, w.height)
-        col:setType("static")
-        col:setCollisionClass("wall")
-        table.insert(colliders, col)
+        local collider = world:newRectangleCollider(w.x, w.y, w.width, w.height)
+        collider:setType("static")
+        collider:setCollisionClass('wall')
+        collider:setUserData({ type = "wall" })
+        table.insert(colliders, collider)
     end
     return colliders
 end
