@@ -1178,7 +1178,7 @@ end
     -- Handle shooting
     -- feels like a global action, maybe move this into main? or a sound file, hmm 5/29/25
     function love.mousepressed(x, y, button, istouch, presses)
-        if Gamestate.current() ~= safeRoomState and not player.isDead and button == 1 then
+        if Gamestate.current() ~= self.stateContext.safeRoomState and not player.isDead and button == 1 then
             sounds.blip:play() -- play projectile blip on mouse click
         end
 

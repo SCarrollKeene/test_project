@@ -580,6 +580,15 @@ function safeRoom:enter(previous_state, world, enemyPool, enemyImageCache, mapCa
         table.remove(Projectile.pool, i)
     end
 
+    -- clear projectile particle effect while in saferoom
+    -- TODO: Not working as intended, revisit later 8/13/25
+    for i = #globalParticleSystems, 1, -1 do
+        local entry = globalParticleSystems[i]
+        if entry.type == "particleTrail" or entry.type == "impactEffect" then
+            table.remove(globalParticleSystems, i)
+        end
+    end
+
     if portal then
         portal:destroy()  -- This should destroy both the collider and the object
         portal = nil
