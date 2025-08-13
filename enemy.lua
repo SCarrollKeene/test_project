@@ -1,3 +1,4 @@
+local Assets = require("assets")
 local Utils = require("utils")
 local Debug = require("game_debug")
 local anim8 = require("libraries/anim8")
@@ -309,14 +310,14 @@ function Enemy:update(dt, frameCount)
     end
 
     if self.isDead then
-         if self.animations and self.animations.death and self.currentAnimation ~= self.animations.death then
-            self.currentAnimation = self.animations.death
-            if self.currentAnimation then self.currentAnimation:resume() end
-        end
-        
         if self.currentAnimation then
             self.currentAnimation:update(dt)
-            -- If death animation finished, you might set toBeRemoved = true here or another flag
+            -- When animation is finished, remove enemy
+            if self.currentAnimation.status == "paused" then
+                self.toBeRemoved = true
+            end
+        else
+            self.toBeRemoved = true -- Fallback: no animation to play
         end
         return
     end
@@ -380,7 +381,7 @@ end
 
 function Enemy:draw()
     if self.currentAnimation and self.spriteSheet then
-        if self.isFlashing then
+        if self.isFlashing and not self.isDead then
             love.graphics.setShader(flashShader)
             flashShader:send("WhiteFactor", 1.0)
         end
@@ -392,7 +393,7 @@ function Enemy:draw()
         -- Draw normally (batched or individual)
         self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
 
-        if self.isFlashing then
+        if self.isFlashing and not self.isDead then
             love.graphics.setShader() -- ensures that only the enemy flashes
         end
 
@@ -454,13 +455,25 @@ function Enemy:die(killer)
     else
         Debug.debugPrint(self.name .. "had no collider or it was already nil.")
     end
+    
     -- death animation and effects go here
-    if self.animations and self.animations.death then
-        self.currentAnimation = self.animations.death
-        self.currentAnimation:resume() -- Make sure it plays
+    local soulsplodeImg = Assets.images.soulsplode
+    if soulsplodeImg then
+        local frameCount = 8 -- Adjust according to how many frames are in "soulsplode.png"
+        local frameWidth = soulsplodeImg:getWidth() / frameCount
+        local frameHeight = soulsplodeImg:getHeight()
+        local anim8 = require("libraries/anim8")
+        local grid = anim8.newGrid(frameWidth, frameHeight, soulsplodeImg:getWidth(), soulsplodeImg:getHeight())
+        self.animations.soulsplode = anim8.newAnimation(grid('1-' .. frameCount, 1), 0.09, "pauseAtEnd")
+        self.currentAnimation = self.animations.soulsplode
+        self.spriteSheet = soulsplodeImg
+        self.width = frameWidth
+        self.height = frameHeight
+        self.currentAnimation:gotoFrame(1)
+        self.currentAnimation:resume()
     end
 
-    self.toBeRemoved = true -- flag for removal from 'enemies' table in main.lua
+    -- self.toBeRemoved = true -- flag for removal from 'enemies' table in main.lua
     Debug.debugPrint(self.name .. " flagged for removal!")
     -- remove from world and/or active enemy table
 end
