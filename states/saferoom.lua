@@ -47,11 +47,12 @@ local recycleProgress = 0
 -- local fadeTimer = 0
 -- local nextState = nil       -- The state to switch to after fade
 
+local score = (data_store.runData and data_store.runData.score) or 0
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
         data_store.runData.score = data_store.runData.score + points
-        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", data_store.runData.score)
+        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", tostring(score))
     else
         Debug.debugPrint("ERROR: Invalid points value passed to incrementPlayerScore:", points)
     end
@@ -924,7 +925,7 @@ function safeRoom:draw()
 
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
-    love.graphics.print("Score: " .. data_store.runData.score, 20, 200)
+    love.graphics.print("Score: " .. tostring(score), 20, 200)
 
     love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)

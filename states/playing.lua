@@ -55,11 +55,12 @@ local recycleProgress = 0
 -- local fadeTimer = 0
 -- local nextState = nil       -- The state to switch to after fade
 
+local score = (data_store.runData and data_store.runData.score) or 0
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
         data_store.runData.score = data_store.runData.score + points
-        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", data_store.runData.score)
+        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", tostring(score))
     else
         Debug.debugPrint("ERROR: Invalid points value passed to incrementPlayerScore:", points)
     end
@@ -483,6 +484,7 @@ function playing:keypressed(key)
 end
 
 function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCache, safeRoomState)
+    assert(#enemyPool > 0)
     Debug.debugPrint("[PLAYING:ENTER] Entered playing gamestate")
     print("[DEBUG] playing:enter, safeRoomState is", tostring(safeRoomState))
 
@@ -495,7 +497,7 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
 
-    -- print("[PLAYING:ENTER] Pool received. #self.enemyPool = " .. tostring(#self.enemyPool))
+    print("[PLAYING:ENTER] Pool received. #self.enemyPool = " .. tostring(#self.enemyPool))
     -- local dead, alive = 0, 0
     -- for _, e in ipairs(self.enemyPool) do
     --     if e.isDead then dead = dead + 1 else alive = alive + 1 end
@@ -1562,7 +1564,7 @@ function playing:draw()
 
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
-    love.graphics.print("Score: " .. data_store.runData.score, 20, 200)
+    love.graphics.print("Score: " .. tostring(score), 20, 200)
     
     -- love.graphics.print("Equipped Slot: " .. (player.equippedSlot or "None"), 20, 170)
 
