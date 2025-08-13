@@ -559,36 +559,36 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     currentWalls = {}   
 
     -- always load map for current combat level
-    local level = LevelManager.levels[LevelManager.currentLevel]
-    local cachedMap = self.mapCache["maps/" .. level.map .. ".lua"]
+    -- local level = LevelManager.levels[LevelManager.currentLevel] -- remove in playing:enter
+    -- local cachedMap = self.mapCache["maps/" .. level.map .. ".lua"] -- remove in playing:enter
 
     -- Defensive check for bad cache load
-    if not cachedMap or not cachedMap.map then
-        error(string.format("[CRITICAL] Map missing in cache for level '%s'", tostring(level.map)))
-    end
-    if not cachedMap.wallData then
-        error(string.format("[CRITICAL] Walls missing in cache for level '%s'", tostring(level.map)))
-    end
+    -- if not cachedMap or not cachedMap.map then
+    --     error(string.format("[CRITICAL] Map missing in cache for level '%s'", tostring(level.map)))
+    -- end
+    -- if not cachedMap.wallData then
+    --     error(string.format("[CRITICAL] Walls missing in cache for level '%s'", tostring(level.map)))
+    -- end
 
-    currentMap = cachedMap.map
-    currentWalls = MapLoader.instantiateWalls(world, cachedMap.wallData)
+    -- currentMap = cachedMap.map -- remove in playing:enter
+    -- currentWalls = MapLoader.instantiateWalls(world, cachedMap.wallData) -- remove in playing:enter
 
-    -- Populate wall colliders from the newly loaded/current walls
-    for _, wall in ipairs(currentWalls) do
-        table.insert(wallColliders, wall)
-    end
+    -- Populate wall colliders from the newly loaded/current walls 
+    -- for _, wall in ipairs(currentWalls) do -- remove in playing:enter
+    --     table.insert(wallColliders, wall)
+    -- end
 
-    print("[DEBUG] Entered play state, room:", level.map, "#walls:", #wallColliders)
-    for i, wall in ipairs(wallColliders) do
-        if wall.getBoundingBox then
-            local x, y, w, h = wall:getBoundingBox()
-            print(string.format(" wall %d: x=%.1f y=%.1f w=%.1f h=%.1f", i, x, y, w, h))
-        end
-    end
+    -- print("[DEBUG] Entered play state, room:", level.map, "#walls:", #wallColliders)
+    -- for i, wall in ipairs(wallColliders) do
+    --     if wall.getBoundingBox then
+    --         local x, y, w, h = wall:getBoundingBox()
+    --         print(string.format(" wall %d: x=%.1f y=%.1f w=%.1f h=%.1f", i, x, y, w, h))
+    --     end
+    -- end
 
-    if not currentMap or not currentMap.width or not currentMap.tilewidth then
-        error("[CRITICAL] Map or its dimensions missing for: " .. tostring(level.map))
-    end
+    -- if not currentMap or not currentMap.width or not currentMap.tilewidth then
+    --     error("[CRITICAL] Map or its dimensions missing for: " .. tostring(level.map))
+    -- end
 
     -- Debug check before calculating mapW/mapH
     -- if not currentMap then
@@ -606,6 +606,8 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     --         tostring(currentMap.tileheight)
     --     ))
     -- end
+
+    LevelManager:loadLevel(LevelManager.currentLevel, self.mapCache, self)
     
     local mapW = currentMap.width * currentMap.tilewidth
     local mapH = currentMap.height * currentMap.tileheight
@@ -636,8 +638,6 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     end
 
     -- >> SPATIAL PARTIONING GRID END 7/1/25 <<
-
-    LevelManager:loadLevel(LevelManager.currentLevel, self.mapCache, self)
 
      -- Initialize wave manager
     local levelData = LevelManager.levels[LevelManager.currentLevel]
