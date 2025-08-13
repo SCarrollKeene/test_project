@@ -1,6 +1,5 @@
 local Collision = require("collision")
 local Gamestate = require("libraries/hump/gamestate")
-local safeRoom = require("states/saferoom")
 local LevelManager = require("levelmanager")
 local MapLoader = require("maploader")
 local WaveManager = require("wavemanager")
@@ -47,14 +46,14 @@ local recycleThreshold = 1.0
 local recycleProgress = 0
 
 -- fade variables for room transitions
-local fadeAlpha = 0         -- 0 = fully transparent, 1 = fully opaque
-local fading = false        -- Is a fade in progress?
-local fadeDirection = 1     -- 1 = fade in (to black), -1 = fade out (to transparent)
-local fadeDuration = 0.5    -- Duration of fade in seconds
-local fadeHoldDuration = 0.5   -- Length of hold in seconds (adjust as needed)
-local fadeHoldTimer = 0
-local fadeTimer = 0
-local nextState = nil       -- The state to switch to after fade
+-- local fadeAlpha = 0         -- 0 = fully transparent, 1 = fully opaque
+-- local fading = false        -- Is a fade in progress?
+-- local fadeDirection = 1     -- 1 = fade in (to black), -1 = fade out (to transparent)
+-- local fadeDuration = 0.5    -- Duration of fade in seconds
+-- local fadeHoldDuration = 0.5   -- Length of hold in seconds (adjust as needed)
+-- local fadeHoldTimer = 0
+-- local fadeTimer = 0
+-- local nextState = nil       -- The state to switch to after fade
 
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
@@ -483,8 +482,9 @@ function playing:keypressed(key)
     end
 end
 
-function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCache)
+function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCache, safeRoomState)
     Debug.debugPrint("[PLAYING:ENTER] Entered playing gamestate")
+    print("[DEBUG] playing:enter, safeRoomState is", tostring(safeRoomState))
 
     -- stateless, clean approach without needing g variables
     local stateContext = {}
@@ -505,6 +505,7 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     -- build the context table for collision.lua
     self.stateContext = {
         portal = portal,
+        enemyPool = enemyPool,
         enemyImageCache = enemyImageCache,
         mapCache = mapCache,
 
@@ -524,8 +525,7 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
         sounds = sounds,
 
         playingState = self,
-        safeRoomState = safeRoom,
-        loadingState = Loading,
+        safeRoomState = safeRoomState,
 
         incrementPlayerScore = incrementPlayerScore
     }
@@ -1511,8 +1511,8 @@ function playing:draw()
         end
         love.graphics.setBlendMode("alpha") -- reset to normal
 
-        if fading and fadeAlpha > 0 then
-            love.graphics.setColor(0, 0, 0, fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
+        if self.stateContext.fading and self.stateContext.fadeAlpha > 0 then
+            love.graphics.setColor(0, 0, 0, self.stateContext.fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
             love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
             love.graphics.setColor(1, 1, 1, 1)
         end

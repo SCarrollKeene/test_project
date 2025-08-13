@@ -37,7 +37,7 @@ local assets = {
     }
 }
 
-function Loading:enter(previous_state, world, playing_state)
+function Loading:enter(previous_state, world, playing_state, safeRoom_state)
 
     -- load player save data
     -- TODO: implement save game and load game logic later on 6/20/25
@@ -58,16 +58,23 @@ function Loading:enter(previous_state, world, playing_state)
 
     self.world = world
     self.playing_state = playing_state
+    self.safeRoom_state = safeRoom_state
 
     self.loaded = 0
     self.total = self.calculateTotalAssets()
+    self.modulesLoaded  = false
+    self.imagesLoaded   = false
+    self.soundsLoaded   = false
+    self.mapsLoaded     = false
+    self.assetsAlreadyLoaded = false  -- Boot flag
+
     -- for _, category in pairs(assets) do
     --     self.total = self.total + #category
     -- end
 
     -- declare cache for enemy pool use
     self.enemyImageCache = self.enemyImageCache or {} -- Use the provided cache or an empty table 
-    self.enemyPool = {}
+    self.enemyPool = self.enemyPool or {}
     self.mapCache = self.mapCache or {}
 
     -- TODO: Preload all enemy images, from main love.load, old, may not be needed anymore 8/10/25
@@ -141,9 +148,12 @@ end
 
 function Loading:update(dt)
   if self.loaded < self.total then
+    -- load assets
         self:loadNextAsset()
     else
-        Gamestate.switch(self.playing_state, self.world, self.enemyPool, self.enemyImageCache, self.mapCache)
+        -- load into playing state
+        self.assetsAlreadyLoaded = true
+        Gamestate.switch(self.playing_state, self.world, self.enemyPool, self.enemyImageCache, self.mapCache, self.safeRoom_state)
     end
 end
 

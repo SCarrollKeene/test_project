@@ -57,12 +57,12 @@ function Collision.beginContact(a, b, coll, ctx)
 
                 if Gamestate.current() == ctx.playingState then
                     ctx.nextState = ctx.safeRoomState
-                    ctx.nextStateParams = {ctx.world, ctx.enemyImageCache, ctx.mapCache} -- pass saferooms cache
+                    ctx.nextStateParams = {ctx.world, ctx.enemyPool, ctx.enemyImageCache, ctx.mapCache, ctx.playingState} -- pass saferooms cache
                 elseif Gamestate.current() == ctx.safeRoomState then
                     -- LevelManager:loadLevel(LevelManager.currentLevel + 1)
                     LevelManager.currentLevel = LevelManager.currentLevel + 1
-                    ctx.nextState = ctx.loadingState -- switch to loading screen before loading next level
-                    ctx.nextStateParams = {ctx.world, ctx.playingState, ctx.enemyImageCache, ctx.enemyTypes, ctx.mapCache}
+                    ctx.nextState = ctx.playingState 
+                    ctx.nextStateParams = {ctx.world, ctx.enemyPool, ctx.enemyImageCache, ctx.mapCache, ctx.safeRoomState}
                 end
 
                 ctx.pendingRoomTransition = true

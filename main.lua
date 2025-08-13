@@ -119,7 +119,8 @@ function love.load()
     love.resize(love.graphics.getWidth(), love.graphics.getHeight())
 
     Gamestate.registerEvents()
-    Gamestate.switch(Loading, world, playing, projectiles)
+    -- initial loading screen before loading playing state
+    Gamestate.switch(Loading, world, playing, safeRoom)
 end
 
 function love.resize(w, h)
