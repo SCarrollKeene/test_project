@@ -437,7 +437,7 @@ end
 function Enemy:die(killer)
     if self.isDead then return end
 
-    Debug.debugPrint(self.name .. " almost dead, preparing to call Utils.die()!")
+    Debug.debugPrint(self.name .. " is dead, preparing to call Utils.die()!")
     self.isDead = true
 
     Utils.die(self, killer)

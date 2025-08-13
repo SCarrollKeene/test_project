@@ -47,12 +47,11 @@ local recycleProgress = 0
 -- local fadeTimer = 0
 -- local nextState = nil       -- The state to switch to after fade
 
-local score = (data_store.runData and data_store.runData.score) or 0
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
         data_store.runData.score = data_store.runData.score + points
-        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", tostring(score))
+        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", data_store.runData.score)
     else
         Debug.debugPrint("ERROR: Invalid points value passed to incrementPlayerScore:", points)
     end
@@ -903,12 +902,6 @@ function safeRoom:draw()
     end
     love.graphics.setBlendMode("alpha") -- reset to normal
 
-    if self.stateContext.fading and self.stateContext.fadeAlpha > 0 then
-        love.graphics.setColor(0, 0, 0, self.stateContext.fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
-        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
-        love.graphics.setColor(1, 1, 1, 1)
-    end
-
     Debug.draw(projectiles, enemies, globalParticleSystems) -- Draws debug overlay
     Debug.drawCollisions(world)
     Debug.drawColliders(wallColliders, player, portal)
@@ -930,11 +923,17 @@ function safeRoom:draw()
 
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
-    love.graphics.print("Score: " .. tostring(score), 20, 200)
+    love.graphics.print("Score: " .. Utils.getScore(), 20, 200)
 
     love.graphics.print("FPS: " .. love.timer.getFPS(), 1100, 20)
     love.graphics.print("Memory (KB): " .. math.floor(collectgarbage("count")), 20, 700)
     love.graphics.print("SAFE ROOM", 1100, 700)
+
+    if self.stateContext.fading and self.stateContext.fadeAlpha > 0 then
+        love.graphics.setColor(0, 0, 0, self.stateContext.fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        love.graphics.setColor(1, 1, 1, 1)
+    end
 end
 
 return safeRoom

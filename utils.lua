@@ -1,4 +1,5 @@
 local Particle = require("particle")
+local data_store = require("data_store")
 
 local Utils = {}
 
@@ -32,6 +33,10 @@ function Utils.pickRandomRarity()
     if rnd <= cumulative then return k end
   end
   return "common" -- fallback
+end
+
+function Utils.getScore()
+    return (data_store.runData and data_store.runData.score) or 0
 end
 
 function Utils.adjustRarityWeightsForLevel(level)

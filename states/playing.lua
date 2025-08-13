@@ -55,12 +55,11 @@ local recycleProgress = 0
 -- local fadeTimer = 0
 -- local nextState = nil       -- The state to switch to after fade
 
-local score = (data_store.runData and data_store.runData.score) or 0
 -- move into its own file later on, possibly
 function incrementPlayerScore(points)
     if type(points) == "number" then
         data_store.runData.score = data_store.runData.score + points
-        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", tostring(score))
+        Debug.debugPrint("SCORE: Player score increased by", points, ". New score:", data_store.runData.score)
     else
         Debug.debugPrint("ERROR: Invalid points value passed to incrementPlayerScore:", points)
     end
@@ -1520,12 +1519,6 @@ function playing:draw()
         end
         love.graphics.setBlendMode("alpha") -- reset to normal
 
-        if self.stateContext.fading and self.stateContext.fadeAlpha > 0 then
-            love.graphics.setColor(0, 0, 0, self.stateContext.fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
-            love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
-            love.graphics.setColor(1, 1, 1, 1)
-        end
-
         popupManager:draw()
     CamManager.camera:detach()
 
@@ -1563,7 +1556,7 @@ function playing:draw()
 
     local percent = math.floor((player.experience / xpNext) * 100)
     love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
-    love.graphics.print("Score: " .. tostring(score), 20, 200)
+    love.graphics.print("Score: " .. Utils.getScore(), 20, 200)
     
     -- love.graphics.print("Equipped Slot: " .. (player.equippedSlot or "None"), 20, 170)
 
@@ -1606,6 +1599,12 @@ function playing:draw()
     )
 
     UI.drawWeaponComparison(player.weapon, candidateWeapon, recycleProgress)
+    end
+
+    if self.stateContext.fading and self.stateContext.fadeAlpha > 0 then
+        love.graphics.setColor(0, 0, 0, self.stateContext.fadeAlpha) -- Black fade; use (1,1,1,fadeAlpha) for white
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        love.graphics.setColor(1, 1, 1, 1)
     end
 end
 
