@@ -39,6 +39,16 @@ local gameOver = {}
 
 -- Debug to test table loading and enemy functions for taking damage, dying and score increment
 function love.keypressed(key)
+    if key == "p" then
+        if Gamestate.current() == playing or Gamestate.current() == safeRoom then
+            Gamestate.push(pause_menu)
+            return
+        elseif Gamestate.current() == pause_menu then
+            Gamestate.pop()
+            return
+        end
+    end
+    
     if key == "r" and player.isDead then
         PlayerRespawn.respawnPlayer(player, world, data_store.metaData, playerScore) -- encapsulate data_store.metaData and player score to main.lua only
         return -- prevent other keys from utilizing r

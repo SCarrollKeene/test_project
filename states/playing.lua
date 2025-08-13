@@ -349,10 +349,6 @@ function playing:roomComplete()
 end
 
 function playing:keypressed(key)
-    if key == "p" then
-        Gamestate.push(pause_menu)
-    end
-
     -- if key == "e" and player.canPickUpItem then
     --         player:addItem(player.canPickUpItem) -- add item to player inventory
     --         selectedItemToCompare = player.canPickUpItem
