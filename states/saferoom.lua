@@ -236,7 +236,6 @@ function spawnPortal()
     local portalY = mapH / 2
     portal = Portal:new(world, portalX, portalY)
     self.stateContext.portal = portal
-    Debug.debugPrint("A portal has spawned! Traverse to " ..data_store.runData.currentRoom.. " room.")
 end
 
 function safeRoom:roomComplete()
@@ -592,7 +591,7 @@ function safeRoom:enter(previous_state, world, enemyPool, enemyImageCache, mapCa
         --portal = Portal:new(world, love.graphics.getWidth()/2, love.graphics.getHeight()/2)
         portal = Portal:new(world, mapW / 2, mapH / 2)
         self.stateContext.portal = portal
-        Debug.debugPrint("[SAFEROOM portal] created at", portal.x, portal.y)
+        self.createPortalAfterFade = true
     end
 
     -- prepare to load next level
@@ -794,6 +793,12 @@ function safeRoom:update(dt)
         if self.stateContext.fadeDirection ~= -1 then
             return -- halt other updates during fade
         end
+    end
+
+    if self.createPortalAfterFade and not self.stateContext.fading then
+        portal = Portal:new(world, mapW / 2, mapH / 2)
+        self.stateContext.portal = portal
+        self.createPortalAfterFade = false
     end
 
     -- if not player.isDead then

@@ -340,7 +340,6 @@ function playing:spawnPortal()
     local portalY = mapH / 2
     portal = Portal:new(world, portalX, portalY)
     self.stateContext.portal = portal
-    Debug.debugPrint("A portal has spawned! Traverse to " ..data_store.runData.currentRoom.. " room.")
 end
 
 function playing:roomComplete()
