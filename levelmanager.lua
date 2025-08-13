@@ -126,14 +126,23 @@ function LevelManager:loadLevel(index, mapCache, playingState)
     self.currentLevel = index
     local level = self.levels[index]
     local cached = mapCache["maps/" .. level.map .. ".lua"]
+
+    -- clear existing colliders
+    for _, collider in ipairs(wallColliders) do
+        if collider.destroy and not collider:isDestroyed() then
+            collider:destroy()
+        end
+    end
+
+    -- Reset global wall collider tracker
+    wallColliders = {}
+    currentWalls = {}
+
     -- load map AND walls, associate global world to map
     currentMap = cached.map
     currentWalls = MapLoader.instantiateWalls(world, cached.wallData)
 
-    -- Reset global wall collider tracker
-    wallColliders = {}
-
-    -- Add new walls to tracker
+    -- Add/sets new walls to tracker
     for _, wall in ipairs(currentWalls) do
         table.insert(wallColliders, wall)
     end

@@ -432,8 +432,9 @@ function safeRoom:enter(previous_state, world, enemyPool, enemyImageCache, mapCa
         end
     end
 
-    -- Clear old wall colliders table
+    -- Clear/reset old wall colliders table
     wallColliders = {}
+    currentWalls = {}
 
     -- passing in its map and walls, which is world, because of colliders
     -- its not a combat level so this is how safe rooms and other rooms will handle
@@ -494,10 +495,6 @@ function safeRoom:enter(previous_state, world, enemyPool, enemyImageCache, mapCa
 
     CamManager.setMap(mapW, mapH)
     --CamManager.camera:attach()
-
-    for _, wall in ipairs(currentWalls) do
-        table.insert(wallColliders, wall)
-    end
 
     -- restore player stats and inventory
     player.inventory = Utils.deepCopy(data_store.runData.inventory)
@@ -600,18 +597,28 @@ function safeRoom:enter(previous_state, world, enemyPool, enemyImageCache, mapCa
     -- prepare to load next level
     LevelManager.currentLevel = LevelManager.currentLevel
 
+    -- fading logic test
+    self.stateContext.fading = true
+    self.stateContext.fadeDirection = -1  -- fade in (from black)
+    self.stateContext.fadeTimer = 0
+    self.stateContext.fadeAlpha = 1
 end
 
 function safeRoom:leave()
     Debug.debugPrint("[SAFEROOM:LEAVE] saferoom leave called")
     -- stop music, clear temp tables/objects, destroy portals, etc
      -- Add wall cleanup:
+    print("Walls before cleanup:", #wallColliders, "currentWalls:", #currentWalls)
     for _, collider in ipairs(wallColliders) do
         if not collider:isDestroyed() then
-        collider:destroy()
+            collider:destroy()
+        else
+            print("[SAFEROOM:LEAVE] Collider already destroyed:", collider)
         end
     end
     wallColliders = {}
+    currentWalls = {}
+    print("Walls after cleanup:", #wallColliders, "currentWalls:", #currentWalls)
 
     -- clear particles
     globalParticleSystems = {}
@@ -743,12 +750,15 @@ function safeRoom:update(dt)
     -- update physics world AFTER all positions are set
     if world then world:update(dt) end
 
-    if self.stateContext.fading then
-        -- SUPPOSED to clear particles when starting fade out
-        -- globalParticleSystems = {}
-        if self.stateContext.fadeDirection == 1 and self.stateContext.nextState == playingState then
-        end
+    if self.stateContext.pendingRoomTransition then
+        self.stateContext.fading = true
+        self.stateContext.fadeDirection = 1
+        self.stateContext.fadeTimer = 0
+        self.stateContext.pendingRoomTransition = false
+        return
+    end
 
+    if self.stateContext.fading then
         if self.stateContext.fadeDirection == 1 then
             -- Fade out (to black)
             self.stateContext.fadeTimer = self.stateContext.fadeTimer + dt
@@ -766,9 +776,9 @@ function safeRoom:update(dt)
                 -- Hold complete, switch state and start fade in
                 print("Next state:", tostring(self.stateContext.nextState))
                 Gamestate.switch(self.stateContext.nextState, unpack(self.stateContext.nextStateParams))
-                globalParticleSystems = {} -- testing for now
-                self.stateContext.fadeDirection = -1
-                self.stateContext.fadeTimer = 0
+                globalParticleSystems = {} -- testing for now, SUPPOSED to clear particles when starting fade out
+                -- self.stateContext.fadeDirection = -1
+                -- self.stateContext.fadeTimer = 0
             end
         elseif self.stateContext.fadeDirection == -1 then
             -- Fade in (from black)
@@ -779,16 +789,10 @@ function safeRoom:update(dt)
                 self.stateContext.fadeAlpha = 0
             end
         end
-        return -- halt other updates during fade
-    end
 
-    if self.stateContext.pendingRoomTransition then
-        self.stateContext.fading = true
-        self.stateContext.fadeDirection = 1
-        self.stateContext.fadeTimer = 0
-        -- nextState = safeRoom
-        self.stateContext.pendingRoomTransition = false
-        return
+        if self.stateContext.fadeDirection ~= -1 then
+            return -- halt other updates during fade
+        end
     end
 
     -- if not player.isDead then

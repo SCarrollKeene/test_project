@@ -553,8 +553,9 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
         end
     end
 
-    -- Clear old wall colliders table
+    -- Clear/reset old wall colliders table
     wallColliders = {}
+    currentWalls = {}   
 
     -- always load map for current combat level
     local level = LevelManager.levels[LevelManager.currentLevel]
@@ -781,20 +782,29 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
             enemy:draw()
         end
     end
+
+    -- fading logic test
+    self.stateContext.fading = true
+    self.stateContext.fadeDirection = -1  -- fade in (from black)
+    self.stateContext.fadeTimer = 0
+    self.stateContext.fadeAlpha = 1
 end
 
 function playing:leave()
     -- stop music, clear temp tables/objects, destroy portals, etc
-    Debug.debugPrint("[PLAYING:LEAVE] playing leave called")
+    print("[PLAYING:LEAVE] playing leave called")
 
-    Debug.debugPrint("Walls before cleanup:", #wallColliders)
+    print("Walls before cleanup:", #wallColliders, "currentWalls:", #currentWalls)
     for _, collider in ipairs(wallColliders) do
         if not collider:isDestroyed() then
-        collider:destroy()
+            collider:destroy()
+        else
+            print("[PLAYING:LEAVE] Collider already destroyed:", collider)
         end
     end
     wallColliders = {}
-    Debug.debugPrint("Walls after cleanup:", #wallColliders)
+    currentWalls = {}
+    print("Walls after cleanup:", #wallColliders, "currentWalls:", #currentWalls)
 
     -- clear particles
     globalParticleSystems = {}
@@ -905,12 +915,15 @@ function playing:update(dt)
         damageFlashTimer = damageFlashTimer - dt
     end
 
-    if self.stateContext.fading then
-        -- SUPPOSED to clear particles when starting fade out
-        if self.stateContext.fadeDirection == 1 and self.stateContext.nextState == playingState then
-            globalParticleSystems = {}
-        end
+    if self.stateContext.pendingRoomTransition then
+        self.stateContext.fading = true
+        self.stateContext.fadeDirection = 1
+        self.stateContext.fadeTimer = 0
+        self.stateContext.pendingRoomTransition = false
+        return
+    end
 
+    if self.stateContext.fading then
         if self.stateContext.fadeDirection == 1 then
             -- Fade out (to black)
             self.stateContext.fadeTimer = self.stateContext.fadeTimer + dt
@@ -928,8 +941,9 @@ function playing:update(dt)
                 -- Hold complete, switch state and start fade in
                 print("Next state:", tostring(self.stateContext.nextState))
                 Gamestate.switch(self.stateContext.nextState, unpack(self.stateContext.nextStateParams))
-                self.stateContext.fadeDirection = -1
-                self.stateContext.fadeTimer = 0
+                globalParticleSystems = {} -- testing for now, SUPPOSED to clear particles when starting fade out
+                -- self.stateContext.fadeDirection = -1
+                -- self.stateContext.fadeTimer = 0
             end
         elseif self.stateContext.fadeDirection == -1 then
             -- Fade in (from black)
@@ -940,16 +954,10 @@ function playing:update(dt)
                 self.stateContext.fadeAlpha = 0
             end
         end
-        return -- halt other updates during fade
-    end
 
-    if self.stateContext.pendingRoomTransition then
-        self.stateContext.fading = true
-        self.stateContext.fadeDirection = 1
-        self.stateContext.fadeTimer = 0
-        -- nextState = safeRoom
-        self.stateContext.pendingRoomTransition = false
-        return
+        if self.stateContext.fadeDirection ~= -1 then
+            return -- halt other updates during fade
+        end
     end
 
     if not player.isDead then
