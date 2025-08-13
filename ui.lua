@@ -6,6 +6,15 @@ local RARITY_COLORS = Particle.RARITY_COLORS
 
 local UI = {}
 
+UI.currentHealthBarWidth = UI.currentHealthBarWidth or nil
+local BASE_BAR_WIDTH = 210
+local BASE_MAX_HEALTH = 100
+
+local function getDynamicBarWidth(player)
+    local proportion = (player.maxHealth or BASE_MAX_HEALTH) / BASE_MAX_HEALTH
+    return BASE_BAR_WIDTH * proportion
+end
+
 local function printOutlined(text, x, y, outlineColor, textColor)
     local oc = outlineColor or {0,0,0,1}
     local tc = textColor or {1,1,1,1}
@@ -39,6 +48,48 @@ function UI.drawWaveTimer(timeLeft, x, y)
     local sec = t % 60
     local text = string.format("Time: %02d:%02d", min, sec)
     love.graphics.printf(text, x, y, 180, "left")
+end
+
+function UI.drawPlayerHealthBar(x, y, height, player, dt)
+    local health = math.max(0, player.health or 0)
+    local maxHealth = player.maxHealth or BASE_MAX_HEALTH
+    local ratio = health / maxHealth
+
+    local targetWidth = getDynamicBarWidth(player)
+
+    -- Animate width smoothly for polish
+    if UI.currentBarWidth == nil then UI.currentBarWidth = targetWidth end
+    local speed = 150 -- pixels/sec
+    if math.abs(UI.currentBarWidth - targetWidth) > 1 then
+        local dir = targetWidth > UI.currentBarWidth and 1 or -1
+        UI.currentBarWidth = UI.currentBarWidth + dir * speed * (dt or 0.016)
+        if (dir == 1 and UI.currentBarWidth > targetWidth) or
+           (dir == -1 and UI.currentBarWidth < targetWidth) then
+            UI.currentBarWidth = targetWidth
+        end
+    else
+        UI.currentBarWidth = targetWidth
+    end
+
+    local barWidth = UI.currentBarWidth
+
+    -- Draw background (gray) - Use barWidth
+    love.graphics.setColor(0.11, 0.11, 0.11, 0.9)
+    love.graphics.rectangle("fill", x, y, barWidth, height, 8, 8)
+
+    -- Draw health fill (proportional to barWidth)
+    local fillColor = {1-(ratio*0.5), ratio, 0.11, 1}
+    love.graphics.setColor(fillColor)
+    love.graphics.rectangle("fill", x, y, barWidth * ratio, height, 8, 8)
+
+    -- Draw border (same dynamic barWidth!)
+    love.graphics.setColor(1, 1, 1, 0.8)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", x, y, barWidth, height, 8, 8)
+    love.graphics.setColor(1,1,1,1)
+
+    -- Optional: Health numeric text
+    love.graphics.print(("%d / %d"):format(health, maxHealth), x+8, y+height/2-10)
 end
 
 function UI.drawShardCounter(x, y)

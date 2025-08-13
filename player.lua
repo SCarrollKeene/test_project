@@ -161,7 +161,8 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
 
     self.baseDamage = 1
     self.damageGrowth = { min = 1, max = 4 }
-    self.health = 100
+    self.health = (data_store.runData and data_store.runData.playerHealth) or 100
+    self.maxHealth = (data_store.runData and data_store.runData.playerMaxHealth) or 100
     self.speed = 300
     self.xVel = 0
     self.yVel = 0
@@ -228,7 +229,7 @@ function Player:getXPToNextLevelUp()
 end
 
 function Player:onLevelUp()
-    local oldHealth = self.health or 0
+    local oldMaxHealth = self.maxHealth or 0 -- change oldHealth to oldMaxHealth later
     local oldBaseDamage = self.baseDamage or 0
     local oldSpeed = self.speed or 0
 
@@ -236,16 +237,17 @@ function Player:onLevelUp()
     self.level = self.level + 1
 
     -- come back to add increases to stats, effects, etc
-    local healthIncrease = math.floor(self.health * 0.07)
+    local healthIncrease = math.floor(self.maxHealth * 0.07) -- change to maxHealth
     local damageIncrease = math.floor(self.baseDamage * percent)
     local speedIncrease = math.floor(self.speed * 0.03)
 
-    self.health = self.health + healthIncrease
+    self.maxHealth = self.maxHealth + healthIncrease
+    self.health = self.maxHealth -- full heal on level up, maybe
     self.baseDamage = self.baseDamage + damageIncrease
     self.speed = self.speed + speedIncrease
 
     -- new percent increases based on previous values
-    local healthPct = oldHealth > 0 and (healthIncrease / oldHealth) * 100 or 0
+    local healthPct = oldMaxHealth > 0 and (healthIncrease / oldMaxHealth) * 100 or 0 -- oldMaxHealth
     local damagePct = oldBaseDamage > 0 and (damageIncrease / oldBaseDamage) * 100 or 0
     local speedPct = oldSpeed > 0 and (speedIncrease / oldSpeed) * 100 or 0
 

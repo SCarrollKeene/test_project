@@ -8,6 +8,7 @@ Data_Store.runData = {
   cleared = false,
   clearedRooms = {},
   playerHealth = 100,
+  playerMaxHealth = 100,
   inventory = {},
   equippedSlot = 1,
   playerLevel = 1,

@@ -494,7 +494,8 @@ function safeRoom:enter(previous_state, world, enemyPool, enemyImageCache, mapCa
     -- restore player stats and inventory
     player.inventory = Utils.deepCopy(data_store.runData.inventory)
     player.equippedSlot = data_store.runData.equippedSlot
-    player.health = data_store.runData.playerHealth or 100
+    player.health = (data_store.runData and data_store.runData.playerHealth) or 100
+    player.maxHealth = (data_store.runData and data_store.runData.playerMaxHealth)  or 100
     player.level = data_store.runData.playerLevel or 1
     player.experience = data_store.runData.playerExperience or 0
     player.baseDamage = data_store.runData.playerBaseDamage or 1
@@ -648,6 +649,7 @@ function safeRoom:leave()
     data_store.runData.inventory = Utils.deepCopy(player.inventory)
     data_store.runData.equippedSlot = player.equippedSlot
     data_store.runData.playerHealth = player.health
+    data_store.runData.playerMaxHealth = player.maxHealth
     data_store.runData.playerLevel = player.level
     data_store.runData.playerExperience = player.experience
     data_store.runData.playerBaseDamage = player.baseDamage
@@ -920,7 +922,8 @@ function safeRoom:draw()
     
     UI.drawEquippedWeaponOne(20, 20, player, 44)
     UI.drawShardCounter(80, 20)
-    love.graphics.print("Health: " .. player.health, 20, 80)
+    UI.drawPlayerHealthBar(20, 80, 32, player, love.timer.getDelta())
+    -- love.graphics.print("Health: " .. player.health, 20, 80)
     love.graphics.print("Level: " .. player.level or 1, 20, 110)
 
     local xpNext = player:getXPToNextLevelUp()

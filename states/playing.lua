@@ -656,7 +656,8 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     -- restore player stats and inventory
     player.inventory = Utils.deepCopy(data_store.runData.inventory)
     player.equippedSlot = data_store.runData.equippedSlot
-    player.health = data_store.runData.playerHealth or 100
+    player.health = (data_store.runData and data_store.runData.playerHealth) or 100
+    player.maxHealth = (data_store.runData and data_store.runData.playerMaxHealth) or 100
     player.level = data_store.runData.playerLevel or 1
     player.experience = data_store.runData.playerExperience or 0
     player.baseDamage = data_store.runData.playerBaseDamage or 1
@@ -830,6 +831,7 @@ function playing:leave()
     data_store.runData.inventory = Utils.deepCopy(player.inventory)
     data_store.runData.equippedSlot = player.equippedSlot
     data_store.runData.playerHealth = player.health
+    data_store.runData.playerMaxHealth = player.maxHealth
     data_store.runData.playerLevel = player.level
     data_store.runData.playerExperience = player.experience
     data_store.runData.playerBaseDamage = player.baseDamage
@@ -1544,7 +1546,8 @@ function playing:draw()
         UI.drawWaveCounter(self.waveManager.currentWave, #self.waveManager.waves, love.graphics.getWidth() / 2, 20)
         UI.drawWaveTimer(self.waveManager.waveTimeLeft or 0, love.graphics.getWidth() / 2, 50)
     end
-    love.graphics.print("Health: " .. player.health, 20, 80)
+    -- love.graphics.print("Health: " .. player.health, 20, 80)
+    UI.drawPlayerHealthBar(20, 80, 32, player, love.timer.getDelta())
     love.graphics.print("Level: " .. player.level or 1, 20, 110)
 
     local xpNext = player:getXPToNextLevelUp()
