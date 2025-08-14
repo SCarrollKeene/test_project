@@ -220,6 +220,15 @@ function checkPlayerPickups()
                     if player.health < player.maxHealth then
                         local healing = 10
                         player.health = math.min(player.health + healing, player.maxHealth)
+
+                        local healPS = Particle.getHealEffect()
+                        if healPS then
+                            healPS:setPosition(player.x, player.y - 12) -- slightly above center
+                            healPS:start()
+                            healPS:emit(18) -- number of particles, tweak to taste
+                            table.insert(globalParticleSystems, { ps = healPS, type = "healEffect", radius = 38 })
+                        end
+
                         if popupManager and player then
                             popupManager:add("+" .. healing .. " HP!", player.x, player.y - 34, {0,1,0,1}, 1.1, -25, 0)
                         end
@@ -736,7 +745,8 @@ function safeRoom:update(dt)
     for i = #globalParticleSystems, 1, -1 do
         local entry = globalParticleSystems[i]   -- entry is a table: { ps = ..., type = ... }
         local ps = entry.ps
-        if not entry.ps then
+    
+        if not ps then
             Debug.debugPrint("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
             table.remove(globalParticleSystems, i)
         else

@@ -228,6 +228,15 @@ function checkPlayerPickups()
                     if player.health < player.maxHealth then
                         local healing = 10
                         player.health = math.min(player.health + healing, player.maxHealth)
+
+                        local healPS = Particle.getHealEffect()
+                        if healPS then
+                            healPS:setPosition(player.x, player.y - 12) -- slightly above center
+                            healPS:start()
+                            healPS:emit(18) -- number of particles, tweak to taste
+                            table.insert(globalParticleSystems, { ps = healPS, type = "healEffect", radius = 38 })
+                        end
+
                         if popupManager and player then
                             popupManager:add("+" .. healing .. " HP!", player.x, player.y - 34, {0,1,0,1}, 1.1, -25, 0)
                         end
@@ -1132,34 +1141,35 @@ end
     for i = #globalParticleSystems, 1, -1 do
         local entry = globalParticleSystems[i]   -- entry is a table: { ps = ..., type = ... }
         local ps = entry.ps
-        if not entry.ps then
+
+        if not ps then
             Debug.debugPrint("[UPDATE ERROR] Removing nil ps from globalParticleSystems at index", i)
             table.remove(globalParticleSystems, i)
         else
             ps:update(dt)
         end
 
-    -- remove inactive particle systems
-    -- switched 'and' to 'or' as this removes particles between transitions
-    -- may need to revisit once we start adding other particle 
-    if ps:getCount() == 0 or not ps:isActive() then
-        table.remove(globalParticleSystems, i)
-        if entry.type == "impactEffect" then
-            Particle.returOnImpactEffect(ps)
-        elseif entry.type == "firefly" then
-            Particle.returnFirefly(ps)
-        elseif entry.type == "deathEffect" then
-            Particle.returnOnDeathEffect(ps)
-        elseif entry.type == "particleTrail" then
-            Particle.returnBaseSpark(ps)
-        elseif entry.type == "itemIndicator" then
-            Particle.returnItemIndicator(ps)
-        elseif entry.type == "portalGlow" then
-            Particle.returnPortalGlow(ps)
+        -- remove inactive particle systems
+        -- switched 'and' to 'or' as this removes particles between transitions
+        -- may need to revisit once we start adding other particle 
+        if ps:getCount() == 0 or not ps:isActive() then
+            table.remove(globalParticleSystems, i)
+            if entry.type == "impactEffect" then
+                Particle.returOnImpactEffect(ps)
+            elseif entry.type == "firefly" then
+                Particle.returnFirefly(ps)
+            elseif entry.type == "deathEffect" then
+                Particle.returnOnDeathEffect(ps)
+            elseif entry.type == "particleTrail" then
+                Particle.returnBaseSpark(ps)
+            elseif entry.type == "itemIndicator" then
+                Particle.returnItemIndicator(ps)
+            elseif entry.type == "portalGlow" then
+                Particle.returnPortalGlow(ps)
+            end
+            Debug.debugPrint("REMOVED INACTIVE PARTICLE SYSTEM")
         end
-        Debug.debugPrint("REMOVED INACTIVE PARTICLE SYSTEM")
     end
-end
 
     -- particle culling if over cap
     local ps_cap = 100

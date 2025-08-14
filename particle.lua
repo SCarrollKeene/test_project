@@ -43,6 +43,28 @@ local function getImage(path)
     return _imgCache[path]
 end
 
+function Particle.healEffect()
+    local particleImage = getImage("sprites/projectile.png")
+    local ps = love.graphics.newParticleSystem(particleImage, 40)
+    ps:setParticleLifetime(0.7, 1.6)
+    ps:setEmissionRate(0) -- We use bursts
+    ps:setSizes(0.5, 1.0)
+    ps:setSizeVariation(0.4)
+    ps:setSpread(math.rad(40)) -- Narrow spread
+    ps:setLinearAcceleration(-4, -40, 4, -80) -- Move upwards, little horizontal jitter
+    ps:setSpeed(32, 54)
+    ps:setColors(
+        0.2, 0.85, 0.3, 0.8,  -- Start: green, mostly opaque
+        0.2, 1.0, 0.5, 0.2    -- End: greener, faded
+    )
+    return ps
+end
+
+-- TODO: change this get method, create a return method, add to pooling and pool cleanup logic in gamestates 8/14/25
+function Particle.getHealEffect()
+    return Particle.healEffect() -- Pooling optional, but omitted for simplicity
+end
+
 function Particle.baseSpark()
     local particleImage = getImage("sprites/projectile.png")
     if not particleImage then 
