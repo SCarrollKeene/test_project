@@ -224,6 +224,21 @@ function checkPlayerPickups()
                     Loot.removeDroppedItem(item)
                     SaveSystem.saveGame()
                     -- TODO: sounds for shard pickups
+                elseif item.type == "health potion" then
+                    if player.health < player.maxHealth then
+                        local healing = 10
+                        player.health = math.min(player.health + healing, player.maxHealth)
+                        if popupManager and player then
+                            popupManager:add("+" .. healing .. " HP!", player.x, player.y - 34, {0,1,0,1}, 1.1, -25, 0)
+                        end
+                        Loot.removeDroppedItem(item)
+                        SaveSystem.saveGame()
+                        -- TODO: sounds for potion heal / health full scenaraios
+                    else
+                        if popupManager and player then
+                            popupManager:add("Health Full", player.x, player.y - 34, {1,1,1,1}, 1.1, -25, 0)
+                        end
+                    end
                 elseif item.type == "weapon" then
                     player.canPickUpItem = item
                     selectedItemToCompare = item
@@ -1540,14 +1555,14 @@ function playing:draw()
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
     
-    UI.drawEquippedWeaponOne(20, 20, player, 44)
-    UI.drawShardCounter(80, 20)
+    UI.drawEquippedWeaponOne(20, 60, player, 44)
+    UI.drawShardCounter(80, 60)
     if self.waveManager then
         UI.drawWaveCounter(self.waveManager.currentWave, #self.waveManager.waves, love.graphics.getWidth() / 2, 20)
         UI.drawWaveTimer(self.waveManager.waveTimeLeft or 0, love.graphics.getWidth() / 2, 50)
     end
     -- love.graphics.print("Health: " .. player.health, 20, 80)
-    UI.drawPlayerHealthBar(20, 80, 32, player, love.timer.getDelta())
+    UI.drawPlayerHealthBar(20, 20, 32, player, love.timer.getDelta())
     love.graphics.print("Level: " .. player.level or 1, 20, 110)
 
     local xpNext = player:getXPToNextLevelUp()

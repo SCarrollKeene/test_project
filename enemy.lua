@@ -11,6 +11,7 @@ Enemy.__index = Enemy
 
 local enemyIDCounter = 0
 local defaultDropChance = 0.5
+local potionDropChance = 0.10
 
 function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, xpAmount, spriteImage)
     enemyIDCounter = enemyIDCounter + 1
@@ -445,6 +446,10 @@ function Enemy:die(killer)
 
     if math.random() < (self.shardDropChance or defaultDropChance) then
         table.insert(droppedItems, Loot.createShardDrop(self.x, self.y))
+    end
+
+    if math.random() < potionDropChance then
+        table.insert(droppedItems, Loot.createPotionDrop(self.x, self.y))
     end
 
     if self.collider then

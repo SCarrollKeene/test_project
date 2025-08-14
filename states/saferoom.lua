@@ -216,6 +216,20 @@ function checkPlayerPickups()
                     Loot.removeDroppedItem(item)
                     SaveSystem.saveGame()
                     -- TODO: sounds for shard pickups
+                elseif item.type == "health potion" then
+                    if player.health < player.maxHealth then
+                        local healing = 10
+                        player.health = math.min(player.health + healing, player.maxHealth)
+                        if popupManager and player then
+                            popupManager:add("+" .. healing .. " HP!", player.x, player.y - 34, {0,1,0,1}, 1.1, -25, 0)
+                        end
+                        Loot.removeDroppedItem(item)
+                        SaveSystem.saveGame()
+                    else
+                        if popupManager and player then
+                            popupManager:add("Health Full", player.x, player.y - 34, {1,1,1,1}, 1.1, -25, 0)
+                        end
+                    end
                 elseif item.type == "weapon" then
                     player.canPickUpItem = item
                     selectedItemToCompare = item
@@ -920,9 +934,9 @@ function safeRoom:draw()
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(scoreFont)
     
-    UI.drawEquippedWeaponOne(20, 20, player, 44)
-    UI.drawShardCounter(80, 20)
-    UI.drawPlayerHealthBar(20, 80, 32, player, love.timer.getDelta())
+    UI.drawEquippedWeaponOne(20, 60, player, 44)
+    UI.drawShardCounter(80, 60)
+    UI.drawPlayerHealthBar(20, 20, 32, player, love.timer.getDelta())
     -- love.graphics.print("Health: " .. player.health, 20, 80)
     love.graphics.print("Level: " .. player.level or 1, 20, 110)
 

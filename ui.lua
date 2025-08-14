@@ -84,11 +84,11 @@ function UI.drawPlayerHealthBar(x, y, height, player, dt)
 
     -- Draw border (same dynamic barWidth!)
     love.graphics.setColor(1, 1, 1, 0.8)
-    love.graphics.setLineWidth(2)
+    love.graphics.setLineWidth(1.5)
     love.graphics.rectangle("line", x, y, barWidth, height, 8, 8)
     love.graphics.setColor(1,1,1,1)
 
-    -- Optional: Health numeric text
+    -- Optional health numeric text
     love.graphics.print(("%d / %d"):format(health, maxHealth), x+8, y+height/2-10)
 end
 

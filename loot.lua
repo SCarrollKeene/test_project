@@ -9,6 +9,15 @@ function createShardDrop(x, y)
     }
 end
 
+function createPotionDrop(x, y)
+    return {
+        type = "health potion",
+        image = love.graphics.newImage("sprites/health-potion.png"),
+        x = x, y = y
+        -- TODO: add green upwards particles to represent healing
+    }
+end
+
 -- Remove dropped item
 function removeDroppedItem(item)
     if not item then return end -- defensive nil check
@@ -103,5 +112,6 @@ return {
   createWeaponDropFromInstance = createWeaponDropFromInstance,
   removeDroppedItem = removeDroppedItem,
   createShardDrop = createShardDrop,
+  createPotionDrop = createPotionDrop,
   recycleWeaponDrop = recycleWeaponDrop
 }

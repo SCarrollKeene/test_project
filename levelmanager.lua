@@ -8,7 +8,7 @@ local function buildCombatWaves(includeBoss)
     local baseDuration = 20
     local maxDuration = 60
 
-    for i = 1, 1 do
+    for i = 1, 3 do
         -- Progressive enemy count and staggered interval
         local enemyCount = baseEnemyCount + (i - 1) * 2  -- e.g., 3, 5, 7, 9, 11
         local spawnInterval = math.max(0.6 - (i - 1) * 0.08, 0.15)  -- Faster spawns later
