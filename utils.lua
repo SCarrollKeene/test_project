@@ -1,3 +1,4 @@
+local enemyTypes = require("enemyTypes")
 local Particle = require("particle")
 local data_store = require("data_store")
 
@@ -37,6 +38,33 @@ end
 
 function Utils.getScore()
     return (data_store.runData and data_store.runData.score) or 0
+end
+
+-- Flatten all allowed variant definitions based on the expanded enemyTypes layout
+function Utils.getAvailableEnemyVariants(allEnemyTypes, availableTypes)
+    if not allEnemyTypes then
+        error("[Utils] getAvailableEnemyVariants: allEnemyTypes is nil")
+    end
+    local variants = {}
+    if availableTypes and #availableTypes > 0 then
+        -- gather variants only from specified types
+        for _, typeName in ipairs(availableTypes) do
+            local allVariants = allEnemyTypes[typeName]
+            if allVariants then
+                for _, variant in ipairs(allVariants) do
+                    table.insert(variants, variant)
+                end
+            end
+        end
+    else
+        -- gather all variants from all types
+        for _, allVariants in pairs(allEnemyTypes) do
+            for _, variant in ipairs(allVariants) do
+                table.insert(variants, variant)
+            end
+        end
+    end
+    return variants
 end
 
 function Utils.adjustRarityWeightsForLevel(level)

@@ -86,36 +86,47 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
 
     -- only preload enemies if enemy cache is empty
     if not next(self.enemyImageCache) then
-        -- preload enemy images
-        for _, blob in ipairs(enemyTypes) do
-            print("[LOADING] Loading enemy sprite:", blob.spritePath)
-            local success, img = pcall(love.graphics.newImage, blob.spritePath)
-            if success and img:getWidth() > 0 and img:getHeight() > 0 then
-                print("[LOADING] successfully loaded:", blob.spritePath)
-                self.enemyImageCache[blob.spritePath] = img
-            else
-                print("[LOADING] Invalid image:", blob.spritePath)
-                -- Use fallback texture
-                local placeholder = love.newImageData(32, 32)
-                placeholder:mapPixel(function()
-                    return 1, 0, 0, 1 -- red RGBA
-                end)
-                self.enemyImageCache[blob.spritePath] = love.graphics.newImage(placeholder)
-                print("[LOADING] Using placeholder for:", blob.spritePath)
+        for enemyType, enemyTable in pairs(enemyTypes) do -- preload enemy images type-keyed enemy table
+            -- preload enemy images
+            for _, blob in ipairs(enemyTable) do
+                print("[LOADING] Loading enemy sprite:", blob.spritePath)
+                local success, img = pcall(love.graphics.newImage, blob.spritePath)
+                if success and img:getWidth() > 0 and img:getHeight() > 0 then
+                    print("[LOADING] successfully loaded:", blob.spritePath)
+                    self.enemyImageCache[blob.spritePath] = img
+                else
+                    print("[LOADING] Invalid image:", blob.spritePath)
+                    -- Use fallback texture
+                    local placeholder = love.newImageData(32, 32)
+                    placeholder:mapPixel(function()
+                        return 1, 0, 0, 1 -- red RGBA
+                    end)
+                    self.enemyImageCache[blob.spritePath] = love.graphics.newImage(placeholder)
+                    print("[LOADING] Using placeholder for:", blob.spritePath)
+                end
+                -- Add to the loaded counter
+                self.loaded = self.loaded + 1
+                -- Add to the total counter
+                self.total = self.total + 1
             end
-            -- Add to the loaded counter
-            self.loaded = self.loaded + 1
-            -- Add to the total counter
-            self.total = self.total + 1
+        end
+    end
+
+    -- preload all enemy types with flat array
+    local allEnemyVariants = {}
+    for _, subTable in pairs(enemyTypes) do
+        for _, variant in ipairs(subTable) do
+            table.insert(allEnemyVariants, variant)
         end
     end
 
     -- Preload 200 enemies into enemy pool
     for i = 1, 200 do
-        local randomIndex = math.random(1, #enemyTypes) -- Pick a random blob type
-        local randomBlob = enemyTypes[randomIndex] -- Get a random blob configuration
-        local img = self.enemyImageCache[randomBlob.spritePath]
-        local e = Enemy:new(world, randomBlob.name, 0, 0, 32, 32, nil, nil, randomBlob.health, randomBlob.speed, randomBlob.baseDamage, 0, img)
+        local pick = 1
+        local pickIndex = math.random(pick, #allEnemyVariants) -- Pick a random enemy variant/type
+        local enemyDef = allEnemyVariants[pickIndex] -- Get a random blob configuration
+        local img = self.enemyImageCache[enemyDef.spritePath]
+        local e = Enemy:new(world, enemyDef.name, 0, 0, 32, 32, nil, nil, enemyDef.health, enemyDef.speed, enemyDef.baseDamage, 0, img)
         e.isDead = true -- Mark as reusable
         table.insert(self.enemyPool, e)
     end

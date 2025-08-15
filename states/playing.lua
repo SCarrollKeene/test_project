@@ -257,8 +257,11 @@ function checkPlayerPickups()
     end
 end
 
-function playing:spawnRandomEnemy(x, y, AvailableEnemyTypes)
+function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
     Debug.debugPrint("[FROM SPAWNRANDOMENEMY POOL] Total enemies:", #self.enemyPool) -- debug preloaded pool status
+    Debug.debugPrint("AvailableEnemyTypes:", availableEnemyTypes) -- works if you pass in an enemy type as a 3rd param in spawnRandomEnemy
+    if type(availableEnemyTypes) == "table" then for i,v in ipairs(availableEnemyTypes) do print("  ",i,v) end end
+
     local state = Gamestate.current()
 
     -- 6/20/25 no spawning in safe rooms!
@@ -267,40 +270,43 @@ function playing:spawnRandomEnemy(x, y, AvailableEnemyTypes)
     local enemyCache = self.enemyImageCache or {} -- Use the current state's enemy image cache, not global
 
     -- Pick a random enemy type from the enemyTypes configuration table
-    local randomIndex = math.random(1, #enemyTypes) -- picks a random index between 1-3
-    local randomBlob = enemyTypes[randomIndex] -- returns a random blob from the table
+    -- local randomIndex = math.random(1, #enemyTypes) -- picks a random index between 1-3
+    -- local randomBlob = enemyTypes[randomIndex] -- returns a random blob from the table
 
     -- Filter based on enemyTypes if provided
-    local availableBlobs = {}
-    if AvailableEnemyTypes and #AvailableEnemyTypes > 0 then
-        -- create a filtered list of available blobs based on enemyTypes
-        for _, blob in ipairs(enemyTypes) do
-            for _, allowedType in ipairs(AvailableEnemyTypes) do
-                if blob.name == allowedType then
-                    table.insert(availableBlobs, blob)
-                    break -- Exit inner loop if match found
-                end
-            end
-        end
-    else
-        -- If no specific types provided, use all available blobs
-        availableBlobs = enemyTypes
-    end
+    --local availableBlobs = {}
+    local allEnemyTypes = self.allEnemyTypes or enemyTypes
+    local availableEnemyVariants = Utils.getAvailableEnemyVariants(allEnemyTypes, availableEnemyTypes)
+    
+    -- if AvailableEnemyTypes and #AvailableEnemyTypes > 0 then
+    --     -- create a filtered list of available blobs based on enemyTypes
+    --     for _, blob in ipairs(enemyTypes) do
+    --         for _, allowedType in ipairs(AvailableEnemyTypes) do
+    --             if blob.name == allowedType then
+    --                 table.insert(availableBlobs, blob)
+    --                 break -- Exit inner loop if match found
+    --             end
+    --         end
+    --     end
+    -- else
+    --     -- If no specific types provided, use all available blobs
+    --     availableBlobs = enemyTypes
+    -- end
 
     -- fall back to all types if filtered list is empty
-    if #availableBlobs == 0 then
+    if availableEnemyVariants and #availableEnemyVariants == 0 then
         Debug.debugPrint("[SPAWNRANDOMENEMY] No valid enemy types to spawn, using all random blobs.")
-        availableBlobs = enemyTypes -- Use all enemyTypes if none match the filter
+        availableEnemyVariants = Utils.getAvailableEnemyVariants(allEnemyTypes) -- Use all enemyTypes if none match the filter
     end
 
     -- select random enemy from filtered list
-    local randomBlobIndex = love.math.random(1, #availableBlobs) -- Pick a random blob type from available blobs
-    local randomBlob = availableBlobs[randomBlobIndex] -- Get a random blob configuration
+    local pickedIndex = love.math.random(1, #availableEnemyVariants) -- Pick a random blob type from available blobs
+    local enemyDef = availableEnemyVariants[pickedIndex] -- Get a random blob configuration
 
     -- Check if the image is already cached
-    local img = enemyCache[randomBlob.spritePath]
+    local img = enemyCache[enemyDef.spritePath]
      if not img then
-        Debug.debugPrint("MISSING IMAGE FOR: ", randomBlob.name, "at path:", randomBlob.spritePath)
+        Debug.debugPrint("MISSING IMAGE FOR: ", enemyDef.name, "at path:", enemyDef.spritePath)
         return -- Exit if image is missing
     end
 
@@ -310,12 +316,12 @@ function playing:spawnRandomEnemy(x, y, AvailableEnemyTypes)
         if e.isDead then
             e:reset(x or love.math.random(32, love.graphics.getWidth() - 32),
                     y or love.math.random(32, love.graphics.getHeight() - 32),
-                    randomBlob, img)
+                    enemyDef, img)
             e:setTarget(player)
             e.isDead = false
             e.toBeRemoved = false
             table.insert(enemies, e)
-            Debug.debugPrint("[POOL REUSE] Reactivating as:", randomBlob.name)
+            Debug.debugPrint("[POOL REUSE] Reactivating as:", enemyDef.name)
             return
         end
     end
@@ -328,10 +334,10 @@ function playing:spawnRandomEnemy(x, y, AvailableEnemyTypes)
     local spawnY = y or love.math.random(enemy_height, love.graphics.getHeight()or 600 - enemy_height)
 
     -- IF no pool THEN create new enemy instance
-    -- Create the enemy instance utilizing the randomBlob variable to change certain enemy variables like speed, health, etc
+    -- Create the enemy instance utilizing the enemyDef variable to change certain enemy variables like speed, health, etc
     local newEnemy = Enemy:new(
-        world, randomBlob.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
-        randomBlob.health, randomBlob.speed, randomBlob.baseDamage, randomBlob.xpAmount, img)
+        world, enemyDef.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
+       enemyDef.health, enemyDef.speed, enemyDef.baseDamage, enemyDef.xpAmount, img)
 
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
@@ -341,11 +347,11 @@ function playing:spawnRandomEnemy(x, y, AvailableEnemyTypes)
     -- add newly created enemies into the pool as well
     table.insert(self.enemyPool, newEnemy)
 
-    newEnemy.spriteIndex = randomIndex -- Store sprite index for rendering
-    Debug.debugPrint("[NEW ENEMY from Spawn Random Enemy] Created:", randomBlob.name)
+    newEnemy.spriteIndex = pickedIndex -- Store sprite index for rendering
+    Debug.debugPrint("[NEW ENEMY from Spawn Random Enemy] Created:", enemyDef.name)
 
     -- debug
-    Debug.debugPrint(string.format("[SPAWN] Spawned at: %s at x=%.1f, y=%.1f", randomBlob.name, spawnX, spawnY))
+    Debug.debugPrint(string.format("[SPAWN] Spawned at: %s at x=%.1f, y=%.1f", enemyDef.name, spawnX, spawnY))
 
     -- if wave.boss then
     --     spawnBossEnemy()
@@ -514,6 +520,7 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     self.enemyPool = enemyPool
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
+    self.allEnemyTypes = enemyTypes
 
     print("[PLAYING:ENTER] Pool received. #self.enemyPool = " .. tostring(#self.enemyPool))
     -- local dead, alive = 0, 0
