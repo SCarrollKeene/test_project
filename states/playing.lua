@@ -5,6 +5,7 @@ local MapLoader = require("maploader")
 local WaveManager = require("wavemanager")
 local player = require("player")
 local Enemy = require("enemy")
+local Gorgoneye = require("gorgoneye")
 local enemyTypes = require("enemytypes")
 local PlayerRespawn = require("playerrespawn")
 local projectiles = require("projectile_store")
@@ -314,9 +315,13 @@ function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
     -- Try to reuse from pool
     for i, e in ipairs(self.enemyPool) do
         if e.isDead then
-            e:reset(x or love.math.random(32, love.graphics.getWidth() - 32),
-                    y or love.math.random(32, love.graphics.getHeight() - 32),
-                    enemyDef, img)
+            if e.name == "Gorgoneye" then
+                e:reset(x, y, enemyDef, img)
+            else
+                e:reset(x or love.math.random(32, love.graphics.getWidth() - 32),
+                        y or love.math.random(32, love.graphics.getHeight() - 32),
+                        enemyDef, img)
+            end
             e:setTarget(player)
             e.isDead = false
             e.toBeRemoved = false
@@ -335,10 +340,17 @@ function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
 
     -- IF no pool THEN create new enemy instance
     -- Create the enemy instance utilizing the enemyDef variable to change certain enemy variables like speed, health, etc
-    local newEnemy = Enemy:new(
-        world, enemyDef.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
-       enemyDef.health, enemyDef.speed, enemyDef.baseDamage, enemyDef.xpAmount, img)
-
+    local newEnemy
+    -- if enemyDef.name == "Gorgoneye" then
+    --     newEnemy = Gorgoneye:new(
+    --         world, enemyDef.name, spawnX, spawnY, enemy_width, enemy_height,
+    --         enemyDef.health, enemyDef.speed, enemyDef.baseDamage, enemyDef.xpAmount, img)
+    -- else
+        newEnemy = Enemy:new(
+            world, enemyDef.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
+            enemyDef.health, enemyDef.speed, enemyDef.baseDamage, enemyDef.xpAmount, img)
+    -- end
+    
     -- configure new_enemy to target player
     newEnemy:setTarget(player)
 
@@ -510,7 +522,7 @@ end
 function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCache, safeRoomState)
     assert(#enemyPool > 0)
     Debug.debugPrint("[PLAYING:ENTER] Entered playing gamestate")
-    print("[DEBUG] playing:enter, safeRoomState is", tostring(safeRoomState))
+    -- print("[DEBUG] playing:enter, safeRoomState is", tostring(safeRoomState))
 
     -- stateless, clean approach without needing g variables
     local stateContext = {}
@@ -522,7 +534,26 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     self.mapCache = mapCache
     self.allEnemyTypes = enemyTypes
 
-    print("[PLAYING:ENTER] Pool received. #self.enemyPool = " .. tostring(#self.enemyPool))
+    -- print("[PLAYING:ENTER] Pool received. #self.enemyPool = " .. tostring(#self.enemyPool))
+
+    -- local total = #self.enemyPool
+    -- local gorgoneyeCount = 0
+    -- for _, enemy in ipairs(self.enemyPool) do
+    --         if enemy.name == "Gorgoneye" or getmetatable(enemy) == Gorgoneye then
+    --             gorgoneyeCount = gorgoneyeCount + 1
+    --         end
+    --     end
+    --     print("Enemy Pool: Total enemies =", total, ", Gorgoneyes =", gorgoneyeCount)
+
+    local counts = {}
+    for _, e in ipairs(self.enemyPool) do
+        local n = e.name or "UNKNOWN"
+        counts[n] = (counts[n] or 0) + 1
+    end
+    for k, v in pairs(counts) do
+        print("Pool holds", v, k)
+    end
+
     -- local dead, alive = 0, 0
     -- for _, e in ipairs(self.enemyPool) do
     --     if e.isDead then dead = dead + 1 else alive = alive + 1 end

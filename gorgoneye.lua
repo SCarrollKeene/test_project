@@ -21,14 +21,12 @@ function Gorgoneye:new(world, name, x, y, width, height, health, speed, baseDama
     assert(spr, "Gorgoneye spriteSheet is nil!")
 
     -- Get the dimensions
-    local sheetW, sheetH = spr:getWidth(), spr:getHeight()
-    local cols, rows = 3, 1
-    assert(sheetW == 96 and sheetH == 32, "Expected gorgoneye-tileset.png to be 96x32, but got " .. sheetW .. "x" .. sheetH)
-    assert(sheetW % cols == 0, "Width must be divisible by 3")
-    assert(sheetH % rows == 0, "Height must be divisible by 1")
+    local sheetW, sheetH = 36, 144
+    -- local cols, rows = 3, 1
+    assert(sheetW == 36 and sheetH == 144, "Expected gorgoneye-tileset.png to be 108x36, but got " .. sheetW .. "x" .. sheetH)
 
-    local frameWidth = sheetW / cols  -- 32
-    local frameHeight = sheetH / rows -- 32
+    local frameWidth = 36
+    local frameHeight = 36
 
     local instance = Enemy.new(
         world,
@@ -56,9 +54,12 @@ function Gorgoneye:new(world, name, x, y, width, height, health, speed, baseDama
 
     local grid = anim8.newGrid(frameWidth, frameHeight, sheetW, sheetH)
     instance.animations = {
-        idle = anim8.newAnimation(grid('1-3', 1), 0.2)
+        left = anim8.newAnimation(grid(1, 1), 1),  -- Top row
+        right = anim8.newAnimation(grid(1, 2), 1),   -- Second row
+        down = anim8.newAnimation(grid(1, 3), 1),   -- Third row
+        up = anim8.newAnimation(grid(1, 4), 1),   -- Bottom row
     }
-    instance.currentAnimation = instance.animations.idle
+    instance.currentAnimation = instance.animations.left
 
     -- Gorgoneye-specific fields
     instance.patrolRange = 120
@@ -78,6 +79,68 @@ function Gorgoneye:new(world, name, x, y, width, height, health, speed, baseDama
 
 end
 
+function Gorgoneye:reset(x, y, blob, img)
+    -- Assign standard fields from pooling
+    self.x = x
+    self.y = y
+    self.name = blob.name
+    self.health = blob.health
+    self.speed = blob.speed
+    self.baseDamage = blob.baseDamage
+    self.xpAmount = blob.xpAmount
+    self.spriteSheet = img or Assets.images.gorgoneye
+    self.isDead = false
+    self.toBeRemoved = false
+    self.isFlashing = false
+    self.xVel = 0
+    self.yVel = 0
+
+    -- Setup frame and sheet sizes (fixed for this tileset)
+    local frameWidth = 36
+    local frameHeight = 36
+    local sheetW = 36
+    local sheetH = 144
+
+    -- Safety check for real image dimensions (optional but good for debug)
+    -- Uncomment if desired:
+    -- assert(
+    --     (self.spriteSheet:getWidth() == sheetW and self.spriteSheet:getHeight() == sheetH),
+    --     "Expected gorgoneye-tileset.png to be "..sheetW.."x"..sheetH..
+    --     ", but got "..self.spriteSheet:getWidth().."x"..self.spriteSheet:getHeight()
+    -- )
+
+    -- Set up new animation grid and direction-based frames
+    local grid = anim8.newGrid(frameWidth, frameHeight, sheetW, sheetH)
+    self.animations = {
+        left  = anim8.newAnimation(grid(1, 1), 1),   -- Top row
+        right = anim8.newAnimation(grid(1, 2), 1),   -- 2nd row
+        down  = anim8.newAnimation(grid(1, 3), 1),   -- 3rd row
+        up    = anim8.newAnimation(grid(1, 4), 1),   -- 4th row
+    }
+    self.currentAnimation = self.animations.left
+    self.width = frameWidth
+    self.height = frameHeight
+
+    -- Gorgoneye-specific fields
+    self.patrolRange = 120
+    self.patrolOriginXPos = x
+    self.patrolDirection = 1
+    self.player = nil
+    self.awarenessRange = 200
+    self.shootInterval = 2.2
+    self.shootCooldown = 0
+
+    -- Reset physics collider
+    if not self.collider then
+        self:load()
+    else
+        self.collider:setPosition(x, y)
+        self.collider:setActive(true)
+    end
+
+    print("[RESET] Gorgoneye reset at", x, y)
+end
+
 function Gorgoneye:load()
     local colliderHeight = self.height
     local colliderWidth = self.width
@@ -95,7 +158,22 @@ function Gorgoneye:setTarget(player)
     self.player = player
 end
 
+function Gorgoneye:updateAI(dt)
+    local playerDist = math.sqrt((self.x - self.player.x)^2 + (self.y - self.player.y)^2)
+    if playerDist <= self.awarenessRange then
+        -- Shoot at player, but don't chase!
+        EnemyAI.shootAtPlayer(self, dt)
+        -- Optionally pause or minimal movement
+        self.xVel = 0
+        self.yVel = 0
+    else
+        -- Patrol logic
+        EnemyAI.patrolarea(self, dt, self.patrolRange)
+    end
+end
+
 function Gorgoneye:update(dt, frameCount)
+    print("[DEBUG] Gorgoneye:update is running!")
     if self.isDead then
         if self.currentAnimation then
             self.currentAnimation:update(dt)
@@ -125,13 +203,27 @@ function Gorgoneye:update(dt, frameCount)
     end
 
     -- Gargoyle behavior: patrol unless player is near; shoot if in range
-    local shootPlayerInRange = function(enemy, dt)
+    --local shootPlayerInRange = function(enemy, dt)
         -- EnemyAI.shootAtPlayer expects .player, .shootCooldown, .shootInterval, and .world to exist
-        EnemyAI.shootAtPlayer(enemy, dt)
+    --    EnemyAI.shootAtPlayer(enemy, dt)
+    --end
+
+    -- Call custom AI routine:
+    self:updateAI(dt)
+
+    if self.xVel ~= 0 or self.yVel ~= 0 then
+        local facing
+        if math.abs(self.xVel) > math.abs(self.yVel) then
+            facing = self.xVel > 0 and 'right' or 'left'
+        else
+            facing = self.yVel > 0 and 'down' or 'up'
+        end
+        if facing and self.animations[facing] then
+            self.currentAnimation = self.animations[facing]
+        end
+        print("xVel:", self.xVel, "yVel:", self.yVel)
     end
-
-    EnemyAI.patrolarea(self, dt, self.patrolRange, shootPlayerInRange)
-
+    
     -- Update animation and position
     if self.currentAnimation then
         self.currentAnimation:update(dt)
@@ -142,15 +234,12 @@ function Gorgoneye:update(dt, frameCount)
 end
 
 function Gorgoneye:draw()
-    love.graphics.setColor(1, 0, 0, 0.2)
-    love.graphics.rectangle("fill", self.x-self.width/2, self.y-self.height/2, self.width, self.height)
-    love.graphics.setColor(1, 1, 1, 1)
-
     if self.spriteSheet and self.currentAnimation then
         if self.isFlashing and not self.isDead then
             love.graphics.setShader(flashShader)
             flashShader:send("WhiteFactor", 1.0)
         end
+
         self.currentAnimation:draw(self.spriteSheet, self.x, self.y, 0, 1, 1, self.width/2, self.height/2)
         if self.isFlashing and not self.isDead then
             love.graphics.setShader()
