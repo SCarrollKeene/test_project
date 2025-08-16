@@ -120,8 +120,8 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
         end
     end
 
-    -- Preload 200 enemies into enemy pool
-    for i = 1, 200 do
+    -- Preload 300 enemies into enemy pool
+    for i = 1, 300 do
         local pick = 1
         local pickIndex = math.random(pick, #allEnemyVariants) -- Pick a random enemy variant/type
         local enemyDef = allEnemyVariants[pickIndex] -- Get a random blob configuration

@@ -1,3 +1,5 @@
+local Projectile = require("projectile")
+
 local EnemyAI = {}
 
 function EnemyAI.pursueTarget(self, dt)
@@ -38,6 +40,44 @@ function EnemyAI.pursueTarget(self, dt)
         
     -- self.x = self.x - (self.speed * 0.25) * dt
     -- self.xvel = (self.speed * 0.25) * dt
+end
+
+function EnemyAI.patrolarea(enemy, dt, patrolRange, onPlayerNear)
+    enemy.patrolOriginXPos = enemy.patrolOriginXPos or enemy.x -- x pos of enemy
+    enemy.patrolDirection = enemy.patrolDirection or 1 -- direction to patrol next
+
+    local minXPos = enemy.patrolOriginXPos - patrolRange
+    local maxXPos = enemy.patrolOriginXPos + patrolRange
+
+    -- patrol movement
+    if enemy.x <= minXPos then
+        enemy.patrolDirection = 1
+    elseif enemy.x >= maxXPos then
+        enemy.patrolDirection = -1
+    end
+    enemy.x = enemy.x + (enemy.speed * enemy.patrolDirection * dt)
+
+    -- player and enemy prox check
+    if enemy.player and onPlayerNear then
+        local dx = enemy.player.x - enemy.x
+        local dy = enemy.player.y - enemy.y
+        local dist = math.sqrt(dx*dx + dy*dy)
+        if dist <= (enemy.awarenessRange or 200) then
+            onPlayerNear(enemy, dt)
+        end
+    end
+end
+
+-- shoot-at-player action
+function EnemyAI.shootAtPlayer(enemy, dt)
+    enemy.shootCooldown = (enemy.shootCooldown or 0) - dt
+    if enemy.shootCooldown <= 0 then
+        local dx = enemy.player.x - enemy.x
+        local dy = enemy.player.y - enemy.y
+        local angle = math.atan2(dy, dx)
+        Projectile.getProjectile(enemy.world, enemy.x, enemy.y, angle, 250, enemy.baseDamage or 15, enemy)
+        enemy.shootCooldown = enemy.shootInterval or 1.5
+    end
 end
 
 return EnemyAI
