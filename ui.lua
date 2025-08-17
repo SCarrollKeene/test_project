@@ -89,7 +89,43 @@ function UI.drawPlayerHealthBar(x, y, height, player, dt)
     love.graphics.setColor(1,1,1,1)
 
     -- Optional health numeric text
-    love.graphics.print(("%d / %d"):format(health, maxHealth), x+8, y+height/2-10)
+    local hpFont = love.graphics.newFont(12)
+    local prevFont = love.graphics.getFont()
+    love.graphics.setFont(hpFont)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print(("%d / %d"):format(health, maxHealth), x+8, y+height/2-8)
+    love.graphics.setFont(prevFont)
+end
+
+function UI.drawPlayerXPBar(x, y, height, player, dt)
+    local currentExperience = player.experience or 0
+    local maxExpereince = player:getXPToNextLevelUp()
+    local ratio = math.min(currentExperience / maxExpereince, 1)
+
+    local barWidth = BASE_BAR_WIDTH
+
+    -- Draw background (gray) - Use barWidth
+    love.graphics.setColor(0.11, 0.11, 0.3, 0.9)
+    love.graphics.rectangle("fill", x, y, barWidth, height, 8, 8)
+
+    -- Draw XP fill (proportional to barWidth)
+    local fillColor = {0.3, 0.7, 1.0, 1}
+    love.graphics.setColor(fillColor)
+    love.graphics.rectangle("fill", x, y, barWidth * ratio, height, 8, 8)
+
+    -- Draw border (same dynamic barWidth!)
+    love.graphics.setColor(1, 1, 1, 0.8)
+    love.graphics.setLineWidth(1.5)
+    love.graphics.rectangle("line", x, y, barWidth, height, 8, 8)
+    love.graphics.setColor(1,1,1,1)
+
+    -- Optional XP numeric text
+    local xpFont = love.graphics.newFont(12)
+    local prevFont = love.graphics.getFont()
+    love.graphics.setFont(xpFont)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print(("XP %d / %d"):format(currentExperience, maxExpereince), x+8, y+height/2-8)
+    love.graphics.setFont(prevFont)
 end
 
 function UI.drawShardCounter(x, y)

@@ -1603,29 +1603,30 @@ function playing:draw()
     end
     love.graphics.setColor(1, 1, 1, 1) -- Set color to white for text
     
-    UI.drawEquippedWeaponOne(20, 60, player, 44)
-    UI.drawShardCounter(80, 60)
+    UI.drawEquippedWeaponOne(20, 110, player, 44)
+    UI.drawShardCounter(80, 110)
     if self.waveManager then
         UI.drawWaveCounter(self.waveManager.currentWave, #self.waveManager.waves, love.graphics.getWidth() / 2, 20)
         UI.drawWaveTimer(self.waveManager.waveTimeLeft or 0, love.graphics.getWidth() / 2, 50)
     end
     -- love.graphics.print("Health: " .. player.health, 20, 80)
-    UI.drawPlayerHealthBar(20, 20, 32, player, love.timer.getDelta())
-    love.graphics.print("Level: " .. player.level or 1, 20, 110)
+    UI.drawPlayerHealthBar(20, 20, 24, player, love.timer.getDelta())
 
-    local xpNext = player:getXPToNextLevelUp()
-    love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 140)
+    -- local xpNext = player:getXPToNextLevelUp()
+    --love.graphics.print("XP: " .. player.experience .. " / " .. xpNext, 20, 140)
+    UI.drawPlayerXPBar(20, 50, 24, player, love.timer.getDelta())
+    love.graphics.print("Level: " .. player.level or 1, 20, 80)
 
-    local percent = math.floor((player.experience / xpNext) * 100)
-    love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
-    love.graphics.print("Score: " .. Utils.getScore(), 20, 200)
+    --local percent = math.floor((player.experience / xpNext) * 100)
+    --love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
+    love.graphics.print("Score: " .. Utils.getScore(), 20, 160)
     
     -- love.graphics.print("Equipped Slot: " .. (player.equippedSlot or "None"), 20, 170)
 
-    if player.weapon then
-    if player.canPickUpItem then
-        love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
-    end
+    if player.weapon then -- this may no longer be necessary 8/17/25
+    -- if player.canPickUpItem then
+    --     love.graphics.print("Pickup Weapon type: " .. tostring(player.canPickUpItem.weaponType), 20, 490)
+    -- end
         love.graphics.print("Range: " .. player.weapon.range, 20, 400)
         love.graphics.print("Equipped Weapon type: " .. player.weapon.weaponType, 20, 430)
         love.graphics.print("Rarity: " .. player.weapon.rarity, 20, 460)
