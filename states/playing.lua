@@ -5,7 +5,7 @@ local MapLoader = require("maploader")
 local WaveManager = require("wavemanager")
 local player = require("player")
 local Enemy = require("enemy")
-local Gorgoneye = require("gorgoneye")
+-- local Gorgoneye = require("gorgoneye")
 local enemyTypes = require("enemytypes")
 local PlayerRespawn = require("playerrespawn")
 local projectiles = require("projectile_store")
@@ -315,13 +315,13 @@ function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
     -- Try to reuse from pool
     for i, e in ipairs(self.enemyPool) do
         if e.isDead then
-            if e.name == "Gorgoneye" then
-                e:reset(x, y, enemyDef, img)
-            else
+            -- if e.name == "Gorgoneye" then
+            --     e:reset(x, y, enemyDef, img)
+            -- else
                 e:reset(x or love.math.random(32, love.graphics.getWidth() - 32),
                         y or love.math.random(32, love.graphics.getHeight() - 32),
                         enemyDef, img)
-            end
+            -- end
             e:setTarget(player)
             e.isDead = false
             e.toBeRemoved = false
@@ -348,7 +348,7 @@ function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
     -- else
         newEnemy = Enemy:new(
             world, enemyDef.name, spawnX, spawnY, enemy_width, enemy_height, nil, nil, 
-            enemyDef.health, enemyDef.speed, enemyDef.baseDamage, enemyDef.xpAmount, img)
+            enemyDef.maxHealth, enemyDef.speed, enemyDef.baseDamage, enemyDef.xpAmount, img)
     -- end
     
     -- configure new_enemy to target player
@@ -545,14 +545,15 @@ function playing:enter(previous_state, world, enemyPool, enemyImageCache, mapCac
     --     end
     --     print("Enemy Pool: Total enemies =", total, ", Gorgoneyes =", gorgoneyeCount)
 
-    local counts = {}
-    for _, e in ipairs(self.enemyPool) do
-        local n = e.name or "UNKNOWN"
-        counts[n] = (counts[n] or 0) + 1
-    end
-    for k, v in pairs(counts) do
-        print("Pool holds", v, k)
-    end
+    -- debug for what enemies are in the pool
+    -- local counts = {}
+    -- for _, e in ipairs(self.enemyPool) do
+    --     local n = e.name or "UNKNOWN"
+    --     counts[n] = (counts[n] or 0) + 1
+    -- end
+    -- for k, v in pairs(counts) do
+    --     print("Pool holds", v, k)
+    -- end
 
     -- local dead, alive = 0, 0
     -- for _, e in ipairs(self.enemyPool) do

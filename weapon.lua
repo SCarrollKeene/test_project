@@ -145,7 +145,7 @@ function Weapon.loadAssets()
     local success, img = pcall(love.graphics.newImage, "sprites/crystal.png")
     if success then
         Weapon.image = img
-        print("[WEAPON] image loaded successfully from:", img)
+        --print("[WEAPON] image loaded successfully from:", img)
     else
         print("[WEAPON] image error:", img)
         Weapon.image = love.graphics.newImage(1, 1) -- 1x1 white pixel

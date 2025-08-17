@@ -1,4 +1,5 @@
 local Assets = require("assets")
+local UI = require("ui")
 local Utils = require("utils")
 local EnemyAI = require("enemy_ai")
 local Debug = require("game_debug")
@@ -14,7 +15,7 @@ local enemyIDCounter = 0
 local defaultDropChance = 0.5
 local potionDropChance = 0.10
 
-function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, speed, baseDamage, xpAmount, spriteImage)
+function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, maxHealth, speed, baseDamage, xpAmount, spriteImage)
     enemyIDCounter = enemyIDCounter + 1
     local instance = {
         name = name or "Enemy",
@@ -24,7 +25,8 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         height = height or 25,
         xVel = xVel or 0,
         yVel = yVel or 0,
-        health = health or 40,
+        maxHealth = maxHealth or 40,
+        health = maxHealth or 40,
         speed = speed or 40,
         baseDamage = baseDamage or 5,
         xpAmount = xpAmount or 10,
@@ -56,7 +58,7 @@ function Enemy:new(passedWorld, name, x, y, width, height, xVel, yVel, health, s
         knockbackTimer = 0
     }
 
-    Debug.debugPrint("DEBUG: Enemy:new - Instance name:", instance.name, " Health:", instance.health, "Speed:", instance.speed, "Type of speed:", type(instance.speed), 
+    Debug.debugPrint("DEBUG: Enemy:new - Instance name:", instance.name, " Health:", instance.maxHealth, "Speed:", instance.speed, "Type of speed:", type(instance.speed), 
     "Damage:", instance.baseDamage)
     setmetatable(instance, {__index = Enemy}) -- Enemy methods and fields/data will get looked up
 
@@ -146,7 +148,8 @@ function Enemy:reset(x, y, blob, img)
     self.x = x
     self.y = y
     self.name = blob.name
-    self.health = blob.health
+    self.maxHealth = blob.maxHealth or blob.health or 40
+    self.health = self.maxHealth
     self.speed = blob.speed
     self.baseDamage = blob.baseDamage
     self.xpAmount = blob.xpAmount
@@ -369,6 +372,14 @@ function Enemy:draw()
     end
         love.graphics.setColor(1, 1, 1, 1) -- color reset
         -- love.graphics.pop()
+
+    -- enemy health bar
+    if not self.isDead then
+        local barWidth = 32
+        local barHeight = 5
+        local yOffset = self.height / 2 - 12  -- tweak offset to sit just above head
+        UI.drawEnemyHealthBar(self, self.x - barWidth/2, self.y - yOffset, barWidth, barHeight)
+    end
 end
 
 -- take damage, deal damage and direction

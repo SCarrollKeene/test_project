@@ -161,9 +161,9 @@ function Projectile.loadAssets()
     local success, img = pcall(love.graphics.newImage, "sprites/fireball.png")
     if success then
         Projectile.image = img
-        print("PROJECTILE image loaded successfully from:", img)
+        --print("[PROJECTILE] image loaded successfully from:", img)
     else
-        print("Projectile image error:", img)
+        print("[PROJECTILE] image error:", img)
         Projectile.image = love.graphics.newImage(1, 1) -- 1x1 white pixel
     end
 end

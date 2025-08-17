@@ -135,6 +135,28 @@ function UI.drawPlayerXPBar(x, y, height, player, dt)
     love.graphics.setFont(prevFont)
 end
 
+function UI.drawEnemyHealthBar(enemy, x, y, width, height)
+    local health = math.max(0, enemy.health or 0)
+    local maxHealth = math.max(1, enemy.maxHealth or enemy.health or 40)  -- fallback if per-enemy maxHealth missing
+    local ratio = math.max(0, math.min(health / maxHealth, 1))
+
+    -- Background
+    love.graphics.setColor(0.11, 0.11, 0.11, 0.85)
+    love.graphics.rectangle("fill", x, y, width, height, 4, 4)
+
+    -- Health fill
+    local fillColor = {1-(ratio*0.5), ratio, 0.11, 1}
+    love.graphics.setColor(fillColor)
+    love.graphics.rectangle("fill", x, y, width * ratio, height, 4, 4)
+
+    -- Border
+    love.graphics.setColor(1, 1, 1, 0.8)
+    love.graphics.setLineWidth(1)
+    love.graphics.rectangle("line", x, y, width, height, 4, 4)
+
+    love.graphics.setColor(1,1,1,1)
+end
+
 function UI.drawShardCounter(x, y)
     local icon = Assets.images.shard
     if not icon then return end

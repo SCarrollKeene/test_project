@@ -89,20 +89,20 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
         for enemyType, enemyTable in pairs(enemyTypes) do -- preload enemy images type-keyed enemy table
             -- preload enemy images
             for _, blob in ipairs(enemyTable) do
-                print("[LOADING] Loading enemy sprite:", blob.spritePath)
+                --print("[LOADING] Loading enemy sprite:", blob.spritePath)
                 local success, img = pcall(love.graphics.newImage, blob.spritePath)
                 if success and img:getWidth() > 0 and img:getHeight() > 0 then
-                    print("[LOADING] successfully loaded:", blob.spritePath)
+                    --print("[LOADING] successfully loaded:", blob.spritePath)
                     self.enemyImageCache[blob.spritePath] = img
                 else
-                    print("[LOADING] Invalid image:", blob.spritePath)
+                    --print("[LOADING] Invalid image:", blob.spritePath)
                     -- Use fallback texture
                     local placeholder = love.newImageData(32, 32)
                     placeholder:mapPixel(function()
                         return 1, 0, 0, 1 -- red RGBA
                     end)
                     self.enemyImageCache[blob.spritePath] = love.graphics.newImage(placeholder)
-                    print("[LOADING] Using placeholder for:", blob.spritePath)
+                    --print("[LOADING] Using placeholder for:", blob.spritePath)
                 end
                 -- Add to the loaded counter
                 self.loaded = self.loaded + 1
@@ -126,7 +126,7 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
         local pickIndex = math.random(pick, #allEnemyVariants) -- Pick a random enemy variant/type
         local enemyDef = allEnemyVariants[pickIndex] -- Get a random blob configuration
         local img = self.enemyImageCache[enemyDef.spritePath]
-        local e = Enemy:new(world, enemyDef.name, 0, 0, 32, 32, nil, nil, enemyDef.health, enemyDef.speed, enemyDef.baseDamage, 0, img)
+        local e = Enemy:new(world, enemyDef.name, 0, 0, 32, 32, nil, nil, enemyDef.maxHealth, enemyDef.speed, enemyDef.baseDamage, 0, img)
         e.isDead = true -- Mark as reusable
         table.insert(self.enemyPool, e)
     end
@@ -205,7 +205,7 @@ function Loading:loadNextAsset()
         self.loaded = self.loaded + #assets.maps
         self.mapsLoaded = true
     end
-    print("[LOADING] loading asset: ", assets)
+    --print("[LOADING] loading asset: ", assets)
 end
 
 function Loading:draw()
