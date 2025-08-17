@@ -52,8 +52,8 @@ end
 
 function UI.drawPlayerHealthBar(x, y, height, player, dt)
     local health = math.max(0, player.health or 0)
-    local maxHealth = player.maxHealth or BASE_MAX_HEALTH
-    local ratio = health / maxHealth
+    local maxHealth = math.max(1, player.maxHealth or BASE_MAX_HEALTH)
+    local ratio = math.min(math.max(health / maxHealth, 0), 1)
 
     local targetWidth = getDynamicBarWidth(player)
 
@@ -78,9 +78,12 @@ function UI.drawPlayerHealthBar(x, y, height, player, dt)
     love.graphics.rectangle("fill", x, y, barWidth, height, 8, 8)
 
     -- Draw health fill (proportional to barWidth)
-    local fillColor = {1-(ratio*0.5), ratio, 0.11, 1}
-    love.graphics.setColor(fillColor)
-    love.graphics.rectangle("fill", x, y, barWidth * ratio, height, 8, 8)
+    local fillWidth = math.floor(barWidth * ratio + 0.5)
+    if fillWidth > 0 then
+        local fillColor = {1-(ratio*0.5), ratio, 0.11, 1}
+        love.graphics.setColor(fillColor)
+        love.graphics.rectangle("fill", x, y, barWidth * ratio, height, 8, 8)
+    end
 
     -- Draw border (same dynamic barWidth!)
     love.graphics.setColor(1, 1, 1, 0.8)
@@ -98,9 +101,10 @@ function UI.drawPlayerHealthBar(x, y, height, player, dt)
 end
 
 function UI.drawPlayerXPBar(x, y, height, player, dt)
-    local currentExperience = player.experience or 0
-    local maxExpereince = player:getXPToNextLevelUp()
-    local ratio = math.min(currentExperience / maxExpereince, 1)
+    -- clamp so overdraw of fill never shows when xp = 0
+    local currentExperience = math.max(0, player.experience or 0)
+    local maxExpereince = math.max(1, player:getXPToNextLevelUp() or 1)
+    local ratio = math.min(math.max(currentExperience / maxExpereince, 0), 1)
 
     local barWidth = BASE_BAR_WIDTH
 
@@ -109,11 +113,14 @@ function UI.drawPlayerXPBar(x, y, height, player, dt)
     love.graphics.rectangle("fill", x, y, barWidth, height, 8, 8)
 
     -- Draw XP fill (proportional to barWidth)
-    local fillColor = {0.3, 0.7, 1.0, 1}
-    love.graphics.setColor(fillColor)
-    love.graphics.rectangle("fill", x, y, barWidth * ratio, height, 8, 8)
+    local fillWidth = math.floor(barWidth * ratio + 0.5)
+    if fillWidth > 0 then
+        local fillColor = {0.3, 0.7, 1.0, 1}
+        love.graphics.setColor(fillColor)
+        love.graphics.rectangle("fill", x, y, barWidth * ratio, height, 8, 8)
+    end
 
-    -- Draw border (same dynamic barWidth!)
+    -- Draw border (white)
     love.graphics.setColor(1, 1, 1, 0.8)
     love.graphics.setLineWidth(1.5)
     love.graphics.rectangle("line", x, y, barWidth, height, 8, 8)
@@ -236,9 +243,13 @@ function UI.drawWeaponComparison(current, candidate, recycleProgress)
         -- Outline
         love.graphics.setColor(1, 1, 1, 0.4) -- faint white outline
         love.graphics.rectangle("line", x, y, width, height, 8, 8)
+
         -- Fill
-        love.graphics.setColor(1, 1, 1, 1) -- solid white
-        love.graphics.rectangle("fill", x, y, width * progress, height, 8, 8)
+        local fillWidth = math.floor(width * progress + 0.5)
+        if fillWidth > 0 then
+            love.graphics.setColor(1, 1, 1, 1) -- solid white
+            love.graphics.rectangle("fill", x, y, width * progress, height, 8, 8)
+        end
         love.graphics.setColor(1, 1, 1, 1) -- reset color
     end
 
