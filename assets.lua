@@ -7,6 +7,7 @@ Assets.images = {
     crystal = nil,
     fire_crystal = nil,
     soulsplode = nil,
+    slime_black = nil,
     gorgoneye = nil,
     -- Add more as needed
 }
@@ -17,6 +18,7 @@ function Assets.load()
     Assets.images.fireball = love.graphics.newImage("sprites/fireball.png")
     Assets.images.firecrystal = love.graphics.newImage("sprites/crystal.png")
     Assets.images.soulsplode = love.graphics.newImage("sprites/soulsplode.png")
+    Assets.images.slime_black = love.graphics.newImage("sprites/slime_black.png")
     Assets.images.gorgoneye = love.graphics.newImage("sprites/gorgoneye-tileset.png")
     -- load image/sound/fonts here
 end

@@ -205,7 +205,7 @@ function Utils.die(target, killer)
     end
 end
 
-function Utils.clearAllEnemies(enemies, enemyPool)
+function Utils.clearAllEnemies(enemies, enemyPools)
     -- Remove from enemies table
     -- TODO: Test in debug mode for enemy colliders still dealing damage to player at wave end 8/6/25
     -- TODO: update, need to destroy enemy colliders here, they cause damage to player
@@ -221,8 +221,8 @@ function Utils.clearAllEnemies(enemies, enemyPool)
     end
 
     -- Deactivate pooled enemies
-    if enemyPool then
-        for i, e in ipairs(enemyPool) do
+    if enemyPools then
+        for i, e in ipairs(enemyPools) do
             e.isDead = true
             e.toBeRemoved = true
             if e.collider then

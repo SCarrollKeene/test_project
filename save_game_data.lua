@@ -60,6 +60,7 @@ end
 function SaveSystem.resetRun()
     -- Reset run-specific data only
     data_store.runData = {
+        score = 0,
         currentRoom = 1,
         cleared = false,
         clearedRooms = {},
@@ -70,7 +71,7 @@ function SaveSystem.resetRun()
         playerLevel = 1,
         playerExperience = 0,
         playerBaseDamage = 1,
-        playerSpeed = 300
+        playerSpeed = 300,
     }
 
     -- Save reset state immediately

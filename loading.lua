@@ -2,6 +2,7 @@ local Gamestate = require("libraries/hump/gamestate")
 local MapLoader = require("maploader")
 local Enemy = require("enemy")
 local enemyTypes = require("enemytypes")
+local ENEMY_CLASSES = require("enemy_registry")
 local Particle = require("particle")
 
 local Loading = {}
@@ -74,7 +75,10 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
 
     -- declare cache for enemy pool use
     self.enemyImageCache = self.enemyImageCache or {} -- Use the provided cache or an empty table 
-    self.enemyPool = self.enemyPool or {}
+    self.enemyPools = self.enemyPools or {
+        blob = {},
+        gorgoneye = {}
+    }
     self.mapCache = self.mapCache or {}
 
     -- TODO: Preload all enemy images, from main love.load, old, may not be needed anymore 8/10/25
@@ -126,9 +130,25 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
         local pickIndex = math.random(pick, #allEnemyVariants) -- Pick a random enemy variant/type
         local enemyDef = allEnemyVariants[pickIndex] -- Get a random blob configuration
         local img = self.enemyImageCache[enemyDef.spritePath]
-        local e = Enemy:new(world, enemyDef.name, 0, 0, 32, 32, nil, nil, enemyDef.maxHealth, enemyDef.speed, enemyDef.baseDamage, 0, img)
+        -- local e = Enemy:new(world, enemyDef.name, 0, 0, 32, 32, nil, nil, enemyDef.maxHealth, enemyDef.speed, enemyDef.baseDamage, 0, img)
+        local logicClass = ENEMY_CLASSES[enemyDef.name] or ENEMY_CLASSES["default"] or Enemy
+        local e = logicClass:new({
+            world = world, 
+            name = enemyDef.name, 
+            x = 0, 
+            y = 0, 
+            width = 32, 
+            height = 32, 
+            maxHealth = enemyDef.maxHealth,
+            health = enemyDef.health, 
+            speed = enemyDef.speed, 
+            baseDamage = enemyDef.baseDamage,
+            xpAmount = enemyDef.xpAmount, 
+            spriteSheet = img,
+            spritePath = enemyDef.spritePath
+        })
         e.isDead = true -- Mark as reusable
-        table.insert(self.enemyPool, e)
+        table.insert(self.enemyPools, e)
     end
 
     -- print("[LOADING] Enemy pool preloaded. Total enemies in pool: " .. tostring(#self.enemyPool))
@@ -164,7 +184,7 @@ function Loading:update(dt)
     else
         -- load into playing state
         self.assetsAlreadyLoaded = true
-        Gamestate.switch(self.playing_state, self.world, self.enemyPool, self.enemyImageCache, self.mapCache, self.safeRoom_state)
+        Gamestate.switch(self.playing_state, self.world, self.enemyPools, self.enemyImageCache, self.mapCache, self.safeRoom_state)
     end
 end
 
