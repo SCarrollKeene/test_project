@@ -29,7 +29,7 @@ function Gorgoneye:new(fields)
     local sheetW, sheetH = 36, 144
 
     -- Use the base Enemy constructor
-    local instance = Enemy.new {
+    local instance = Enemy:new {
         world = fields.world,
         name = fields.name or "Gorgoneye",
         x = fields.x or 0,
@@ -46,6 +46,9 @@ function Gorgoneye:new(fields)
     setmetatable(instance, Gorgoneye)
 
     -- Gorgoneye AI state
+    instance.xVel = 0
+    instance.yVel = 0
+
     instance.enemyType = "gorgoneye"
 
     instance.patrolRange      = 120
@@ -146,8 +149,8 @@ function Gorgoneye:updateAI(dt)
     if playerDist <= self.awarenessRange then
         -- Shoot at player, but don't chase!
         EnemyAI.shootAtPlayer(self, dt)
-        self.xVel = 0
-        self.yVel = 0
+        self.xVel = self.xVel or 0
+        self.yVel = self.yVel or 0
     else
         -- Patrol logic
         EnemyAI.patrolarea(self, dt, self.patrolRange)

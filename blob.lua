@@ -27,7 +27,7 @@ function Blob:new(fields)
     local frameWidth  = spr:getWidth() / 3
     local frameHeight = spr:getHeight() / 4
 
-    local instance = Enemy.new {
+    local instance = Enemy:new {
         world = fields.world,
         name = fields.name or "Blob",
         x = fields.x or 0,
