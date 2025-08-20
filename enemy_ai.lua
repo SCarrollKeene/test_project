@@ -1,4 +1,6 @@
+local Assets = require("assets")
 local Projectile = require("projectile")
+local projectiles = require("projectile_store")
 
 local EnemyAI = {}
 
@@ -42,41 +44,138 @@ function EnemyAI.pursueTarget(self, dt)
     -- self.xvel = (self.speed * 0.25) * dt
 end
 
-function EnemyAI.patrolarea(enemy, dt, patrolRange, onPlayerNear)
-    enemy.patrolOriginXPos = enemy.patrolOriginXPos or enemy.x -- x pos of enemy
-    enemy.patrolDirection = enemy.patrolDirection or 1 -- direction to patrol next
+function EnemyAI.patrolArea(enemy, dt, patrolRange, onPlayerNear, direction)
+    -- enemy.patrolOriginXPos = enemy.patrolOriginXPos or enemy.x -- x pos of enemy
+    -- enemy.patrolDirection = enemy.patrolDirection or 1 -- direction to patrol next
 
-    local minXPos = enemy.patrolOriginXPos - patrolRange
-    local maxXPos = enemy.patrolOriginXPos + patrolRange
+    -- local minXPos = enemy.patrolOriginXPos - patrolRange
+    -- local maxXPos = enemy.patrolOriginXPos + patrolRange
 
-    -- patrol movement
-    if enemy.x <= minXPos then
-        enemy.patrolDirection = 1
-    elseif enemy.x >= maxXPos then
-        enemy.patrolDirection = -1
+    -- -- current collider position
+    -- local x, y = enemy.x, enemy.y
+    -- if enemy.collider then
+    --     x, y = enemy.collider:getPosition()
+    -- end
+
+    -- -- patrol movement
+    -- if x <= minXPos then
+    --     enemy.patrolDirection = 1
+    -- elseif x >= maxXPos then
+    --     enemy.patrolDirection = -1
+    -- end
+
+    -- -- physics based movement using setLinearVelocity
+    -- if enemy.collider then
+    --     enemy.collider:setLinearVelocity(enemy.speed * enemy.patrolDirection, 0)
+    -- end
+
+    direction = direction or "horizontal"
+
+    if direction == "horizontal" then
+        enemy.patrolOriginXPos = enemy.patrolOriginXPos or enemy.x
+        enemy.patrolDirection = enemy.patrolDirection or 1
+        local minXPos = enemy.patrolOriginXPos - patrolRange
+        local maxXPos = enemy.patrolOriginXPos + patrolRange
+        local x = enemy.x
+        if enemy.collider then x = enemy.collider:getX() end
+        if x <= minXPos then
+            enemy.patrolDirection = 1
+        elseif x >= maxXPos then
+            enemy.patrolDirection = -1
+        end
+        if enemy.collider then
+            enemy.collider:setLinearVelocity(enemy.speed * enemy.patrolDirection, 0)
+        end
+
+    elseif direction == "vertical" then
+        enemy.patrolOriginYPos = enemy.patrolOriginYPos or enemy.y
+        enemy.patrolVDirection = enemy.patrolVDirection or 1
+        local minYPos = enemy.patrolOriginYPos - patrolRange
+        local maxYPos = enemy.patrolOriginYPos + patrolRange
+        local y = enemy.y
+        if enemy.collider then y = enemy.collider:getY() end
+        if y <= minYPos then
+            enemy.patrolVDirection = 1
+        elseif y >= maxYPos then
+            enemy.patrolVDirection = -1
+        end
+        if enemy.collider then
+            enemy.collider:setLinearVelocity(0, enemy.speed * enemy.patrolVDirection)
+        end
+        
+    elseif direction == "both" then
+        -- Horizontal setup
+        enemy.patrolOriginXPos = enemy.patrolOriginXPos or enemy.x
+        enemy.patrolDirection  = enemy.patrolDirection or 1
+        local minXPos = enemy.patrolOriginXPos - patrolRange
+        local maxXPos = enemy.patrolOriginXPos + patrolRange
+        local x = enemy.x
+        if enemy.collider then x = enemy.collider:getX() end
+        if x <= minXPos then
+            enemy.patrolDirection = 1
+        elseif x >= maxXPos then
+            enemy.patrolDirection = -1
+        end
+
+        -- Vertical setup
+        enemy.patrolOriginYPos = enemy.patrolOriginYPos or enemy.y
+        enemy.patrolVDirection = enemy.patrolVDirection or 1
+        local minYPos = enemy.patrolOriginYPos - patrolRange
+        local maxYPos = enemy.patrolOriginYPos + patrolRange
+        local y = enemy.y
+        if enemy.collider then y = enemy.collider:getY() end
+        if y <= minYPos then
+            enemy.patrolVDirection = 1
+        elseif y >= maxYPos then
+            enemy.patrolVDirection = -1
+        end
+
+        -- Apply both x and y velocity
+        if enemy.collider then
+            enemy.collider:setLinearVelocity(
+                enemy.speed * enemy.patrolDirection,
+                enemy.speed * enemy.patrolVDirection
+            )
+        end
     end
-    enemy.x = enemy.x + (enemy.speed * enemy.patrolDirection * dt)
 
     -- player and enemy prox check
     if enemy.player and onPlayerNear then
-        local dx = enemy.player.x - enemy.x
-        local dy = enemy.player.y - enemy.y
+        local dx = enemy.player.x - x
+        local dy = enemy.player.y - y
         local dist = math.sqrt(dx*dx + dy*dy)
         if dist <= (enemy.awarenessRange or 200) then
+            if enemy.collider then
+                enemy.collider:setLinearVelocity(0, 0)
+            end
             onPlayerNear(enemy, dt)
         end
     end
 end
 
 -- shoot-at-player action
-function EnemyAI.shootAtPlayer(enemy, dt)
+function EnemyAI.shootAtPlayer(enemy, dt, projectiles)
     enemy.shootCooldown = (enemy.shootCooldown or 0) - dt
     if enemy.shootCooldown <= 0 then
-        local dx = enemy.player.x - enemy.x
-        local dy = enemy.player.y - enemy.y
+        local x = enemy.x
+        local y = enemy.y
+        if enemy.collider then
+            x, y = enemy.collider:getPosition()
+        end
+
+        local dx = enemy.player.x - x
+        local dy = enemy.player.y - y
         local angle = math.atan2(dy, dx)
-        Projectile.getProjectile(enemy.world, enemy.x, enemy.y, angle, 250, enemy.baseDamage or 15, enemy)
+        local projectile = Projectile.getProjectile(enemy.world, enemy.x, enemy.y, angle, 250, enemy.baseDamage or 15, enemy, nil, nil)
+        if projectile then
+            projectile.image = Assets.images.gorgoneye_shot
+            table.insert(projectiles, projectile)
+        end
         enemy.shootCooldown = enemy.shootInterval or 1.5
+    end
+
+    if enemy.collider then
+        enemy.collider:setLinearVelocity(0, 0)
     end
 end
 

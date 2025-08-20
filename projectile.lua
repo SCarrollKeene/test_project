@@ -1,6 +1,7 @@
 local Utils = require("utils")
 local wf = require("libraries/windfield")
 local Timer = require("libraries/hump/timer")
+local Assets = require("assets")
 local Particle = require("particle")
 
 local Projectile = {}
@@ -203,12 +204,20 @@ function Projectile:onHitEnemy(enemy)
         (self.owner and self.owner.name) or "Unknown", 
          (enemy and enemy.name) or "Unknown Enemy"))
 
-    -- applying damage based on owner
-    if self.owner and self.owner.dealDamage then
-        Utils.dealDamage(self.owner, enemy, self.damage, self.owner) -- self.owner, 1. owner 2. who gets credit for the kill
-    -- Direct damage fallback if owner not set
+    if self.owner then
+        -- applying damage based on owner
+        if self.owner.type == "player" and enemy.type == "enemy" then
+            Utils.dealDamage(self.owner, enemy, self.damage, self.owner) -- self.owner, 1. owner 2. who gets credit for the kill
+        -- Direct damage fallback if owner not set
+        elseif self.owner.type == "enemy" and enemy.type == "player" then
+            Utils.dealDamage(self.owner, enemy, self.damage, self.owner)
+        else
+            -- don't damage other enemies if you're an enemy proj
+            print("Projectile of enemy ignored other enemy.")
+            return --skip
+        end
     elseif enemy and enemy.takeDamage then
-        enemy:takeDamage(self.damage, self.owner)
+        enemy:takeDamage(self.damange, self.owner)
     end
 
     -- check for and apply knockback

@@ -4,6 +4,7 @@ local Utils = require("utils")
 local Enemy = require("enemy")
 local EnemyAI = require("enemy_ai")
 local Projectile = require("projectile")
+local projectiles = require("projectile_store")
 local Debug = require("game_debug")
 local anim8 = require("libraries/anim8")
 local wf = require("libraries/windfield")
@@ -129,7 +130,12 @@ function Gorgoneye:load()
     -- Create collider for this enemy type
     local colliderHeight = self.height
     local colliderWidth = self.width
-    self.collider = self.world:newBSGRectangleCollider(self.x - colliderWidth/2, self.y - colliderHeight/2, colliderWidth, colliderHeight, 10)
+    self.collider = self.world:newBSGRectangleCollider(
+        self.x - colliderWidth/2, 
+        self.y - colliderHeight/2, 
+        colliderWidth, colliderHeight, 
+        10
+    )
     self.collider:setFixedRotation(true)
     self.collider:setUserData(self)
     print("DEBUG: GORGONEYE collider created with W: "..self.width.." and H: "..self.height)
@@ -148,12 +154,12 @@ function Gorgoneye:updateAI(dt)
     local playerDist = math.sqrt(dx*dx + dy*dy)
     if playerDist <= self.awarenessRange then
         -- Shoot at player, but don't chase!
-        EnemyAI.shootAtPlayer(self, dt)
+        EnemyAI.shootAtPlayer(self, dt, projectiles)
         self.xVel = self.xVel or 0
         self.yVel = self.yVel or 0
     else
         -- Patrol logic
-        EnemyAI.patrolarea(self, dt, self.patrolRange)
+        EnemyAI.patrolArea(self, dt, self.patrolRange, nil, "both")
     end
 end
 
@@ -181,7 +187,7 @@ function Gorgoneye:update(dt, frameCount)
         if self.knockbackTimer <= 0 then
             self.isKnockedBack = false
         end
-        return
+        return -- Skip normal AI movement logic while knocked back
     end
 
     if self.isDead then
@@ -210,32 +216,34 @@ function Gorgoneye:update(dt, frameCount)
     end -- If collider somehow got removed early
 
     -- Update current animation (if it exists)
-    if self.currentAnimation then
-        self.currentAnimation:update(dt)
-    end
+    -- if self.currentAnimation then
+    --     self.currentAnimation:update(dt)
+    -- end
+    self.x, self.y = self.collider:getPosition()
 
     -- Facing direction (set animation)
-    if self.xVel ~= 0 or self.yVel ~= 0 then
+    -- if self.xVel ~= 0 or self.yVel ~= 0 then
+    --     local facing
+    --     if math.abs(self.xVel) > math.abs(self.yVel) then
+    --         facing = self.xVel > 0 and 'right' or 'left'
+    --     else
+    --         facing = self.yVel > 0 and 'down' or 'up'
+    --     end
+    --     if facing and self.animations[facing] then
+    --         self.currentAnimation = self.animations[facing]
+    --     end
+    -- end   
+    local vx, vy = self.collider:getLinearVelocity()
+    if math.abs(vx) > 1 or math.abs(vy) > 1 then
         local facing
-        if math.abs(self.xVel) > math.abs(self.yVel) then
-            facing = self.xVel > 0 and 'right' or 'left'
+        if math.abs(vx) > math.abs(vy) then
+            facing = vx > 0 and 'right' or 'left'
         else
-            facing = self.yVel > 0 and 'down' or 'up'
+            facing = vy > 0 and 'down' or 'up'
         end
         if facing and self.animations[facing] then
             self.currentAnimation = self.animations[facing]
         end
-    end
-
-    if self.collider then
-        self.x, self.y = self.collider:getPosition()
-    else
-        Debug.debugPrint("[GORGONEYE] UPDATE: getPosition failed because collider is nil for "..tostring(self.name))
-        return -- skip to movement logic below
-    end
-
-    if self.currentAnimation then
-        self.currentAnimation:update(dt)
     end
 
     -- Gorgoneye-specific AI, pursue and shoot player

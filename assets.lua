@@ -4,6 +4,7 @@ Assets.images = {
     shard = nil,
     red_orb = nil,
     fireball = nil,
+    gorgoneye_shot = nil,
     crystal = nil,
     fire_crystal = nil,
     soulsplode = nil,
@@ -16,6 +17,7 @@ function Assets.load()
     Assets.images.shard = love.graphics.newImage("sprites/magicite-shard.png")
     Assets.images.red_orb = love.graphics.newImage("sprites/orb_red.png")
     Assets.images.fireball = love.graphics.newImage("sprites/fireball.png")
+    Assets.images.gorgoneye_shot = love.graphics.newImage("sprites/gorgoneye-projectile.png")
     Assets.images.firecrystal = love.graphics.newImage("sprites/crystal.png")
     Assets.images.soulsplode = love.graphics.newImage("sprites/soulsplode.png")
     Assets.images.slime_black = love.graphics.newImage("sprites/slime_black.png")
