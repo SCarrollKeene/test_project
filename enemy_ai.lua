@@ -102,7 +102,7 @@ function EnemyAI.patrolArea(enemy, dt, patrolRange, onPlayerNear, direction)
         if enemy.collider then
             enemy.collider:setLinearVelocity(0, enemy.speed * enemy.patrolVDirection)
         end
-        
+
     elseif direction == "both" then
         -- Horizontal setup
         enemy.patrolOriginXPos = enemy.patrolOriginXPos or enemy.x
@@ -166,10 +166,10 @@ function EnemyAI.shootAtPlayer(enemy, dt, projectiles)
         local dx = enemy.player.x - x
         local dy = enemy.player.y - y
         local angle = math.atan2(dy, dx)
-        local projectile = Projectile.getProjectile(enemy.world, enemy.x, enemy.y, angle, 250, enemy.baseDamage or 15, enemy, nil, nil)
+        local projectile = Projectile.getProjectile(enemy.world, enemy.x, enemy.y, angle, 250, enemy.baseDamage or 15, enemy, Assets.images.gorgoneye_shot, nil, nil)
         if projectile then
-            projectile.image = Assets.images.gorgoneye_shot
             table.insert(projectiles, projectile)
+            print("Shooting: assigned image", projectile.image, projectile)
         end
         enemy.shootCooldown = enemy.shootInterval or 1.5
     end

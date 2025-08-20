@@ -109,9 +109,8 @@ function love.load()
 
     -- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
     -- Particle.preloadImages()
-    Projectile.loadAssets()
-    Weapon.loadAssets()
     Assets.load()
+    Weapon.loadAssets()
 
     local mage_spritesheet_path = "sprites/mage-NESW.png"
     local dash_spritesheet_path = "sprites/dash.png"

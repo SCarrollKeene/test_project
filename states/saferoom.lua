@@ -68,7 +68,7 @@ function triggerDamageFlash()
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, baseRange, x, y, level, id, type)
+function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, projectileImage, knockback, baseRange, x, y, level, id, type)
   local weaponDrop = {
     name = name,
     image = image,
@@ -78,6 +78,7 @@ function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, p
     fireRate = fireRate,
     projectileClass = projectileClass,
     baseDamage = baseDamage,
+    projectileImage = projectileImage,
     knockback = knockback,
     baseRange = baseRange,
     x = x,
@@ -144,6 +145,7 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.baseFireRate,
             weaponToEquip.projectileClass,
             weaponToEquip.baseDamage,
+            weaponToEquip.projectileImage,
             weaponToEquip.knockback,
             weaponToEquip.baseRange,
             weaponToEquip.level,
@@ -540,6 +542,7 @@ function safeRoom:enter(previous_state, world, enemyPools, enemyImageCache, mapC
             w.baseFireRate,
             w.projectileClass,
             w.baseDamage,
+            w.projectileImage,
             w.knockback,
             w.baseRange,
             w.level,

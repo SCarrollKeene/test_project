@@ -97,7 +97,7 @@ function Projectile:initializeTrailPosition(offset)
 end
 
 -- constructor function, if you wanted to create multiple projectiles with different methods/data
-function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level, knockback, maxRange)
+function Projectile:new(world, x, y, angle, speed, radius, damage, owner, image, level, knockback, maxRange)
     local self = {
         level = level or 1,
         newCreateCount = newCreateCount + 1,
@@ -106,10 +106,10 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level,
         angle = angle,
         speed = speed or 300,
         radius = radius or 10,
-        image = Projectile.image,
         width = 20,
         height = 20,
         damage = damage or 10, -- store damage
+        image = image,
         knockback = knockback or 0,
         maxRange = maxRange or 600,
         distanceTravled = 0,
@@ -158,16 +158,9 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, level,
     return self
 end
 
-function Projectile.loadAssets()
-    local success, img = pcall(love.graphics.newImage, "sprites/fireball.png")
-    if success then
-        Projectile.image = img
-        --print("[PROJECTILE] image loaded successfully from:", img)
-    else
-        print("[PROJECTILE] image error:", img)
-        Projectile.image = love.graphics.newImage(1, 1) -- 1x1 white pixel
-    end
-end
+-- function Projectile.loadAssets()
+--     Projectile.image = Assets.images.fireball
+-- end
 
 function Projectile:destroySelf()
      print("[DESTROY SELF] collision at:", self.x, self.y)
@@ -323,6 +316,7 @@ function Projectile:draw()
     if self.image then
         local imgWidth = self.image:getWidth()
         local imgHeight = self.image:getHeight()
+        print("Drawing projectile, image:", self.image)
         love.graphics.draw(self.image, self.x - imgWidth / 2, self.y - imgHeight / 2)
     else
         -- Fallback: Draw debug shape
@@ -332,20 +326,20 @@ function Projectile:draw()
     end 
 end
 
-function Projectile.getProjectile(world, x, y, angle, speed, damage, owner, knockback, maxRange)
+function Projectile.getProjectile(world, x, y, angle, speed, damage, owner, image, knockback, maxRange)
     for _, p in ipairs(pool) do
         if not p.active then -- skip destroyed projectiles
             print("[REUSE] Reusing inactive projectile, was destroyed:", p.isDestroyed)
-            p:reactivate(world, x, y, angle, speed, damage, owner, knockback, maxRange)
+            p:reactivate(world, x, y, angle, speed, damage, owner, image, knockback, maxRange)
             return p
         end
     end
      print("[EXPAND POOL] Creating new projectile")
 
      -- Fallback: Expand pool if needed
-    local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner, knockback, maxRange)
+    local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner, image, knockback, maxRange)
     newProj.active = true
-    newProj:reactivate(world, x, y, angle, speed, damage, owner, knockback, maxRange)
+    newProj:reactivate(world, x, y, angle, speed, damage, owner, image, knockback, maxRange)
     table.insert(pool, newProj)
     return newProj
 end
@@ -364,16 +358,16 @@ function Projectile.getStats()
   return active, inactive
 end
 
-function Projectile:reactivate(world, x, y, angle, speed, damage, owner, knockback, maxRange)
+function Projectile:reactivate(world, x, y, angle, speed, damage, owner, image, knockback, maxRange)
     -- to turn this baby back on, its essentially just the collider table with its collider props set again
     print("[REACTIVATE] Reactivating projectiles and particles state:", self)
     self.world = world
     self.x = x
     self.y = y
-    self.image = Projectile.image
     self.angle = angle
     self.speed = speed
     self.damage = damage
+    self.image = image
     self.knockback = knockback or 0
     self.maxRange = maxRange or self.maxRange or 600
     self.distanceTraveled = 0

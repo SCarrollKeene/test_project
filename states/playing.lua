@@ -1,3 +1,4 @@
+local Assets = require("assets")
 local Collision = require("collision")
 local Gamestate = require("libraries/hump/gamestate")
 local LevelManager = require("levelmanager")
@@ -152,6 +153,7 @@ function equipWeapon(weaponToEquip)
             weaponToEquip.baseFireRate,
             weaponToEquip.projectileClass,
             weaponToEquip.baseDamage,
+            weaponToEquip.projectileImage,
             weaponToEquip.knockback,
             weaponToEquip.baseRange,
             weaponToEquip.level,
@@ -802,6 +804,7 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     local levelData = LevelManager.levels[LevelManager.currentLevel]
     self.waveManager = WaveManager.new(levelData)
 
+    -- Initialize projectile batch
     self.projectileBatch = love.graphics.newSpriteBatch(Projectile.image, 1000)  -- 1000 = initial capacity
 
      -- Initialize enemy batches for current enemy file
@@ -839,6 +842,7 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
             w.baseFireRate,
             w.projectileClass,
             w.baseDamage,
+            w.projectileImage,
             w.knockback,
             w.baseRange,
             w.level,
@@ -1364,7 +1368,7 @@ end
                 local damage = weapon:getDamage() or 10
                 local speed = weapon:getProjectileSpeed() or 200
                 -- create projectiles with angle and speed
-                local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player, player.weapon.knockback, player.weapon.range)
+                local newProjectile = Projectile.getProjectile(world, player.x, player.y, angle, speed, damage, player, Assets.images.fireball, player.weapon.knockback, player.weapon.range)
 
                --Debug.debugPrint("DEBUG: player.weapon.shoot() CREATED a projectile\n", "x:", player.x, "y:", player.y, "angle:", angle, "speed:", 600, "\nplayer base dmg:", player.baseDamage, "player weapon dmg:", player.weapon.damage)
                 if newProjectile then
@@ -1763,6 +1767,7 @@ function playing:draw()
         selectedItemToCompare.baseFireRate,
         selectedItemToCompare.projectileClass,
         selectedItemToCompare.baseDamage,
+        selectedItemToCompare.projectileImage,
         selectedItemToCompare.knockback,
         selectedItemToCompare.baseRange,
         selectedItemToCompare.level,

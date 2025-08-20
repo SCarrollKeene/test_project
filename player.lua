@@ -1,3 +1,4 @@
+local Assets = require("assets")
 local Weapon = require("weapon")
 local Loot = require("loot")
 local Projectile = require("projectile")
@@ -182,6 +183,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
         baseFireRate = self.weapon.baseFireRate,
         projectileClass = self.weapon.projectileClass,
         baseDamage = self.weapon.baseDamage,
+        projectileImage = self.weapon.projectileImage,
         knockback = self.weapon.knockback,
         baseRange = self.weapon.baseRange,
         level = self.weapon.level,
@@ -191,8 +193,8 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
 
     -- if no weapon in inventory, create a new weapon and insert into inventory, please work
     if not self.weapon then
-        -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage and level class params/args from Weapon class
-        self.weapon = Weapon:new("Fire Crystal", Weapon.image, "Crystal", "common", 200, 2, Projectile, 10, 0, 200, 1, "weapon")
+        -- default equipped weapon: name, image, weaponType, fireRate, projectileClass, baseDamage, proj img, knockback and level class params/args from Weapon class
+        self.weapon = Weapon:new("Fire Crystal", Weapon.image, "Crystal", "common", 200, 2, Projectile, 10, Assets.images.fireball, 0, 200, 1, "weapon")
     end
 
     if #self.inventory == 0 then
@@ -205,6 +207,7 @@ function Player:load(passedWorld, sprite_path, dash_sprite_path, death_sprite_pa
             baseFireRate = self.weapon.baseFireRate,
             projectileClass = self.weapon.projectileClass,
             baseDamage = self.weapon.baseDamage,
+            projectileImage = self.weapon.projectileImage,
             knockback = self.weapon.knockback,
             baseRange = self.weapon.baseRange,
             level = self.weapon.level,

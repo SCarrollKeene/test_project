@@ -27,7 +27,7 @@ Weapon.image = nil
 -- saving/loaidng for persisten weapon levels
 -- need to build an inventory screen or at least a UI for weapons held
 
-function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, projectileClass, baseDamage, knockback, baseRange, level, id, type)
+function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, projectileClass, baseDamage, projectileImage, knockback, baseRange, level, id, type)
 
     local self = {
         name = name or "Fire Crystal",
@@ -35,6 +35,7 @@ function Weapon:new(name, image, weaponType, rarity, baseSpeed, baseFireRate, pr
         weaponType = weaponType or "Crystal",
         rarity = rarity or "common",
         baseDamage = baseDamage or 10, --store base damage OR default to 10
+        projectileImage = projectileImage,
         knockback = knockback or 0,
         speed = nil,
         baseSpeed = baseSpeed or 200,
@@ -165,6 +166,7 @@ function Weapon:shoot(world, x, y, angle, speed, owner)
         local proj_corners = 10
         local proj_radius = self.radius or 10
         local proj_speed = self:getProjectileSpeed()
+        local proj_img = self.projectileImage
         local proj_knockback = self.knockback
         local proj_range = self.range or 200
 
@@ -172,7 +174,7 @@ function Weapon:shoot(world, x, y, angle, speed, owner)
             error("Weapon's projectileClass is not set or has no :new() method!")
         end
 
-        return self.projectileClass:new(world, x, y, angle, proj_speed, proj_radius, proj_dmg, owner, proj_knockback, proj_range)
+        return self.projectileClass:new(world, x, y, angle, proj_speed, proj_radius, proj_dmg, owner, proj_img, proj_knockback, proj_range)
     end
     return nil -- return nil if cooldown isn't ready
 end
