@@ -233,6 +233,47 @@ function Utils.clearAllEnemies(enemies, enemyPools)
     end
 end
 
+function Utils.shrinkEnemyPool(pool, maxSizePool)
+if not pool or type(pool) ~= "table" or not maxSizePool then return end
+    local inactiveEnemies = {} -- hold inactive pooled enemies
+    -- collect index of inactive/dead enemies
+    for i = #pool, 1, -1 do
+        if pool[i].isDead or pool[i].toBeRemoved then
+            table.insert(inactiveEnemies, i)
+        end
+    end
+
+    -- Only trim if there are extra inactive entries above maxSize
+    local excess = #pool - maxSize
+    if excess > 0 and #inactiveEnemies > 0 then
+        -- Remove from end first for safety
+        local removed = 0
+        for _, idx in ipairs(inactiveEnemies) do
+            if removed >= excess then break end
+            -- Optional: clean up collider, memory, and other resources
+            local enemy = pool[idx]
+            if enemy.collider then
+                enemy.collider:destroy()
+                enemy.collider = nil
+            end
+            pool[idx] = nil
+            removed = removed + 1
+        end
+
+        -- Compact pool to remove holes left by nil assignments
+        local compacted = {}
+        for i = 1, #pool do
+            if pool[i] ~= nil then
+                table.insert(compacted, pool[i])
+            end
+        end
+        
+        -- Replace original pool data
+        for i = 1, #pool do pool[i] = nil end
+        for i, v in ipairs(compacted) do pool[i] = v end
+    end
+end
+
 -- function Utils.collectAllShards(metaData, player)
 --     for i = #droppedItems, 1, -1 do
 --         local item = droppedItems[i]

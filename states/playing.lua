@@ -1470,6 +1470,12 @@ end
         -- Wave completion check
         if self.waveManager and self.waveManager.isFinished and not data_store.runData.cleared and not self.shardPopupDelay then
             Utils.clearAllEnemies(enemies, self.enemyPools)
+            -- test and refine later
+            -- Utils.shrinkEnemyPool(self.enemyPools.blob, 70)
+            -- Utils.shrinkEnemyPool(self.enemyPools.gorgoneye, 70)
+            -- for poolType, pool in pairs(self.enemyPools) do
+            --     Utils.shrinkEnemyPool(pool, 300)
+            -- end
             Utils.collectAllShards(data_store.metaData, player)
             self.shardPopupDelay = 0.7
         end
