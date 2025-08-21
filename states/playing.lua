@@ -77,7 +77,7 @@ function triggerDamageFlash()
 end
 
 -- Spawn a weapon drop
-function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, knockback, baseRange, x, y, level, id, type)
+function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, projectileClass, baseDamage, projectileImage, knockback, baseRange, x, y, level, id, type)
   local weaponDrop = {
     name = name,
     image = image,
@@ -87,6 +87,7 @@ function spawnWeaponDrop(name, image, weaponType, rarity, baseSpeed, fireRate, p
     fireRate = fireRate,
     projectileClass = projectileClass,
     baseDamage = baseDamage,
+    projectileImage = projectileImage,
     knockback = knockback,
     baseRange = baseRange,
     x = x,
@@ -547,6 +548,7 @@ function playing:keypressed(key)
         local fireCrystalBaseFireRate = 2
         local fireCrystalProjectileClass = Projectile
         local fireCrystalBaseDamage = 10
+        local fireCrystalProjectileImage = Weapon.projectileImage
         local fireCrystalKnockback = 0
         local fireCrystalBaseRange = 200
         local fireCrystalLevel = 1
@@ -580,6 +582,7 @@ function playing:keypressed(key)
             fireCrystalBaseFireRate,
             fireCrystalProjectileClass,
             fireCrystalBaseDamage,
+            fireCrystalProjectileImage,
             fireCrystalKnockback,
             fireCrystalBaseRange,
             dropX,
