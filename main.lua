@@ -75,6 +75,10 @@ function love.keypressed(key)
 end
 
 function love.load()
+     -- Garbage collector tuning (add here, at the start!)
+    collectgarbage("setpause", 100)
+    collectgarbage("setstepmul", 300)
+    
     -- Initialize the game canvas with virtual resolution
     gameCanvas = love.graphics.newCanvas(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
 

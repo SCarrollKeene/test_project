@@ -957,7 +957,8 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
         end
     end
 
-    -- fading logic test
+    
+    -- fading logic test, TODO: fix fading logic into saferoom AGAIN 8/21/25
     self.stateContext.fading = true
     self.stateContext.fadeDirection = -1  -- fade in (from black)
     self.stateContext.fadeTimer = 0
@@ -1020,6 +1021,9 @@ end
 
 function playing:update(dt)
     Debug.debugPrint("playing:update")
+    -- small GC step every frame to keep frame times smooth
+    collectgarbage("step", 5)
+
     if love.keyboard.isDown("q") and selectedItemToCompare then
         if not recycleFocusedItem then
             recycleFocusedItem = selectedItemToCompare

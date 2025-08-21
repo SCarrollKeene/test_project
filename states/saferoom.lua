@@ -691,6 +691,10 @@ function safeRoom:leave()
 end
 
 function safeRoom:update(dt)
+    Debug.debugPrint("safeRoom:update")
+    -- small GC step every frame to keep frame times smooth
+    collectgarbage("step", 5)
+
     if love.keyboard.isDown("q") and selectedItemToCompare then
         if not recycleFocusedItem then
             recycleFocusedItem = selectedItemToCompare
