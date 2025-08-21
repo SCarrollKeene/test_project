@@ -6,5 +6,5 @@ function love.conf(t)
    t.window.width = 1280
    t.window.height = 768
    t.window.resizable = true -- Allow the user to resize the window  
-   t.window.vsync = 1
+   t.window.vsync = true
 end

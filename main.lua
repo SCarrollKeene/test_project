@@ -82,7 +82,7 @@ function love.load()
     -- love.graphics.setDefaultFilter("nearest", "nearest")
 
     -- Call initial game setup
-    love.window.setMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, { resizable = true, fullscreen = false, vsync = 1 }) -- Ensure window is resizable
+    love.window.setMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, { resizable = true, fullscreen = false, vsync = true }) -- Ensure window is resizable
     love.graphics.setLineStyle("rough")
     love.graphics.setLineWidth(2)
 
