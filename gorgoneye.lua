@@ -1,4 +1,5 @@
 local Assets = require("assets")
+local CamManager = require("cam_manager")
 local UI = require("ui")
 local Utils = require("utils")
 local Enemy = require("enemy")
@@ -210,6 +211,10 @@ function Gorgoneye:update(dt, frameCount)
         end
     end
 
+    if not self:checkActiveByCamera(CamManager.camera) then
+        return -- exit if not active/visible
+    end
+
     if not self.collider then 
         Debug.debugPrint("UPDATE_NO_COLLIDER: self is", tostring(self), "name:", (self and self.name or "N/A"))
         return 
@@ -282,25 +287,6 @@ function Gorgoneye:die(killer)
     Debug.debugPrint(self.name .. " is dead, preparing to call Utils.die()!")
     self.isDead = true
 
-    Utils.die(self, killer)
-
-    if math.random() < (self.shardDropChance or defaultDropChance) then
-        table.insert(droppedItems, Loot.createShardDrop(self.x, self.y))
-    end
-
-    if math.random() < potionDropChance then
-        table.insert(droppedItems, Loot.createPotionDrop(self.x, self.y))
-    end
-
-    if self.collider then
-        Debug.debugPrint("Attempting to destroy collider for: " .. self.name)
-        self.collider:destroy()
-        self.collider = nil -- set collider to nil
-        Debug.debugPrint(self.name .. " collider is destroyed!")
-    else
-        Debug.debugPrint(self.name .. "had no collider or it was already nil.")
-    end
-    
     -- death animation and effects go here
     local soulsplodeImg = Assets.images.soulsplode
     if soulsplodeImg then
@@ -316,6 +302,25 @@ function Gorgoneye:die(killer)
         self.height = frameHeight
         self.currentAnimation:gotoFrame(1)
         self.currentAnimation:resume()
+    end
+
+    if self.collider then
+        Debug.debugPrint("Attempting to destroy collider for: " .. self.name)
+        self.collider:destroy()
+        self.collider = nil -- set collider to nil
+        Debug.debugPrint(self.name .. " collider is destroyed!")
+    else
+        Debug.debugPrint(self.name .. "had no collider or it was already nil.")
+    end
+
+    Utils.die(self, killer)
+    
+    if math.random() < (self.shardDropChance or defaultDropChance) then
+        table.insert(droppedItems, Loot.createShardDrop(self.x, self.y))
+    end
+
+    if math.random() < potionDropChance then
+        table.insert(droppedItems, Loot.createPotionDrop(self.x, self.y))
     end
 
     -- self.toBeRemoved = true -- flag for removal from 'enemies' table in main.lua

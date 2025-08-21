@@ -1,4 +1,5 @@
 local Debug = require("game_debug")
+local CamManager = require("cam_manager")
 
 local Enemy = {}
 Enemy.__index = Enemy
@@ -98,6 +99,36 @@ function Enemy:isNearPlayer(buffer)
     local dy = self.y - self.target.y
     local distanceSquared = dx * dx + dy * dy
     return distanceSquared <= buffer * buffer
+end
+
+-- Checks if this enemy is in cam view, enables or disables its collider accordingly
+function Enemy:checkActiveByCamera(camera)
+    if not self.collider then return false end
+    -- Calculate enemy AABB (centered on x, y)
+    local left   = self.x - (self.width or 32) / 2
+    local top    = self.y - (self.height or 32) / 2
+    local right  = self.x + (self.width or 32) / 2
+    local bottom = self.y + (self.height or 32) / 2
+
+    -- Get camera viewport boundaries (assuming CamManager provides this)
+    local camX, camY = camera:position()
+    local halfW = love.graphics.getWidth() / 2 / (CamManager.scale or 1)
+    local halfH = love.graphics.getHeight() / 2 / (CamManager.scale or 1)
+    local camLeft   = camX - halfW
+    local camRight  = camX + halfW
+    local camTop    = camY - halfH
+    local camBottom = camY + halfH
+
+    -- AABB intersection check
+    local inView = not (right < camLeft or left > camRight or bottom < camTop or top > camBottom)
+
+    -- Enable or disable physics/collider based on visibility
+    if self.collider:isActive() ~= inView then
+        self.collider:setActive(inView)
+        -- Debug message to confirm state changes
+        print(string.format("[ENEMY CHECK CAMERA] %s (%d) active=%s x=%.1f y=%.1f", self.name or "Enemy", self.enemyID or -1, tostring(inView), self.x, self.y))
+    end
+    return inView
 end
 
 -- Stub: children override
