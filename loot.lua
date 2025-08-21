@@ -81,7 +81,7 @@ function createWeaponDropFromInstance(weapon, x, y)
 end
 
 function recycleWeaponDrop(item, metaData, player)
-  print("[DEBUG] recycleWeaponDrop called", item and item.name, item and item.type)
+  -- print("[DEBUG] recycleWeaponDrop called", item and item.name, item and item.type)
     if not item or item.type ~= "weapon" then return end
 
     -- Calculate payout

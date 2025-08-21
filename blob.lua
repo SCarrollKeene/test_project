@@ -72,7 +72,7 @@ end
 
 function Blob:reset(x, y, def, img)
     assert(img, "[BLOB:RESET] Tried to reset enemy with nil image!")
-    print("Resetting Blob with spriteSheet:", img, "Width:", img:getWidth(), "Height:", img:getHeight())
+    -- print("Resetting Blob with spriteSheet:", img, "Width:", img:getWidth(), "Height:", img:getHeight())
 
     -- Pool reuse logic
     -- Base logic: core vars, collider from Enemy base class

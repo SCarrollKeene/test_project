@@ -32,7 +32,7 @@ Particle.RARITY_COLORS = {
 -- Safe loading: if images are missing and try to crash the game, pcall returns an error
 local function getImage(path)
     if not _imgCache[path] then
-        print("LOADING PARTICLE IMAGE: ", path)
+        -- print("LOADING PARTICLE IMAGE: ", path)
         local success, img = pcall(love.graphics.newImage, path)
         if not success then
             print("PARTICLE IMAGE ERROR: ", img)

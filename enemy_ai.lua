@@ -169,7 +169,7 @@ function EnemyAI.shootAtPlayer(enemy, dt, projectiles)
         local projectile = Projectile.getProjectile(enemy.world, enemy.x, enemy.y, angle, 250, enemy.baseDamage or 15, enemy, Assets.images.gorgoneye_shot, nil, nil)
         if projectile then
             table.insert(projectiles, projectile)
-            print("Shooting: assigned image", projectile.image, projectile)
+            -- print("Shooting: assigned image", projectile.image, projectile)
         end
         enemy.shootCooldown = enemy.shootInterval or 1.5
     end

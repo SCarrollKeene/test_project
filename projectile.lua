@@ -32,7 +32,7 @@ function Projectile.getCleanUpTimer()
 end
 
 function Projectile.cleanPool(timerValue)
-    print("[CLEANUP] Function entered")
+    --print("[CLEANUP] Function entered")
     local inactiveCount = 0
     local toRemove = {} -- excess pooled inactive projectiles marked for removal
 
@@ -40,14 +40,14 @@ function Projectile.cleanPool(timerValue)
         if not pool[i].active then
             inactiveCount = inactiveCount + 1
             if inactiveCount > MAX_POOL_SIZE then
-                print("[CLEANUP] MAX POOL SIZE IS LESS THAN INACTIVE COUNT")
+                --print("[CLEANUP] MAX POOL SIZE IS LESS THAN INACTIVE COUNT")
                 -- Return particle to global pool
                 if pool[i].particleTrail then
                     Particle.returnBaseSpark(pool[i].particleTrail)
                     -- pool[i].particleTrail = nil
                 end
                 table.insert(toRemove, i)
-                print("[CLEANUP] CLEANUP REMOVED PROJ FROM POOL")
+                --print("[CLEANUP] CLEANUP REMOVED PROJ FROM POOL")
             end
         end
     end
@@ -66,7 +66,7 @@ function Projectile.cleanPool(timerValue)
         table.remove(pool, index)
     end
 
-    print(string.format("[CLEANUP] Removed %d inactive projectiles at %.2f seconds", #toRemove, timerValue))
+    --print(string.format("[CLEANUP] Removed %d inactive projectiles at %.2f seconds", #toRemove, timerValue))
 
     -- Additionally, clean particles for remaining inactive ones
     for i = #pool, 1, -1 do
@@ -128,10 +128,10 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, image,
     setmetatable(self, {__index = Projectile}) -- Projectile methods and fields/data will get looked up
 
     -- Debug before creating collider
-    print("DEBUG Projectile:new - Creating collider with:")
-    print("  x:", self.x, "y:", self.y)
-    print("  width:", self.width, "type:", type(self.width))
-    print("  height:", self.height, "type:", type(self.height))
+    --print("DEBUG Projectile:new - Creating collider with:")
+    --print("  x:", self.x, "y:", self.y)
+    --print("  width:", self.width, "type:", type(self.width))
+    --print("  height:", self.height, "type:", type(self.height))
 
     if type(self.width) ~= "number" or type(self.height) ~= "number" then
         error("Projectile dimensions are not numbers! Width: " .. tostring(self.width) .. ", Height: " .. tostring(self.height))
@@ -167,11 +167,11 @@ end
 -- end
 
 function Projectile:destroySelf()
-     print("[DESTROY SELF] collision at:", self.x, self.y)
+    --print("[DESTROY SELF] collision at:", self.x, self.y)
     if self.isDestroyed then return end -- Prevent multiple destructions
 
-    print(string.format("[DESTROY] - Destroying projectile (Owner: %s)",
-     (self.owner and self.owner.name) or "Unknown"))
+    --print(string.format("[DESTROY] - Destroying projectile (Owner: %s)",
+    -- (self.owner and self.owner.name) or "Unknown"))
 
     if type(self.deactivate) == "function" then
         self:deactivate() -- Deactivate the projectile particles
@@ -210,7 +210,7 @@ function Projectile:onHitEnemy(enemy)
             Utils.dealDamage(self.owner, enemy, self.damage, self.owner)
         else
             -- don't damage other enemies if you're an enemy proj
-            print("Projectile of enemy ignored other enemy.")
+            -- print("Projectile of enemy ignored other enemy.")
             return --skip
         end
     elseif enemy and enemy.takeDamage then
@@ -275,7 +275,7 @@ function Projectile:update(dt)
     self.prevY = self.y
 
     if self.distanceTraveled >= (self.maxRange or 600) then
-        print("[PROJECTILE RANGE EXCEEDED] Destroying projectile.")
+        -- print("[PROJECTILE RANGE EXCEEDED] Destroying projectile.")
         -- TODO: destroy or remove particle effect so it isn't happening after the projectile is gone 8/6/25
         self:destroySelf()
         return
@@ -320,7 +320,7 @@ function Projectile:draw()
     if self.image then
         local imgWidth = self.image:getWidth()
         local imgHeight = self.image:getHeight()
-        print("Drawing projectile, image:", self.image)
+        --print("Drawing projectile, image:", self.image)
         love.graphics.draw(self.image, self.x - imgWidth / 2, self.y - imgHeight / 2)
     else
         -- Fallback: Draw debug shape
@@ -333,12 +333,12 @@ end
 function Projectile.getProjectile(world, x, y, angle, speed, damage, owner, image, knockback, maxRange)
     for _, p in ipairs(pool) do
         if not p.active then -- skip destroyed projectiles
-            print("[REUSE] Reusing inactive projectile, was destroyed:", p.isDestroyed)
+            --print("[REUSE] Reusing inactive projectile, was destroyed:", p.isDestroyed)
             p:reactivate(world, x, y, angle, speed, damage, owner, image, knockback, maxRange)
             return p
         end
     end
-     print("[EXPAND POOL] Creating new projectile")
+    --print("[EXPAND POOL] Creating new projectile")
 
      -- Fallback: Expand pool if needed
     local newProj = Projectile:new(world, x, y, angle, speed, 10, damage, owner, image, knockback, maxRange)
@@ -364,7 +364,7 @@ end
 
 function Projectile:reactivate(world, x, y, angle, speed, damage, owner, image, knockback, maxRange)
     -- to turn this baby back on, its essentially just the collider table with its collider props set again
-    print("[REACTIVATE] Reactivating projectiles and particles state:", self)
+    --print("[REACTIVATE] Reactivating projectiles and particles state:", self)
     self.world = world
     self.x = x
     self.y = y
@@ -426,7 +426,7 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner, image, 
 end
 
 function Projectile:deactivate()
-    print("[DEACTIVATE] Deactivated projectile", self)
+    --print("[DEACTIVATE] Deactivated projectile", self)
 
     self.active = false
     self.toBeRemoved = true

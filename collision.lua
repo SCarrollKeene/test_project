@@ -51,9 +51,9 @@ function Collision.beginContact(a, b, coll, ctx)
             if ctx.portal and ctx.portal.cooldownActive then
                 ctx.sounds.ghost:play() -- portal
 
-                print("Gamestate.current() is", tostring(Gamestate.current()))
-                print("ctx.playingState is", tostring(ctx.playingState))
-                print("ctx.safeRoomState is", tostring(ctx.safeRoomState))
+                -- print("Gamestate.current() is", tostring(Gamestate.current()))
+                -- print("ctx.playingState is", tostring(ctx.playingState))
+                -- print("ctx.safeRoomState is", tostring(ctx.safeRoomState))
 
                 if Gamestate.current() == ctx.playingState then
                     ctx.nextState = ctx.safeRoomState

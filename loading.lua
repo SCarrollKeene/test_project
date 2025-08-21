@@ -126,8 +126,8 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
         if img then
             self.projectileImages[name] = img
             self.projectileBatches[name] = love.graphics.newSpriteBatch(img, 512)
-        else
-            print("[LOADING] WARNING: image missing for projectile type:", name)
+        -- else
+        --     print("[LOADING] WARNING: image missing for projectile type:", name)
         end
     end
 

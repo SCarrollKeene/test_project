@@ -80,7 +80,7 @@ end
 
 function Gorgoneye:reset(x, y, def, img)
     assert(img, "[GORGONEYE:RESET] Tried to reset enemy with nil image!")
-    print("Resetting Gorgoneye with spriteSheet:", img, "Width:", img:getWidth(), "Height:", img:getHeight())
+    --print("Resetting Gorgoneye with spriteSheet:", img, "Width:", img:getWidth(), "Height:", img:getHeight())
 
     -- Pool-respawn logic, which matches your Enemy.reset pattern
     -- Base logic: core vars, collider from Enemy base class
@@ -139,7 +139,7 @@ function Gorgoneye:load()
     )
     self.collider:setFixedRotation(true)
     self.collider:setUserData(self)
-    print("DEBUG: GORGONEYE collider created with W: "..self.width.." and H: "..self.height)
+    --print("DEBUG: GORGONEYE collider created with W: "..self.width.." and H: "..self.height)
     self.collider:setCollisionClass('enemy')
     self.collider:setObject(self)
 end

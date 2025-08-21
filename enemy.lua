@@ -126,7 +126,7 @@ function Enemy:checkActiveByCamera(camera)
     if self.collider:isActive() ~= inView then
         self.collider:setActive(inView)
         -- Debug message to confirm state changes
-        print(string.format("[ENEMY CHECK CAMERA] %s (%d) active=%s x=%.1f y=%.1f", self.name or "Enemy", self.enemyID or -1, tostring(inView), self.x, self.y))
+        Debug.debugPrint(string.format("[ENEMY CHECK CAMERA] %s (%d) active=%s x=%.1f y=%.1f", self.name or "Enemy", self.enemyID or -1, tostring(inView), self.x, self.y))
     end
     return inView
 end
