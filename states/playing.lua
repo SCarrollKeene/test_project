@@ -407,7 +407,7 @@ function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
         return
     end
 
-    -- Try to reuse a DEAD enemy from the pool
+    -- calculate area and pool
     local w = config.width
     local h = config.height
     local mapW = currentMap.width * currentMap.tilewidth
@@ -420,14 +420,14 @@ function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
         self.enemyPools[poolName] = pool
     end
 
+    local spawnX = x or love.math.random(w, mapW - w)
+    local spawnY = y or love.math.random(h, mapH - h)
+
+    -- try to reuse a dead enemy from their respective pool
     for _, e in ipairs(pool) do
         if e.isDead then
             if e.reset then
-                e:reset(
-                    x or love.math.random(w, mapW - w),
-                    y or love.math.random(h, mapH - h),
-                    config, img
-                )
+                e:reset(spawnX, spawnY, config, img)
                 e:setTarget(player)
                 e.isDead = false
                 e.toBeRemoved = false
@@ -440,9 +440,7 @@ function playing:spawnRandomEnemy(x, y, availableEnemyTypes)
 
     -- Create a new enemy using the logic class from the registry
     -- if no pool reuse exists
-    local spawnX = x or love.math.random(w, mapW - w)
-    local spawnY = y or love.math.random(h, mapH - h)
-
+    
     local newEnemy = logicClass:new({
         world = world,
         name = config.name,
@@ -619,8 +617,13 @@ function playing:keypressed(key)
     end
 end
 
-function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCache, safeRoomState)
-    assert(#enemyPools > 0)
+function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCache, safeRoomState, projectileBatches)
+    local count = 0
+    for _, pool in pairs(enemyPools) do
+        count = count + #pool
+    end
+    assert(count > 0, "No enemies preloaded in any pool!")
+
     Debug.debugPrint("[PLAYING:ENTER] Entered playing gamestate")
     -- print("[DEBUG] playing:enter, safeRoomState is", tostring(safeRoomState))
 
@@ -635,6 +638,7 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     }
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
+    self.projectileBatches = projectileBatches
     self.allEnemyTypes = enemyTypes
 
     -- print("[PLAYING:ENTER] Pool received. #self.enemyPool = " .. tostring(#self.enemyPool))
@@ -649,14 +653,14 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     --     print("Enemy Pool: Total enemies =", total, ", Gorgoneyes =", gorgoneyeCount)
 
     -- debug for what enemies are in the pool
-    local counts = {}
-    for _, e in ipairs(self.enemyPools) do
-        local n = e.name or "UNKNOWN"
-        counts[n] = (counts[n] or 0) + 1
-    end
-    for k, v in pairs(counts) do
-        print("Pool holds", v, k)
-    end
+    -- local counts = {}
+    -- for _, e in ipairs(self.enemyPools) do
+    --     local n = e.name or "UNKNOWN"
+    --     counts[n] = (counts[n] or 0) + 1
+    -- end
+    -- for k, v in pairs(counts) do
+    --     print("Pool holds", v, k)
+    -- end
 
     -- local dead, alive = 0, 0
     -- for _, e in ipairs(self.enemyPool) do
@@ -805,7 +809,12 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     self.waveManager = WaveManager.new(levelData)
 
     -- Initialize projectile batch
-    self.projectileBatch = love.graphics.newSpriteBatch(Projectile.image, 1000)  -- 1000 = initial capacity
+    -- self.projectileBatch = love.graphics.newSpriteBatch(Projectile.image, 1000)  -- 1000 = initial capacity
+    self.projectileBatches = {}
+    -- Only create SpriteBatches for to-be-used images
+    self.projectileBatches["fireball"] = love.graphics.newSpriteBatch(Assets.images.fireball, 500)
+    self.projectileBatches["gorgoneye_shot"] = love.graphics.newSpriteBatch(Assets.images.gorgoneye_shot, 500)
+    -- TODO: add more as needed per new projectile types
 
      -- Initialize enemy batches for current enemy file
     self.enemyBatches = {}
@@ -1574,32 +1583,57 @@ function playing:draw()
         --     p:draw()
         -- end
 
-        -- draw projectiles using sprite batch for performance
+        -- new projectile batching for all projectile types
+        for _, batch in pairs(self.projectileBatches) do
+            batch:clear()
+        end
 
         -- Projectile batching
-        self.projectileBatch:clear()
+        -- self.projectileBatch:clear()
+        -- for _, p in ipairs(projectiles) do
+        --         -- Verify position is numeric
+        --         if type(p.x) == "number" and type(p.y) == "number" then
+        --         -- For a circular projectile, use radius; for sprite, use width/height
+        --         local projW = p.width  or (p.radius and p.radius * 2) or 10
+        --         local projH = p.height or (p.radius and p.radius * 2) or 10
+
+        --         local left = p.x - projW/2
+        --         local top  = p.y - projH/2
+
+        --         if Utils.isAABBInView(CamManager.camera, left, top, projW, projH) then
+        --             self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
+        --             -- Debug.debugPrint("Projectile batched at position:", p.x, p.y)
+        --         else
+        --             -- Debug.debugPrint("Projectile culled at position:", p.x, p.y)
+        --         end
+        --     else
+        --         -- Debug.debugPrint("[WARN] Invalid projectile position", p.x, p.y)
+        --     end
+        -- end
+        -- love.graphics.draw(self.projectileBatch)
+        -- Debug.debugPrint("Total projectiles in batch:", self.projectileBatch:getCount())
+
+        -- new projectiles batching
         for _, p in ipairs(projectiles) do
-                -- Verify position is numeric
-                if type(p.x) == "number" and type(p.y) == "number" then
-                -- For a circular projectile, use radius; for sprite, use width/height
-                local projW = p.width  or (p.radius and p.radius * 2) or 10
+            -- Detect image name, default to "fireball" if missing
+            local imgName = p.imageName
+            if not imgName and p.image == Assets.images.gorgoneye_shot then
+                imgName = "gorgoneye_shot"
+            elseif not imgName or p.image == Assets.images.fireball then
+                imgName = "fireball"
+            end
+            local batch = self.projectileBatches and self.projectileBatches[imgName]
+            if batch and type(p.x) == "number" and type(p.y) == "number" and not p.toBeRemoved then
+                local projW = p.width or (p.radius and p.radius * 2) or 10
                 local projH = p.height or (p.radius and p.radius * 2) or 10
-
-                local left = p.x - projW/2
-                local top  = p.y - projH/2
-
-                if Utils.isAABBInView(CamManager.camera, left, top, projW, projH) then
-                    self.projectileBatch:add(p.x, p.y, 0, 1, 1, p.width/2, p.height/2)
-                    -- Debug.debugPrint("Projectile batched at position:", p.x, p.y)
-                else
-                    -- Debug.debugPrint("Projectile culled at position:", p.x, p.y)
-                end
-            else
-                -- Debug.debugPrint("[WARN] Invalid projectile position", p.x, p.y)
+                local ox, oy = projW/2, projH/2
+                batch:add(p.x, p.y, 0, 1, 1, ox, oy)
             end
         end
-        love.graphics.draw(self.projectileBatch)
-        -- Debug.debugPrint("Total projectiles in batch:", self.projectileBatch:getCount())
+
+        for _, batch in pairs(self.projectileBatches) do
+            love.graphics.draw(batch)
+        end
 
         -- Enemy rendering
         for _, batch in pairs(self.enemyBatches) do
@@ -1647,7 +1681,7 @@ function playing:draw()
             portal:draw()
         end
         
-        Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatch, self.enemyPools)
+        Debug.draw(projectiles, enemies, globalParticleSystems, self.projectileBatches, self.enemyPools)
         Debug.drawEnemyTracking(enemies, player)
         Debug.drawCollisions(world)
         Debug.drawColliders(wallColliders, player, portal)

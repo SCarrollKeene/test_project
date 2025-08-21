@@ -1,3 +1,4 @@
+local Assets = require("assets")
 local Gamestate = require("libraries/hump/gamestate")
 local MapLoader = require("maploader")
 local Enemy = require("enemy")
@@ -116,6 +117,20 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
         end
     end
 
+    -- image helper function for batching
+    local projectileImageNames = { "fireball", "gorgoneye_shot" }
+    self.projectileImages = {}
+    self.projectileBatches = {}
+    for _, name in ipairs(projectileImageNames) do
+        local img = Assets.images[name]
+        if img then
+            self.projectileImages[name] = img
+            self.projectileBatches[name] = love.graphics.newSpriteBatch(img, 512)
+        else
+            print("[LOADING] WARNING: image missing for projectile type:", name)
+        end
+    end
+
     -- preload all enemy types with flat array
     local allEnemyVariants = {}
     for _, subTable in pairs(enemyTypes) do
@@ -148,7 +163,16 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
             spritePath = enemyDef.spritePath
         })
         e.isDead = true -- Mark as reusable
-        table.insert(self.enemyPools, e)
+
+        -- Determine the right pool by name
+        local poolName = enemyDef.poolName or enemyDef.name:lower()
+        self.enemyPools[poolName] = self.enemyPools[poolName] or {}
+        table.insert(self.enemyPools[poolName], e)
+    end
+
+    -- check for pool loading
+    for k,v in pairs(self.enemyPools) do
+        print("Pool", k, "has", #v, "enemies preloaded")
     end
 
     -- print("[LOADING] Enemy pool preloaded. Total enemies in pool: " .. tostring(#self.enemyPool))
@@ -184,7 +208,7 @@ function Loading:update(dt)
     else
         -- load into playing state
         self.assetsAlreadyLoaded = true
-        Gamestate.switch(self.playing_state, self.world, self.enemyPools, self.enemyImageCache, self.mapCache, self.safeRoom_state)
+        Gamestate.switch(self.playing_state, self.world, self.enemyPools, self.enemyImageCache, self.mapCache, self.safeRoom_state, self.projectileBatches)
     end
 end
 

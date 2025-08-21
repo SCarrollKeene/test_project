@@ -82,7 +82,7 @@ function love.load()
     -- love.graphics.setDefaultFilter("nearest", "nearest")
 
     -- Call initial game setup
-    love.window.setMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, { resizable = true, fullscreen = false, vsync = true }) -- Ensure window is resizable
+    love.window.setMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, { resizable = true, fullscreen = false, vsync = 1 }) -- Ensure window is resizable
     love.graphics.setLineStyle("rough")
     love.graphics.setLineWidth(2)
 
@@ -158,15 +158,19 @@ end
 
 function love.draw()
     -- moved all logic into func playing:draw() because I'm utilizing hump.gamestate
-
+    love.graphics.print("VSync State: " .. tostring(love.window.getVSync and love.window.getVSync() or "unknown"), 1100, 80)
     -- Set the render target to your gameCanvas
     love.graphics.setCanvas(gameCanvas)
     love.graphics.clear(0.1, 0.1, 0.1, 1) -- Clear the canvas (e.g., to a dark grey)
 
+    -- Draw current gamestate onto gameCanvas
+    if Gamestate.current() and Gamestate.current().draw then
+        Gamestate.current():draw()
+    end
+
     -- Reset the render target to the screen
     love.graphics.setCanvas()
     love.graphics.clear(0, 0, 0, 1) -- Clear the actual screen to black (for letter/pillarboxing)
-
     -- Draw the gameCanvas to the actual screen, scaled and offset
     love.graphics.draw(gameCanvas, offsetX, offsetY, 0, scaleX, scaleY)
 end

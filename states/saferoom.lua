@@ -391,7 +391,7 @@ function safeRoom:keypressed(key)
     end
 end
 
-function safeRoom:enter(previous_state, world, enemyPools, enemyImageCache, mapCache, playingState)
+function safeRoom:enter(previous_state, world, enemyPools, enemyImageCache, mapCache, playingState, projectileBatches)
     Debug.debugPrint("[SAFEROOM:ENTER] entered saferoom gamestate")
     print("[DEBUG] safeRoom:enter, playingState is", tostring(playingState))
 
@@ -405,6 +405,7 @@ function safeRoom:enter(previous_state, world, enemyPools, enemyImageCache, mapC
     }
     self.enemyImageCache = enemyImageCache
     self.mapCache = mapCache
+    self.projectileBatches = projectileBatches
     self.currentMap = currentMap
 
     -- build the context table for collision.lua

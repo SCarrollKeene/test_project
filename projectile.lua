@@ -112,7 +112,7 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, image,
         image = image,
         knockback = knockback or 0,
         maxRange = maxRange or 600,
-        distanceTravled = 0,
+        distanceTraveled = 0,
         world = world,
         owner = owner, --store the owner of the shot projectile, in this case, the player
         ignoreTarget = owner,
@@ -154,6 +154,10 @@ function Projectile:new(world, x, y, angle, speed, radius, damage, owner, image,
         -- table.insert(globalParticleSystems, self.particleTrail) -- insert particles into global table
         table.insert(globalParticleSystems, { ps = self.particleTrail, type = "particleTrail", radius = 16 } ) -- context-based pooling
     end
+
+    -- set imageName based on known proj images
+    local imageName = Assets.getImageName(self.image)
+    self.imageName = imageName
 
     return self
 end
@@ -378,6 +382,10 @@ function Projectile:reactivate(world, x, y, angle, speed, damage, owner, image, 
     self.isDestroyed = false -- reset destroyed state
     self.toBeRemoved = false -- reset removal flag
     self.active = true -- set active flag to true
+
+    -- set imageName based on known proj images
+    local imageName = Assets.getImageName(self.image)
+    self.imageName = imageName
 
      -- Remove invalid collider reference
     if self.collider and self.collider:isDestroyed() then

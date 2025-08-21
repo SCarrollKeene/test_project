@@ -28,4 +28,13 @@ function Assets.load()
     -- load image/sound/fonts here
 end
 
+function Assets.getImageName(image)
+    for name, img in pairs(Assets.images) do
+        if img == image then
+            return name
+        end
+    end
+    return "fireball" -- if not matching, return fireball by default
+end
+
 return Assets
