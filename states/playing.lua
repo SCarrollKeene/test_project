@@ -779,6 +779,8 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     
     local mapW = currentMap.width * currentMap.tilewidth
     local mapH = currentMap.height * currentMap.tileheight
+    local enemyCount = #enemies
+    print("Enemy count: " .. enemyCount)
 
     -- print("[DEBUG] currentMap:", currentMap, 
     --   "width:", currentMap and currentMap.width, 
@@ -787,14 +789,30 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     CamManager.setMap(mapW, mapH)
     --CamManager.camera:attach()
 
-    -- >> SPATIAL PARTIONING GRID START 7/1/25 <<
+    -- >> ADAPTIVE SPATIAL PARTIONING GRID START 7/1/25 <<
+
+    local function getAdaptiveGridCellSize(mapWidth, mapHeight, entityCount)
+        -- tweak thresholds and cell sizes to performance needs
+        if entityCount and entityCount > 200 then
+            return 575
+        elseif mapWidth > 2000 or mapHeight > 1200 then
+            return 475
+        elseif entityCount and entityCount > 100 then
+            return 425
+        else
+            return 300 -- fallback
+        end
+    end
 
     -- TODO: revisit making spatial grid scale based on the map width and height
     -- right now its not clearing colliders correctly between :enter and :leave states
     -- reverted back to using hard coded dimensions for the time being 7/4/25
-    self.gridCellSize = 425 -- Each cell is 200x200 pixels, tweak for performance.
-    self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
-    self.gridHeight = math.ceil(768 / self.gridCellSize)
+    -- self.gridCellSize = 425 -- Each cell is 200x200 pixels, tweak for performance.
+    self.gridCellSize = getAdaptiveGridCellSize(mapW, mapH, enemyCount) -- Each cell is 200x200 pixels, tweak for performance.
+    --self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
+    self.gridWidth = math.ceil(mapW / self.gridCellSize) -- Grid dimensions for your map
+    --self.gridHeight = math.ceil(768 / self.gridCellSize)
+    self.gridHeight = math.ceil(mapH / self.gridCellSize)
     self.spatialGrid = {} -- This will hold all the enemies, sorted into cells.
     
     -- Pre-populate the grid with empty tables to avoid errors
@@ -805,7 +823,7 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
         end
     end
 
-    -- >> SPATIAL PARTIONING GRID END 7/1/25 <<
+    -- >> ADAPTIVE SPATIAL PARTIONING GRID END 7/1/25 <<
 
      -- Initialize wave manager
     local levelData = LevelManager.levels[LevelManager.currentLevel]

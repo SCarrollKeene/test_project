@@ -1,5 +1,4 @@
 local wf = require("libraries/windfield")
-local Assets = require("assets")
 local Collision = require("collision")
 local enemyTypes = require("enemytypes")
 local Gamestate = require("libraries/hump/gamestate")
@@ -87,6 +86,10 @@ function love.load()
 
     -- Call initial game setup
     love.window.setMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, { resizable = true, fullscreen = false, vsync = true }) -- Ensure window is resizable
+    vsync = select(3, love.window.getMode())
+    print("VSync:", vsync.vsync)
+    print("VSync:", love.window.getVSync())
+
     love.graphics.setLineStyle("rough")
     love.graphics.setLineWidth(2)
 
@@ -113,7 +116,6 @@ function love.load()
 
     -- optional, preloader for particle images. I think the safeloading in particle.lua should be good for now
     -- Particle.preloadImages()
-    Assets.load()
     Weapon.loadAssets()
 
     local mage_spritesheet_path = "sprites/mage-NESW.png"

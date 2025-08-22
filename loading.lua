@@ -64,10 +64,11 @@ function Loading:enter(previous_state, world, playing_state, safeRoom_state)
 
     self.loaded = 0
     self.total = self.calculateTotalAssets()
-    self.modulesLoaded  = false
-    self.imagesLoaded   = false
-    self.soundsLoaded   = false
-    self.mapsLoaded     = false
+    self.modulesLoaded = false
+    self.assetsLoaded = false
+    self.imagesLoaded = false
+    self.soundsLoaded = false
+    self.mapsLoaded = false
     self.assetsAlreadyLoaded = false  -- Boot flag
 
     -- for _, category in pairs(assets) do
@@ -222,6 +223,11 @@ function Loading:loadNextAsset()
         end
         self.loaded = self.loaded + #assets.modules
         self.modulesLoaded = true
+
+    -- load assets
+    elseif not self.assetsLoaded then
+    Assets.load()
+    self.assetsLoaded = true
 
     -- load images
     elseif not self.imagesLoaded then
