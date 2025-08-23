@@ -794,10 +794,9 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     -- >> ADAPTIVE SPATIAL PARTIONING GRID START 7/1/25 <<
 
     local function getAdaptiveGridCellSize(mapWidth, mapHeight, entityCount)
-        print(mapWidth, mapHeight)
         -- tweak thresholds and cell sizes to performance needs
         if mapWidth <= 1280 and mapHeight <= 768 then
-            return 425 -- or 300, if you want even simpler math
+            return 300 -- or 300, if you want even simpler math
         elseif entityCount > 400 then
             return 525
         elseif entityCount > 300 then
@@ -1225,11 +1224,6 @@ function playing:update(dt)
             selectedItemToCompare = nil
         end
 end
-
-    -- NOTE: I need collision detection before I can continue and the logic for player attacks, enemy attacking player, getting damage values from projectile.damage
-    -- and calling the appropriate dealDamage function
-    -- AND updating projectile direction control by player : UPDATE: works now for player attacking enemy
-
     -- change enemy to a diff name to not conflict or be confused with enemy module 6/1/25
     -- old enemy update loop
     -- for i, enemy in ipairs(enemies) do
@@ -1261,21 +1255,38 @@ end
     local playerGridX = math.floor(player.x / self.gridCellSize) + 1
     local playerGridY = math.floor(player.y / self.gridCellSize) + 1
 
-    -- 4. Only update enemies in the player's cell and the 8 neighboring cells
+    -- 4. only update enemies in hot/near cells, tag them as updated
+    local updated = {} -- tracking who got updated
+
     for dx = -1, 1 do
         for dy = -1, 1 do
             local checkX = playerGridX + dx
             local checkY = playerGridY + dy
-
-            -- Make sure the neighboring cell is valid
+            -- Make sure neighboring cell is valid
             if checkX >= 1 and checkX <= self.gridWidth and checkY >= 1 and checkY <= self.gridHeight then
-                -- This is a "hot" cell, so update every enemy inside it
                 for _, enemy in ipairs(self.spatialGrid[checkX][checkY]) do
-                    enemy:update(dt, self.frameCount) -- This is the expensive AI update call
+                    -- This is a "hot" cell, so update every enemy inside it
+                    enemy:update(dt, self.frameCount) -- enemy full update with AI
+                    updated[enemy] = true -- Mark as already updated
                 end
             end
         end
     end
+
+    -- 5. Do a fallback update for ALL enemies not updated above
+    for _, enemy in ipairs(enemies) do
+        if not updated[enemy] then
+            -- if idle update method exists, use it
+            if enemy.updateIdle then
+                print("enemy idle: ", enemy.name)
+                enemy.updateIdle(enemy, dt)
+            else
+                -- just call normal update but skip AI (requires modification in enemy:update)
+                enemy:update(dt, self.frameCount, true) -- true = force "idle only" mode (handled inside update)
+            end
+        end
+    end
+
 -- >> END OF NEW LOOP 7/1/25 <<
 
     -- Debug: List alive/active enemies

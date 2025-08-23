@@ -41,19 +41,19 @@ return {
             poolName = "blob" 
         }
     },
-    gorgoneye = {
-        { 
-            name = "Gorgoneye", 
-            spritePath = "sprites/gorgoneye-tileset.png",
-            width = 36, 
-            height = 36, 
-            maxHealth = 80, 
-            health = 80, 
-            speed = 30, 
-            baseDamage = 20, 
-            xpAmount = 30, 
-            enemyType = "gorgoneye",
-            poolName = "gorgoneye" 
-        }
-    }
+    -- gorgoneye = {
+    --     { 
+    --         name = "Gorgoneye", 
+    --         spritePath = "sprites/gorgoneye-tileset.png",
+    --         width = 36, 
+    --         height = 36, 
+    --         maxHealth = 80, 
+    --         health = 80, 
+    --         speed = 30, 
+    --         baseDamage = 20, 
+    --         xpAmount = 30, 
+    --         enemyType = "gorgoneye",
+    --         poolName = "gorgoneye" 
+    --     }
+    -- }
 }

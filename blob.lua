@@ -133,8 +133,38 @@ end
 
 function Blob:update(dt, frameCount) 
     -- update animations even on skipped frames
-    if self.currentAnimation then
-        self.currentAnimation:update(dt)
+    -- if self.currentAnimation then
+    --     self.currentAnimation:update(dt)
+    -- end
+
+    if self.isDead then
+        if self.currentAnimation then
+            self.currentAnimation:update(dt)
+            -- When animation is finished, remove enemy
+            if self.currentAnimation.status == "paused" then
+                self.toBeRemoved = true
+            end
+        else
+            self.toBeRemoved = true -- Fallback: no animation to play
+        end
+        return
+    end
+
+    -- self:move(dt)
+    if self.isKnockedBack then
+        self.knockbackTimer = self.knockbackTimer - dt
+        if self.knockbackTimer <= 0 then
+            self.isKnockedBack = false
+        end
+        return -- Skip normal AI movement logic while knocked back
+    end
+
+    if self.isFlashing then
+        self.flashTimer = self.flashTimer - dt
+        if self.flashTimer <= 0 then
+            self.isFlashing = false
+            self.flashTimer = 0
+        end
     end
 
     -- frame count/slicing
@@ -150,36 +180,7 @@ function Blob:update(dt, frameCount)
         return
     end
 
-    -- self:move(dt)
-    if self.isKnockedBack then
-        self.knockbackTimer = self.knockbackTimer - dt
-        if self.knockbackTimer <= 0 then
-            self.isKnockedBack = false
-        end
-        return -- Skip normal AI movement logic while knocked back
-    end
-
-    if self.isDead then
-        if self.currentAnimation then
-            self.currentAnimation:update(dt)
-            -- When animation is finished, remove enemy
-            if self.currentAnimation.status == "paused" then
-                self.toBeRemoved = true
-            end
-        else
-            self.toBeRemoved = true -- Fallback: no animation to play
-        end
-        return
-    end
-
-    if self.isFlashing then
-        self.flashTimer = self.flashTimer - dt
-        if self.flashTimer <= 0 then
-            self.isFlashing = false
-            self.flashTimer = 0
-        end
-    end
-
+    -- cull off camera
     if not self:checkActiveByCamera(CamManager.camera) then
         return -- exit if not active/visible
     end
@@ -188,11 +189,12 @@ function Blob:update(dt, frameCount)
         Debug.debugPrint("UPDATE_NO_COLLIDER: self is", tostring(self), "name:", (self and self.name or "N/A"))
         return 
     end -- If collider somehow got removed early
+    self.x, self.y = self.collider:getPosition()
 
      -- Update current animation (if it exists)
-    if self.currentAnimation then
-        self.currentAnimation:update(dt)
-    end
+    -- if self.currentAnimation then
+    --     self.currentAnimation:update(dt)
+    -- end
 
     Debug.debugPrint("DEBUG: Blob:update: " .. "Name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
 
@@ -203,28 +205,28 @@ function Blob:update(dt, frameCount)
             self.currentAnimation = self.animations.idle
         end
 
-    if self.collider then
-        self.x, self.y = self.collider:getPosition()
-    else
-        Debug.debugPrint("[BLOB] UPDATE: getPosition failed because collider is nil for "..tostring(self.name))
-        return -- skip to movement logic below
-    end
+    -- if self.collider then
+    --     self.x, self.y = self.collider:getPosition()
+    -- else
+    --     Debug.debugPrint("[BLOB] UPDATE: getPosition failed because collider is nil for "..tostring(self.name))
+    --     return -- skip to movement logic below
+    -- end
 
-
-    if self.currentAnimation and self.currentAnimation.update then
-        self.currentAnimation:update(dt)
-    end
+    -- if self.currentAnimation and self.currentAnimation.update then
+    --     self.currentAnimation:update(dt)
+    -- end
 
     -- pursue target
     if self:isNearPlayer(500) then
         EnemyAI.pursueTarget(self, dt)
     else
-        self.collider:setLinearVelocity(0, 0)
-        self.isMoving = false
-        -- idle
-        if self.animations and self.animations.idle then
-            self.currentAnimation = self.animations.idle
-        end
+        -- enemy idle
+        EnemyAI.updateIdle(self, dt)
+    end
+
+    -- Update current animation (if it exists)
+    if self.currentAnimation then
+        self.currentAnimation:update(dt)
     end
 end
 

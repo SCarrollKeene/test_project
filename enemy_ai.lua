@@ -4,6 +4,24 @@ local projectiles = require("projectile_store")
 
 local EnemyAI = {}
 
+function EnemyAI.updateIdle(enemy, dt)
+    enemy.collider:setLinearVelocity(0, 0)
+    enemy.isMoving = false
+
+    if enemy.animations and enemy.animations.idle then
+        if enemy.currentAnimation ~= enemy.animations.idle then
+            enemy.currentAnimation = enemy.animations.idle
+        end
+        enemy.currentAnimation:update(dt)
+    end
+
+    -- Only play idle animation if it exists
+    if enemy.currentAnimation and enemy.currentAnimation.update then
+        enemy.currentAnimation:update(dt)
+    end
+end
+
+
 function EnemyAI.pursueTarget(self, dt)
     if not self.target then return end
 
