@@ -7,7 +7,9 @@ local WaveManager = require("wavemanager")
 local player = require("player")
 local ENEMY_CLASSES = require("enemy_registry")
 local Enemy = require("enemy")
+local Gorgoneye = require("gorgoneye")
 local enemyTypes = require("enemytypes")
+local EnemyManager = require("enemy_manager")
 local PlayerRespawn = require("playerrespawn")
 local projectiles = require("projectile_store")
 local UI = require("ui")
@@ -792,13 +794,20 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     -- >> ADAPTIVE SPATIAL PARTIONING GRID START 7/1/25 <<
 
     local function getAdaptiveGridCellSize(mapWidth, mapHeight, entityCount)
+        print(mapWidth, mapHeight)
         -- tweak thresholds and cell sizes to performance needs
-        if entityCount and entityCount > 200 then
-            return 575
-        elseif mapWidth > 2000 or mapHeight > 1200 then
+        if mapWidth <= 1280 and mapHeight <= 768 then
+            return 425 -- or 300, if you want even simpler math
+        elseif entityCount > 400 then
+            return 525
+        elseif entityCount > 300 then
+            return 500
+        elseif entityCount > 200 then
             return 475
-        elseif entityCount and entityCount > 100 then
+        elseif entityCount > 100 then
             return 425
+        elseif mapWidth > 2000 or mapHeight > 1200 then
+            return 400
         else
             return 300 -- fallback
         end
@@ -1080,6 +1089,17 @@ function playing:update(dt)
     -- frame count
     local frameCount = self.frameCount
     self.frameCount = (self.frameCount or 0) + 1
+
+    -- -- Monitor performance and adapt AI throttle if needed
+    EnemyManager.monitorPerformanceAndAdapt(dt)
+
+    -- -- AI/throttled update for each enemy
+    for _, enemy in ipairs(enemies) do
+        if math.fmod(self.frameCount, EnemyManager.aiThrottleStep) == 0 then
+            -- print("[ENEMY AI UPDATE] Updating enemy:", (enemy.name or "unknown"))
+            Gorgoneye:updateAI(dt)
+        end
+    end
     
     -- After player:update(dt, mapW, mapH) or player:update(dt)
     local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
