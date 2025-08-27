@@ -33,8 +33,8 @@ function Blob:new(fields)
         name = fields.name or "Blob",
         x = fields.x or 0,
         y = fields.y or 0,
-        width = frameWidth,
-        height = frameHeight,
+        width = 22,
+        height = 32,
         maxHealth = fields.maxHealth or 60,
         health = fields.maxHealth or 60,
         speed = fields.speed or 50,
@@ -167,6 +167,18 @@ function Blob:update(dt, frameCount)
         end
     end
 
+    if not self.collider then 
+        Debug.debugPrint("UPDATE_NO_COLLIDER: self is", tostring(self), "name:", (self and self.name or "N/A"))
+        return
+    end -- If collider somehow got removed early
+    self.x, self.y = self.collider:getPosition()
+    
+
+    -- Update current animation (if it exists), runs every frame
+    if self.currentAnimation then
+        self.currentAnimation:update(dt)
+    end
+
     -- frame count/slicing
     if not self.enemyID then
         Debug.debugPrint("[ERROR] enemyID is nil for", tostring(self.name))
@@ -191,32 +203,20 @@ function Blob:update(dt, frameCount)
     end -- If collider somehow got removed early
     self.x, self.y = self.collider:getPosition()
 
-     -- Update current animation (if it exists)
-    -- if self.currentAnimation then
-    --     self.currentAnimation:update(dt)
-    -- end
-
     Debug.debugPrint("DEBUG: Blob:update: " .. "Name:", self.name, "Speed:", self.speed, "Type of speed:", type(self.speed), "Damage:", self.baseDamage)
 
-        -- Switch animation based on state
-        if self.isMoving and self.animations and self.animations.walk and self.currentAnimation ~= self.animations.walk then
-            self.currentAnimation = self.animations.walk
-        elseif not self.isMoving and self.animations and self.animations.idle and self.currentAnimation ~= self.animations.idle then
-            self.currentAnimation = self.animations.idle
-        end
+    self:updateAI(dt)
+end
 
-    -- if self.collider then
-    --     self.x, self.y = self.collider:getPosition()
-    -- else
-    --     Debug.debugPrint("[BLOB] UPDATE: getPosition failed because collider is nil for "..tostring(self.name))
-    --     return -- skip to movement logic below
-    -- end
+function Blob:updateAI(dt)
+    -- Switch animation based on state
+    if self.isMoving and self.animations and self.animations.walk and self.currentAnimation ~= self.animations.walk then
+        self.currentAnimation = self.animations.walk
+    elseif not self.isMoving and self.animations and self.animations.idle and self.currentAnimation ~= self.animations.idle then
+        self.currentAnimation = self.animations.idle
+    end
 
-    -- if self.currentAnimation and self.currentAnimation.update then
-    --     self.currentAnimation:update(dt)
-    -- end
-
-    -- pursue target
+    -- pursue target, move to player if in range
     if self:isNearPlayer(500) then
         EnemyAI.pursueTarget(self, dt)
     else

@@ -87,7 +87,7 @@ function love.load()
     -- Call initial game setup
     love.window.setMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, { resizable = true, fullscreen = false, vsync = true }) -- Ensure window is resizable
     vsync = select(3, love.window.getMode())
-    print("VSync:", vsync.vsync)
+    --print("VSync:", vsync.vsync)
     print("VSync:", love.window.getVSync())
 
     love.graphics.setLineStyle("rough")
@@ -118,7 +118,7 @@ function love.load()
     -- Particle.preloadImages()
     Weapon.loadAssets()
 
-    local mage_spritesheet_path = "sprites/mage-NESW.png"
+    local mage_spritesheet_path = "sprites/Mage.png"
     local dash_spritesheet_path = "sprites/dash.png"
     local death_spritesheet_path = "sprites/soulsplode.png"
 

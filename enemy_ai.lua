@@ -12,54 +12,87 @@ function EnemyAI.updateIdle(enemy, dt)
         if enemy.currentAnimation ~= enemy.animations.idle then
             enemy.currentAnimation = enemy.animations.idle
         end
-        enemy.currentAnimation:update(dt)
     end
 
-    -- Only play idle animation if it exists
+    -- play idle animation if it exists
     if enemy.currentAnimation and enemy.currentAnimation.update then
         enemy.currentAnimation:update(dt)
     end
 end
 
+-- function EnemyAI.pursueTarget(self, dt)
+--     if not self.target then return end
+    
+--     if not self.collider or not self.collider:isActive() then
+--         return -- Don’t pursue if not onscreen/active collider
+--     end
 
+--     -- AI: Decide movement direction/velocity
+--     if self.target then
+--         -- Calculate direction vector from self to target
+--         local dx = self.target.x - self.x
+--         local dy = self.target.y - self.y
+
+--         -- Normalize the direction vector (to get a unit vector)
+--         local distance = math.sqrt(dx*dx + dy*dy)
+
+--         if distance > 0.1 then -- Only move if not already at the target's exact position
+--             self.isMoving = true
+--             local dirX = dx / distance
+--             local dirY = dy / distance
+
+--             -- Update position based on direction and speed
+--             -- self.x = self.x + dirX * self.speed * dt
+--             -- self.y = self.y + dirY * self.speed * dt
+
+--             self.collider:setLinearVelocity(dirX * self.speed, dirY * self.speed)
+--         else
+--             self.collider:setLinearVelocity(0, 0)
+--         end
+--     else
+--         self.collider:setLinearVelocity(0, 0)
+--     end
+--     -- Alternatively, if you prefer using xVel/yVel:
+--     -- self.xVel = dirX * self.speed
+--     -- self.yVel = dirY * self.speed
+
+--     -- No target? Default behavior (e.g., patrol, stay idle, or move randomly)
+--     -- For now, if no target, it will not move based on target logic.
+--     -- You could, for example, make it move slowly to the left:
+        
+--     -- self.x = self.x - (self.speed * 0.25) * dt
+--     -- self.xvel = (self.speed * 0.25) * dt
+-- end
 function EnemyAI.pursueTarget(self, dt)
+    -- 1. Skip if no target
     if not self.target then return end
 
-    -- AI: Decide movement direction/velocity
-    if self.target then
-        -- Calculate direction vector from self to target
-        local dx = self.target.x - self.x
-        local dy = self.target.y - self.y
+    -- 2. Skip if collider not active (i.e., offscreen, pooled, or disabled)
+    if not self.collider or not self.collider:isActive() then
+        return
+    end
 
-        -- Normalize the direction vector (to get a unit vector)
-        local distance = math.sqrt(dx*dx + dy*dy)
+    -- 3. Early out if far from player (reduce unnecessary math/cpu for distant blobs)
+    local dx = self.target.x - self.x
+    local dy = self.target.y - self.y
+    local threatRadius = 500 -- Only pursue if within this many pixels (tune as needed)
+    local distanceSq = dx * dx + dy * dy
+    if distanceSq > threatRadius * threatRadius then
+        self.collider:setLinearVelocity(0, 0)
+        return
+    end
 
-        if distance > 0.1 then -- Only move if not already at the target's exact position
-            self.isMoving = true
-            local dirX = dx / distance
-            local dirY = dy / distance
-
-            -- Update position based on direction and speed
-            -- self.x = self.x + dirX * self.speed * dt
-            -- self.y = self.y + dirY * self.speed * dt
-
-            self.collider:setLinearVelocity(dirX * self.speed, dirY * self.speed)
-        else
-            self.collider:setLinearVelocity(0, 0)
-        end
+    -- 4. Only do direction/normalize math if not *very* close to target
+    if distanceSq > 0.01 then -- Use ^2 of original "0.1" to avoid sqrt unless necessary
+        self.isMoving = true
+        -- Only now do the (slower) sqrt
+        local distance = math.sqrt(distanceSq)
+        local dirX = dx / distance
+        local dirY = dy / distance
+        self.collider:setLinearVelocity(dirX * self.speed, dirY * self.speed)
     else
         self.collider:setLinearVelocity(0, 0)
     end
-    -- Alternatively, if you prefer using xVel/yVel:
-    -- self.xVel = dirX * self.speed
-    -- self.yVel = dirY * self.speed
-
-    -- No target? Default behavior (e.g., patrol, stay idle, or move randomly)
-    -- For now, if no target, it will not move based on target logic.
-    -- You could, for example, make it move slowly to the left:
-        
-    -- self.x = self.x - (self.speed * 0.25) * dt
-    -- self.xvel = (self.speed * 0.25) * dt
 end
 
 function EnemyAI.patrolArea(enemy, dt, patrolRange, onPlayerNear, direction)

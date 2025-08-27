@@ -782,7 +782,7 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     local mapW = currentMap.width * currentMap.tilewidth
     local mapH = currentMap.height * currentMap.tileheight
     local enemyCount = #enemies
-    print("Enemy count: " .. enemyCount)
+    --print("Enemy count: " .. enemyCount)
 
     -- print("[DEBUG] currentMap:", currentMap, 
     --   "width:", currentMap and currentMap.width, 
@@ -800,11 +800,11 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
         elseif entityCount > 400 then
             return 525
         elseif entityCount > 300 then
-            return 500
+            return 450
         elseif entityCount > 200 then
-            return 475
+            return 400
         elseif entityCount > 100 then
-            return 425
+            return 350
         elseif mapWidth > 2000 or mapHeight > 1200 then
             return 400
         else
@@ -823,11 +823,28 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     self.gridHeight = math.ceil(mapH / self.gridCellSize)
     self.spatialGrid = {} -- This will hold all the enemies, sorted into cells.
     
-    -- Pre-populate the grid with empty tables to avoid errors
-    for x = 1, self.gridWidth do
-        self.spatialGrid[x] = {}
-        for y = 1, self.gridHeight do
-            self.spatialGrid[x][y] = {}
+    function playing:assignEnemiesToSpatialGrid()
+        -- Pre-populate the grid with empty tables to avoid errors
+        for x = 1, self.gridWidth do
+            self.spatialGrid[x] = {}
+            for y = 1, self.gridHeight do
+                self.spatialGrid[x][y] = {}
+            end
+        end
+
+        -- 2. Repopulate the grid with the current positions of all enemies
+        -- reassigned to grid cells based on their positions
+        for _, enemy in ipairs(enemies) do
+            if not enemy.isDead and enemy.x and enemy.y then
+                -- Clamp to grid bounds
+                local gridX = math.floor(enemy.x / self.gridCellSize) + 1
+                local gridY = math.floor(enemy.y / self.gridCellSize) + 1
+
+                -- Ensure the enemy is within the grid bounds before inserting
+                if gridX >= 1 and gridX <= self.gridWidth and gridY >= 1 and gridY <= self.gridHeight then
+                    table.insert(self.spatialGrid[gridX][gridY], enemy)
+                end
+            end
         end
     end
 
@@ -1096,7 +1113,8 @@ function playing:update(dt)
     for _, enemy in ipairs(enemies) do
         if math.fmod(self.frameCount, EnemyManager.aiThrottleStep) == 0 then
             -- print("[ENEMY AI UPDATE] Updating enemy:", (enemy.name or "unknown"))
-            Gorgoneye:updateAI(dt)
+            Enemy:update(dt, self.frameCount)
+            -- Gorgoneye:updateAI(dt)
         end
     end
     
@@ -1234,29 +1252,20 @@ end
     -- >> START OF NEW LOOP ENEMY UPDATE LOGIC 7/1/25 <<
 
     -- 1. Clear the grid from the previous frame
-    for x = 1, self.gridWidth do
-        for y = 1, self.gridHeight do
-            self.spatialGrid[x][y] = {}
-        end
-    end
-
-    -- 2. Populate the grid with the current positions of all enemies
-    for _, enemy in ipairs(enemies) do
-        local gridX = math.floor(enemy.x / self.gridCellSize) + 1
-        local gridY = math.floor(enemy.y / self.gridCellSize) + 1
-
-        -- Ensure the enemy is within the grid bounds before inserting
-        if gridX >= 1 and gridX <= self.gridWidth and gridY >= 1 and gridY <= self.gridHeight then
-            table.insert(self.spatialGrid[gridX][gridY], enemy)
-        end
-    end
+    -- for x = 1, self.gridWidth do
+    --     for y = 1, self.gridHeight do
+    --         self.spatialGrid[x][y] = {}
+    --     end
+    -- end
+    self:assignEnemiesToSpatialGrid()
 
     -- 3. Determine the player's grid cell
-    local playerGridX = math.floor(player.x / self.gridCellSize) + 1
-    local playerGridY = math.floor(player.y / self.gridCellSize) + 1
+    local px, py = player.x, player.y
+    local playerGridX = math.floor(px / self.gridCellSize) + 1
+    local playerGridY = math.floor(py / self.gridCellSize) + 1
 
     -- 4. only update enemies in hot/near cells, tag them as updated
-    local updated = {} -- tracking who got updated
+    local nearbyEnemies = {} -- tracking enemies who got updated
 
     for dx = -1, 1 do
         for dy = -1, 1 do
@@ -1267,7 +1276,8 @@ end
                 for _, enemy in ipairs(self.spatialGrid[checkX][checkY]) do
                     -- This is a "hot" cell, so update every enemy inside it
                     enemy:update(dt, self.frameCount) -- enemy full update with AI
-                    updated[enemy] = true -- Mark as already updated
+                    --nearbyEnemies[enemy] = true -- Mark as already updated
+                    table.insert(nearbyEnemies, enemy)
                 end
             end
         end
@@ -1275,19 +1285,47 @@ end
 
     -- 5. Do a fallback update for ALL enemies not updated above
     for _, enemy in ipairs(enemies) do
-        if not updated[enemy] then
+        if not nearbyEnemies[enemy] then
             -- if idle update method exists, use it
             if enemy.updateIdle then
                 print("enemy idle: ", enemy.name)
                 enemy.updateIdle(enemy, dt)
             else
                 -- just call normal update but skip AI (requires modification in enemy:update)
-                enemy:update(dt, self.frameCount, true) -- true = force "idle only" mode (handled inside update)
+                enemy:update(dt, self.frameCount, true) -- this forces idle anim so enemies don't freeze 8/26/25
             end
         end
     end
+    for _, enemy in ipairs(nearbyEnemies) do
+        if math.fmod(self.frameCount, EnemyManager.aiThrottleStep) == 0 then
+            Enemy:update(dt, self.frameCount)
+        end
+    end
 
--- >> END OF NEW LOOP 7/1/25 <<
+    -- 6. collider deactivation loop for enemies far from player
+    for _, enemy in ipairs(enemies) do
+        if not enemy.collider then goto continue end -- skip if collider missing
+        if enemy.toBeRemoved or enemy.isDead then goto continue end
+
+        local gridX = math.floor(enemy.x / self.gridCellSize) + 1
+        local gridY = math.floor(enemy.y / self.gridCellSize) + 1
+        local inHotCell = math.abs(gridX - playerGridX) <= 1 and math.abs(gridY - playerGridY) <= 1
+        local inCamera = enemy:checkActiveByCamera(CamManager.camera)
+        if inHotCell and inCamera then
+            if not enemy.collider:isActive() then
+                enemy.collider:setActive(true)
+                enemy.collider:setSleepingAllowed(false)
+            end
+        else
+            if enemy.collider:isActive() then
+                enemy.collider:setActive(false)
+            end
+            enemy.collider:setSleepingAllowed(true)
+        end
+        ::continue::
+    end
+
+    -- >> END OF NEW LOOP 7/1/25 <<
 
     -- Debug: List alive/active enemies
     -- print("[DEBUG] Alive enemies:", #enemies)
@@ -1822,6 +1860,21 @@ function playing:draw()
     --local percent = math.floor((player.experience / xpNext) * 100)
     --love.graphics.print("Level Progress: " .. percent .. "%", 20, 170)
     love.graphics.print("Score: " .. Utils.getScore(), 20, 160)
+    -- Draw the count of all enemies on screen
+    love.graphics.print("Enemies: " .. tostring(#enemies), 20, 180)
+
+    -- Count and display active/inactive colliders
+    local active, inactive = 0, 0
+    for i, enemy in ipairs(enemies) do
+        if enemy.collider and enemy.collider:isActive() then
+            active = active + 1
+        else
+            inactive = inactive + 1
+        end
+    end
+    love.graphics.print("Enemy colliders active: " .. active, 20, 200)
+    love.graphics.print("Enemy colliders inactive: " .. inactive, 20, 220)
+
     
     -- love.graphics.print("Equipped Slot: " .. (player.equippedSlot or "None"), 20, 170)
 

@@ -81,7 +81,7 @@ end
 function Enemy:load()
     if not self.world then error("Enemy:load missing world context") end
     local w, h = self.width, self.height
-    self.collider = self.world:newBSGRectangleCollider(self.x - w/2, self.y - h/2, w, h, 10)
+    self.collider = self.world:newBSGRectangleCollider(self.x - w/2, self.y - h/2, w, h, 2)
     self.collider:setFixedRotation(true)
     self.collider:setUserData(self)
     self.collider:setCollisionClass("enemy")
@@ -126,9 +126,14 @@ function Enemy:checkActiveByCamera(camera)
     if self.collider:isActive() ~= inView then
         self.collider:setActive(inView)
         -- Debug message to confirm state changes
-        Debug.debugPrint(string.format("[ENEMY CHECK CAMERA] %s (%d) active=%s x=%.1f y=%.1f", self.name or "Enemy", self.enemyID or -1, tostring(inView), self.x, self.y))
+        --print(string.format("[ENEMY CHECK CAMERA] %s (%d) active=%s x=%.1f y=%.1f", self.name or "Enemy", self.enemyID or -1, tostring(inView), self.x, self.y))
+        -- Always print the inView state (DEBUG)
+        
+
     end
+    -- print(string.format("[CAMERA CULL] Enemy: %s (%d) inView=%s colliderActive=%s", self.name, self.enemyID, tostring(inView), tostring(self.collider:isActive())))
     return inView
+    
 end
 
 -- Stub: children override

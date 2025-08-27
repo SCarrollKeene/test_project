@@ -12,7 +12,7 @@ sounds = sounds or {}
 
 local assets = {
     images = {
-        "sprites/mage-NESW.png",
+        "sprites/Mage.png",
         "sprites/dash.png",
         "sprites/slime_black.png",
         "sprites/slime_blue.png",
