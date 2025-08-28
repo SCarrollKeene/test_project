@@ -187,7 +187,7 @@ function Blob:update(dt, frameCount)
 
     -- throttle enemy AI logic
     local id = self.enemyID or 1
-    local throttle = 2
+    local throttle = 4
     if math.fmod(id, throttle) ~= math.fmod(frameCount, throttle) then
         return
     end

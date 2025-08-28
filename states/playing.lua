@@ -831,11 +831,11 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
         navH = currentMap.height * currentMap.tileheight
     end
 
-    -- self.gridCellSize = 425 -- Each cell is 200x200 pixels, tweak for performance.
+    --self.gridCellSize = 96 -- Each cell is 200x200 pixels, tweak for performance.
     self.gridCellSize = getAdaptiveGridCellSize(navW, navH, enemyCount) -- Each cell is 200x200 pixels, tweak for performance.
-    --self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
+    --self.gridWidth = 8 -- Grid dimensions for your map
     self.gridWidth = math.ceil(navW / self.gridCellSize) -- Grid dimensions for your map
-    --self.gridHeight = math.ceil(768 / self.gridCellSize)
+    --self.gridHeight = 8
     self.gridHeight = math.ceil(navH / self.gridCellSize)
     self.spatialGrid = {} -- This will hold all the enemies, sorted into cells.
     
@@ -1670,7 +1670,7 @@ function playing:draw()
         navW = currentMap.width * currentMap.tilewidth
         navH = currentMap.height * currentMap.tileheight
     end
-    print("Navigation Bounds:", navX, navY, navW, navH)
+    -- print("Navigation Bounds:", navX, navY, navW, navH)
 
 
     -- draw map first, player should load on top of map

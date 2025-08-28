@@ -136,8 +136,8 @@ function Debug.drawSpatialGrid(world, navX, navY, navW, navH, grid, cellSize, gr
         return
     end
 
-    print(string.format("Drawing spatial grid at navX=%d navY=%d navW=%d navH=%d cellSize=%d gridW=%d gridH=%d",
-    navX, navY, navW, navH, cellSize, gridWidth, gridHeight))
+    -- print(string.format("Drawing spatial grid at navX=%d navY=%d navW=%d navH=%d cellSize=%d gridW=%d gridH=%d",
+    -- navX, navY, navW, navH, cellSize, gridWidth, gridHeight))
 
     love.graphics.setColor(1, 1, 0, 0.3) -- Yellow, semi-transparent
 
@@ -150,7 +150,7 @@ function Debug.drawSpatialGrid(world, navX, navY, navW, navH, grid, cellSize, gr
                 if cellX + cellSize > navX and cellX < navX + navW then
                     --cellY + cellSize > navY and cellY < navY + navH then
                     --love.graphics.rectangle("line", cellX, cellY, cellSize, cellSize)
-                    
+
                     -- Calculate clipped width/height so the cell doesn't draw past the nav area
                     local w = math.min(cellSize, (navX + navW) - cellX)
                     local h = math.min(cellSize, (navY + navH) - cellY)
