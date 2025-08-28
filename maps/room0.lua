@@ -9,8 +9,8 @@ return {
   height = 12,
   tilewidth = 64,
   tileheight = 64,
-  nextlayerid = 9,
-  nextobjectid = 17,
+  nextlayerid = 10,
+  nextobjectid = 21,
   properties = {},
   tilesets = {
     {
@@ -278,6 +278,37 @@ return {
           rotation = 0,
           visible = true,
           properties = {}
+        }
+      }
+    },
+    {
+      type = "objectgroup",
+      draworder = "topdown",
+      id = 9,
+      name = "Navigation",
+      class = "",
+      visible = true,
+      opacity = 1,
+      offsetx = 0,
+      offsety = 0,
+      parallaxx = 1,
+      parallaxy = 1,
+      properties = {},
+      objects = {
+        {
+          id = 17,
+          name = "NavigationBounds",
+          type = "",
+          shape = "rectangle",
+          x = 128,
+          y = 128,
+          width = 1024,
+          height = 512,
+          rotation = 0,
+          visible = true,
+          properties = {
+            ["can_navigate"] = true
+          }
         }
       }
     },

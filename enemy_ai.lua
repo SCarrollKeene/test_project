@@ -67,15 +67,15 @@ function EnemyAI.pursueTarget(self, dt)
     -- 1. Skip if no target
     if not self.target then return end
 
-    -- 2. Skip if collider not active (i.e., offscreen, pooled, or disabled)
+    -- 2. Skip if collider not active culled offscreen, pooled, or disabled
     if not self.collider or not self.collider:isActive() then
         return
     end
 
-    -- 3. Early out if far from player (reduce unnecessary math/cpu for distant blobs)
+    -- 3. Early out if far distance from player
     local dx = self.target.x - self.x
     local dy = self.target.y - self.y
-    local threatRadius = 500 -- Only pursue if within this many pixels (tune as needed)
+    local threatRadius = 500 -- Only pursue if within this many pixels, finetuning
     local distanceSq = dx * dx + dy * dy
     if distanceSq > threatRadius * threatRadius then
         self.collider:setLinearVelocity(0, 0)

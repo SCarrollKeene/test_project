@@ -7,11 +7,23 @@ local Debug = {}
 Debug.mode = false  -- Global debug mode flag
 Debug.showWalls = false  -- Flag to show wall colliders
 Debug.traceParticles = false
+Debug.showSpatialGrid = false
+Debug.showAllPhysicsFixtures = false
 
 function Debug.keypressed(key)
-    if key == "t" then
+    if key == "t" and not (love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")) then
         Debug.mode = not Debug.mode
         print("[DEBUG MODE]: ", Debug.mode and "ON" or "OFF")
+
+        Debug.showAllPhysicsFixtures = not Debug.showAllPhysicsFixtures
+        print("[DEBUG] All Physics Fixtures: ", Debug.showAllPhysicsFixtures and "ON" or "OFF")
+        Debug.drawAllPhysicsFixtures(world)
+    end
+
+    if (key == "t" or key == "T") and (love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")) then
+        Debug.showSpatialGrid = not Debug.showSpatialGrid
+        print("[DEBUG] Spatial Grid: ", Debug.showSpatialGrid and "ON" or "OFF")
+        Debug.drawSpatialGrid(world)
     end
 end
 
@@ -113,32 +125,52 @@ function Debug.drawEnemyTracking(enemies, player)
 end
 
 -- to visualize the spatial grid in main.lua
-function Debug.drawSpatialGrid(grid, cellSize, gridWidth, gridHeight, cam)
-    if not Debug.mode then return end
+function Debug.drawSpatialGrid(world, navX, navY, navW, navH, grid, cellSize, gridWidth, gridHeight, mapW, mapH)
+    if not Debug.showSpatialGrid then return end
 
-    CamManager.camera:attach()
+    -- Defensive: bail if any arg is missing/not a table
+    if type(grid) ~= "table" or not cellSize or not gridWidth or not gridHeight then return end
+
+    if not navX or not navY or not mapW or not mapH then
+        print("SpatialGrid ERROR: nav bounds or map size is nil!")
+        return
+    end
+
+    print(string.format("Drawing spatial grid at navX=%d navY=%d navW=%d navH=%d cellSize=%d gridW=%d gridH=%d",
+    navX, navY, navW, navH, cellSize, gridWidth, gridHeight))
+
     love.graphics.setColor(1, 1, 0, 0.3) -- Yellow, semi-transparent
 
     for x = 1, gridWidth do
-        for y = 1, gridHeight do
-            local cellX = (x - 1) * cellSize
-            local cellY = (y - 1) * cellSize
-            love.graphics.rectangle("line", cellX, cellY, cellSize, cellSize)
-            -- Optionally, show entity count in each cell:
-            if grid[x][y] and #grid[x][y] > 0 then
-                love.graphics.setColor(1, 0, 0, 0.7)
-                love.graphics.print(tostring(#grid[x][y]), cellX + 4, cellY + 4)
-                love.graphics.setColor(1, 1, 0, 0.3)
+        if grid[x] ~= nil then -- defensive check for if x is nil
+            for y = 1, gridHeight do
+                local cellX = navX + (x - 1) * cellSize
+                local cellY = navY + (y - 1) * cellSize
+                -- Only draw if the cell fits the map
+                if cellX + cellSize > navX and cellX < navX + navW then
+                    --cellY + cellSize > navY and cellY < navY + navH then
+                    --love.graphics.rectangle("line", cellX, cellY, cellSize, cellSize)
+                    
+                    -- Calculate clipped width/height so the cell doesn't draw past the nav area
+                    local w = math.min(cellSize, (navX + navW) - cellX)
+                    local h = math.min(cellSize, (navY + navH) - cellY)
+                    love.graphics.rectangle("line", cellX, cellY, w, h)
+                    -- Optionally, show entity count in each cell:
+                    if grid[x][y] ~= nil and #grid[x][y] > 0 then
+                        love.graphics.setColor(1, 0, 0, 0.7)
+                        love.graphics.print(tostring(#grid[x][y]), cellX + 4, cellY + 4)
+                        love.graphics.setColor(1, 1, 0, 0.3)
+                    end
+                end
             end
         end
     end
 
     love.graphics.setColor(1, 1, 1, 1) -- Reset color
-    CamManager.camera:detach()
 end
 
 function Debug.drawAllPhysicsFixtures(world)
-    if not Debug.mode then return end
+    if not Debug.showAllPhysicsFixtures then return end
 
     for _, body in ipairs(world:getBodies()) do
         for _, fixture in ipairs(body:getFixtures()) do

@@ -783,7 +783,6 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     local mapH = currentMap.height * currentMap.tileheight
     local enemyCount = #enemies
     --print("Enemy count: " .. enemyCount)
-
     -- print("[DEBUG] currentMap:", currentMap, 
     --   "width:", currentMap and currentMap.width, 
     --   "tilewidth:", currentMap and currentMap.tilewidth)
@@ -815,16 +814,33 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
     -- TODO: revisit making spatial grid scale based on the map width and height
     -- right now its not clearing colliders correctly between :enter and :leave states
     -- reverted back to using hard coded dimensions for the time being 7/4/25
+
+    local nav = currentMap and currentMap.navigationBounds
+    local navX, navY, navW, navH
+
+    if nav then
+        navX = nav.x
+        navY = nav.y
+        navW = nav.width
+        navH = nav.height
+    else
+        -- Fallback (legacy: use whole map if NavigationBounds missing)
+        navX = 0
+        navY = 0
+        navW = currentMap.width * currentMap.tilewidth
+        navH = currentMap.height * currentMap.tileheight
+    end
+
     -- self.gridCellSize = 425 -- Each cell is 200x200 pixels, tweak for performance.
-    self.gridCellSize = getAdaptiveGridCellSize(mapW, mapH, enemyCount) -- Each cell is 200x200 pixels, tweak for performance.
+    self.gridCellSize = getAdaptiveGridCellSize(navW, navH, enemyCount) -- Each cell is 200x200 pixels, tweak for performance.
     --self.gridWidth = math.ceil(1280 / self.gridCellSize) -- Grid dimensions for your map
-    self.gridWidth = math.ceil(mapW / self.gridCellSize) -- Grid dimensions for your map
+    self.gridWidth = math.ceil(navW / self.gridCellSize) -- Grid dimensions for your map
     --self.gridHeight = math.ceil(768 / self.gridCellSize)
-    self.gridHeight = math.ceil(mapH / self.gridCellSize)
+    self.gridHeight = math.ceil(navH / self.gridCellSize)
     self.spatialGrid = {} -- This will hold all the enemies, sorted into cells.
     
     function playing:assignEnemiesToSpatialGrid()
-        -- Pre-populate the grid with empty tables to avoid errors
+        -- clear the grid with empty tables to avoid errors
         for x = 1, self.gridWidth do
             self.spatialGrid[x] = {}
             for y = 1, self.gridHeight do
@@ -837,8 +853,8 @@ function playing:enter(previous_state, world, enemyPools, enemyImageCache, mapCa
         for _, enemy in ipairs(enemies) do
             if not enemy.isDead and enemy.x and enemy.y then
                 -- Clamp to grid bounds
-                local gridX = math.floor(enemy.x / self.gridCellSize) + 1
-                local gridY = math.floor(enemy.y / self.gridCellSize) + 1
+                local gridX = math.floor((enemy.x - navX) / self.gridCellSize) + 1
+                local gridY = math.floor((enemy.y - navY) / self.gridCellSize) + 1
 
                 -- Ensure the enemy is within the grid bounds before inserting
                 if gridX >= 1 and gridX <= self.gridWidth and gridY >= 1 and gridY <= self.gridHeight then
@@ -1119,8 +1135,25 @@ function playing:update(dt)
     end
     
     -- After player:update(dt, mapW, mapH) or player:update(dt)
-    local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
-    local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
+    local mapW = currentMap and currentMap.width and currentMap.tilewidth and
+    (currentMap.width * currentMap.tilewidth) or love.graphics.getWidth()
+    local mapH = currentMap and currentMap.height and currentMap.tileheight and
+    (currentMap.height * currentMap.tileheight) or love.graphics.getHeight()
+
+    local nav = currentMap and currentMap.navigationBounds
+    local navX, navY, navW, navH
+    if nav then
+        navX = nav.x
+        navY = nav.y
+        navW = nav.width
+        navH = nav.height
+    else
+        navX = 0
+        navY = 0
+        navW = currentMap.width * currentMap.tilewidth
+        navH = currentMap.height * currentMap.tileheight
+    end
+
     -- local w, h = love.graphics.getWidth(), love.graphics.getHeight()
     CamManager.setMap(mapW, mapH) -- Set map boundaries for the camera
     --CamManager.camera:attach() -- Attach the camera to the LOVE2D graphics system
@@ -1198,8 +1231,10 @@ function playing:update(dt)
     end
 
     if not player.isDead then
-        local mapW = currentMap and currentMap.width * currentMap.tilewidth or love.graphics.getWidth()
-        local mapH = currentMap and currentMap.height * currentMap.tileheight or love.graphics.getHeight()
+        local mapW = currentMap and currentMap.width and currentMap.tilewidth and
+        (currentMap.width * currentMap.tilewidth) or love.graphics.getWidth()
+        local mapH = currentMap and currentMap.height and currentMap.tileheight and
+        (currentMap.height * currentMap.tileheight) or love.graphics.getHeight()
         player:update(dt, mapW, mapH)
     end
 
@@ -1261,8 +1296,8 @@ end
 
     -- 3. Determine the player's grid cell
     local px, py = player.x, player.y
-    local playerGridX = math.floor(px / self.gridCellSize) + 1
-    local playerGridY = math.floor(py / self.gridCellSize) + 1
+    local playerGridX = math.floor((px - navX) / self.gridCellSize) + 1
+    local playerGridY = math.floor((py - navY) / self.gridCellSize) + 1
 
     -- 4. only update enemies in hot/near cells, tag them as updated
     local nearbyEnemies = {} -- tracking enemies who got updated
@@ -1283,6 +1318,8 @@ end
         end
     end
 
+    -- print("gridWidth", self.gridWidth, "gridHeight", self.gridHeight, "mapW", mapW, "mapH", mapH)
+
     -- 5. Do a fallback update for ALL enemies not updated above
     for _, enemy in ipairs(enemies) do
         if not nearbyEnemies[enemy] then
@@ -1302,13 +1339,13 @@ end
         end
     end
 
-    -- 6. collider deactivation loop for enemies far from player
+    -- 6. collider deact loop for enemies far from player
     for _, enemy in ipairs(enemies) do
         if not enemy.collider then goto continue end -- skip if collider missing
         if enemy.toBeRemoved or enemy.isDead then goto continue end
 
-        local gridX = math.floor(enemy.x / self.gridCellSize) + 1
-        local gridY = math.floor(enemy.y / self.gridCellSize) + 1
+        local gridX = math.floor((enemy.x - navX) / self.gridCellSize) + 1
+        local gridY = math.floor((enemy.y - navY) / self.gridCellSize) + 1
         local inHotCell = math.abs(gridX - playerGridX) <= 1 and math.abs(gridY - playerGridY) <= 1
         local inCamera = enemy:checkActiveByCamera(CamManager.camera)
         if inHotCell and inCamera then
@@ -1610,6 +1647,32 @@ function playing:draw()
     local tx = camX - love.graphics.getWidth() / 2 / scale
     local ty = camY - love.graphics.getHeight() / 2 / scale
 
+    -- map dimensions for drawing and clamping spatialGrid
+    local mapW = currentMap.width * currentMap.tilewidth
+    local mapH = currentMap.height * currentMap.tileheight
+
+
+    -- nav bounds needed for spatial grid calculations
+    local nav = currentMap and currentMap.navigationBounds
+    if not nav then
+    print("[ Playing:draw ERROR] Navigation bounds missing from map!")
+    end
+    local navX, navY, navW, navH
+    if nav then
+        navX = nav.x
+        navY = nav.y
+        navW = nav.width
+        navH = nav.height
+    else
+        -- Optional, set default/fallback bounds here
+        navX = 0
+        navY = 0
+        navW = currentMap.width * currentMap.tilewidth
+        navH = currentMap.height * currentMap.tileheight
+    end
+    print("Navigation Bounds:", navX, navY, navW, navH)
+
+
     -- draw map first, player should load on top of map
     if currentMap then
         local mapW = currentMap.width * currentMap.tilewidth
@@ -1780,7 +1843,7 @@ function playing:draw()
         Debug.drawCollisions(world)
         Debug.drawColliders(wallColliders, player, portal)
         Debug.drawAllPhysicsFixtures(world)
-        Debug.drawSpatialGrid(self.spatialGrid, self.gridCellSize, self.gridWidth, self.gridHeight, CamManager)
+        Debug.drawSpatialGrid(world, navX, navY, navW, navH, self.spatialGrid, self.gridCellSize, self.gridWidth, self.gridHeight, CamManager, mapH, mapW)
 
         love.graphics.setBlendMode("add") -- for visibility
         -- draw particles systems last after other entities

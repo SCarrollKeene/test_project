@@ -81,7 +81,7 @@ end
 function Enemy:load()
     if not self.world then error("Enemy:load missing world context") end
     local w, h = self.width, self.height
-    self.collider = self.world:newBSGRectangleCollider(self.x - w/2, self.y - h/2, w, h, 2)
+    self.collider = self.world:newBSGRectangleCollider(self.x - w/2, self.y - h/2, w, h, 10)
     self.collider:setFixedRotation(true)
     self.collider:setUserData(self)
     self.collider:setCollisionClass("enemy")

@@ -179,6 +179,7 @@ function love.draw()
     love.graphics.clear(0, 0, 0, 1) -- Clear the actual screen to black (for letter/pillarboxing)
     -- Draw the gameCanvas to the actual screen, scaled and offset
     love.graphics.draw(gameCanvas, offsetX, offsetY, 0, scaleX, scaleY)
+    -- TODO: Optional: Draw black bars for letterboxing/pillarboxing 8/28/25
 end
 
 -- TODO: make ESC key global for quiting no matter what game state they are in

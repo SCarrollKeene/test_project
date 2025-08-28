@@ -1,6 +1,6 @@
 local EnemyManager = {}
 
-EnemyManager.targetFps = 60 -- FPS we want to maintain
+EnemyManager.targetFps = 120 -- FPS to maintain, testing 60 and 120
 EnemyManager.aiThrottleStep = 1 -- no initial throttling
 local throttleCheckTimer = 0 -- periodic timer to check performance
 

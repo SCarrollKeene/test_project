@@ -23,6 +23,7 @@ function MapLoader.parse(mapName)
     local filePath = "maps/" .. mapName .. ".lua"
     local map = sti(filePath)
 
+    -- Walls extraction
     local wallData = {}
     if map.layers["Walls"] and map.layers["Walls"].objects then
         for _, obj in ipairs(map.layers["Walls"].objects) do
@@ -34,6 +35,25 @@ function MapLoader.parse(mapName)
             })
         end
     end
+
+    -- NavigationBounds extraction
+    local foundNav = false
+    -- After loading map with STI lib
+    if map.layers["Navigation"] and map.layers["Navigation"].objects then
+        for _, obj in ipairs(map.layers["Navigation"].objects) do
+            if obj.name == "NavigationBounds" and (obj.properties and obj.properties.can_navigate) then
+                map.navigationBounds = {
+                    x = obj.x,
+                    y = obj.y,
+                    width = obj.width,
+                    height = obj.height,
+                    can_navigate = obj.properties.can_navigate
+                }
+                break
+            end
+        end
+    end
+    
     return map, wallData
 end
 
