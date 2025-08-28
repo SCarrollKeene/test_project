@@ -65,7 +65,7 @@ end
 -- end
 function EnemyAI.pursueTarget(self, dt)
     -- 1. Skip if no target
-    if not self.target then return end
+    if not self.target or self.target.isDead then return end
 
     -- 2. Skip if collider not active culled offscreen, pooled, or disabled
     if not self.collider or not self.collider:isActive() then
@@ -77,6 +77,30 @@ function EnemyAI.pursueTarget(self, dt)
     local dy = self.target.y - self.y
     local threatRadius = 500 -- Only pursue if within this many pixels, finetuning
     local distanceSq = dx * dx + dy * dy
+    local radiusToPlayerSquared = 128 * 128 -- Only update frequently if within 128px of player/target
+    local closeToPlayer = (distanceSq < radiusToPlayerSquared)
+
+    --  recalculate pursuit direction only if the player moves enough (angle/distance threshold), not every AI update
+    self._pursuitTimer = (self._pursuitTimer or 0) - dt
+    local RECHECK_TIME = closeToPlayer and 0.05 or 0.3
+
+    self._lastPursuitDX = self._lastPursuitDX or dx
+    self._lastPursuitDY = self._lastPursuitDY or dy
+    local deltaDx = dx - self._lastPursuitDX
+    local deltaDy = dy - self._lastPursuitDY
+    local directionChangeThresholdSq = closeToPlayer and 4 or 64
+    local deltaSq = deltaDx * deltaDx + deltaDy * deltaDy
+
+    -- Only recalc if timer expired or significant direction change
+    if self._pursuitTimer > 0 and deltaSq < directionChangeThresholdSq and not (self._forcePursuitUpdate) then
+        return
+    end
+    self._pursuitTimer = RECHECK_TIME
+    self._lastPursuitDX = dx
+    self._lastPursuitDY = dy
+    self._forcePursuitUpdate = false
+    
+    -- Early out if outside threat radius
     if distanceSq > threatRadius * threatRadius then
         self.collider:setLinearVelocity(0, 0)
         return
@@ -93,6 +117,8 @@ function EnemyAI.pursueTarget(self, dt)
     else
         self.collider:setLinearVelocity(0, 0)
     end
+
+    -- TODO: make it to where if enemies are close to player, they don't bog down FPS and performance 8/28/25
 end
 
 function EnemyAI.patrolArea(enemy, dt, patrolRange, onPlayerNear, direction)

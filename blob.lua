@@ -46,6 +46,7 @@ function Blob:new(fields)
 
     -- blob specific fields
     instance.enemyType = "blob"
+    instance.throttle = fields.throttle or 2
 
     instance.flashDuration = 0.12
     instance.isFlashing = false
@@ -187,7 +188,7 @@ function Blob:update(dt, frameCount)
 
     -- throttle enemy AI logic
     local id = self.enemyID or 1
-    local throttle = 4
+    local throttle = self.throttle or 3 -- lower number = more frequent updates, higher # = less frequent
     if math.fmod(id, throttle) ~= math.fmod(frameCount, throttle) then
         return
     end
