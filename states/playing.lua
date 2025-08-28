@@ -1127,12 +1127,19 @@ function playing:update(dt)
 
     -- -- AI/throttled update for each enemy
     for _, enemy in ipairs(enemies) do
-        if math.fmod(self.frameCount, EnemyManager.aiThrottleStep) == 0 then
+        -- if math.fmod(self.frameCount, EnemyManager.aiThrottleStep) == 0 then
+        if math.fmod(enemy.enemyID, EnemyManager.aiThrottleStep) == math.fmod(self.frameCount, EnemyManager.aiThrottleStep) then
             -- print("[ENEMY AI UPDATE] Updating enemy:", (enemy.name or "unknown"))
             Enemy:update(dt, self.frameCount)
             -- Gorgoneye:updateAI(dt)
         end
     end
+    -- alt throttle update method approach
+    -- for i, enemy in ipairs(enemies) do
+    --     if (i % EnemyManager.aiThrottleStep) == (self.frameCount % EnemyManager.aiThrottleStep) then
+    --         enemy:update(dt, self.frameCount)
+    --     end
+    -- end
     
     -- After player:update(dt, mapW, mapH) or player:update(dt)
     local mapW = currentMap and currentMap.width and currentMap.tilewidth and
