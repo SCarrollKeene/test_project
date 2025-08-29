@@ -65,7 +65,10 @@ end
 -- end
 function EnemyAI.pursueTarget(self, dt)
     -- 1. Skip if no target
-    if not self.target or self.target.isDead then return end
+    if not self.target or self.target.isDead then 
+        EnemyAI.updateIdle(self, dt)
+        return 
+    end
 
     -- 2. Skip if collider not active culled offscreen, pooled, or disabled
     if not self.collider or not self.collider:isActive() then
